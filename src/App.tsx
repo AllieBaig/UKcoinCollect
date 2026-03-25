@@ -19,6 +19,10 @@ export default function App() {
     const saved = localStorage.getItem('collected_coins');
     return saved ? JSON.parse(saved) : [];
   });
+  const [customCoins, setCustomCoins] = useState<Coin[]>(() => {
+    const saved = localStorage.getItem('custom_coins');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [requestedCoins, setRequestedCoins] = useState<RequestedCoin[]>(() => {
     const saved = localStorage.getItem('requested_coins');
     return saved ? JSON.parse(saved) : [];
@@ -30,13 +34,16 @@ export default function App() {
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   
   // Request Form State
+  const [reqName, setReqName] = useState('');
   const [reqDenom, setReqDenom] = useState('50p');
   const [reqYear, setReqYear] = useState(new Date().getFullYear());
+  const [reqPhoto, setReqPhoto] = useState<string | null>(null);
+  const [isAddingToCollection, setIsAddingToCollection] = useState(false);
 
   const [isZoomed, setIsZoomed] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [scanResult, setScanResult] = useState<{ denomination: string; year: number | null } | null>(null);
+  const [scanResult, setScanResult] = useState<{ denomination: string; year: number | null; photo?: string } | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -46,8 +53,14 @@ export default function App() {
   }, [collectedIds]);
 
   useEffect(() => {
+    localStorage.setItem('custom_coins', JSON.stringify(customCoins));
+  }, [customCoins]);
+
+  useEffect(() => {
     localStorage.setItem('requested_coins', JSON.stringify(requestedCoins));
   }, [requestedCoins]);
+
+  const allCoins = useMemo(() => [...UK_COINS, ...customCoins], [customCoins]);
 
   const toggleCollected = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -57,7 +70,7 @@ export default function App() {
   };
 
   const denominations = useMemo(() => {
-    const unique = Array.from(new Set(UK_COINS.map(c => c.denomination)));
+    const unique = Array.from(new Set(allCoins.map(c => c.denomination))) as string[];
     const order = ['£2', '£1', 'Half Crown', '1 Shilling', '50p', '3p', '1p', '1/2p'];
     return unique.sort((a, b) => {
       const indexA = order.indexOf(a);
@@ -67,10 +80,10 @@ export default function App() {
       if (indexB === -1) return -1;
       return indexA - indexB;
     });
-  }, []);
+  }, [allCoins]);
 
   const filteredCoins = useMemo(() => {
-    return UK_COINS.filter(coin => {
+    return allCoins.filter(coin => {
       const matchesSearch = coin.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            coin.denomination.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesFilter = filter === 'all' || 
@@ -80,10 +93,30 @@ export default function App() {
       
       return matchesSearch && matchesFilter && matchesDenom;
     });
-  }, [searchQuery, filter, collectedIds, activeDenomination]);
+  }, [searchQuery, filter, collectedIds, activeDenomination, allCoins]);
 
   const handleRequestSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isAddingToCollection) {
+      const newCoin: Coin = {
+        id: `custom-${Date.now()}`,
+        name: reqName || `${reqDenom} (${reqYear})`,
+        denomination: reqDenom,
+        year: reqYear,
+        description: 'Custom added coin.',
+        imageUrl: reqPhoto || `https://picsum.photos/seed/custom-${reqDenom}-${reqYear}/600/600`
+      };
+      setCustomCoins(prev => [...prev, newCoin]);
+      setCollectedIds(prev => [...prev, newCoin.id]);
+      setIsRequestModalOpen(false);
+      // Reset
+      setReqName('');
+      setReqPhoto(null);
+      setIsAddingToCollection(false);
+      return;
+    }
+
     const newRequest: RequestedCoin = {
       id: `req-${Date.now()}`,
       denomination: reqDenom,
@@ -135,12 +168,18 @@ export default function App() {
     setIsAnalyzing(true);
     const canvas = canvasRef.current;
     const video = videoRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    
+    // Capture at a smaller size for analysis and storage
+    const targetWidth = 400;
+    const targetHeight = (video.videoHeight / video.videoWidth) * targetWidth;
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      ctx.drawImage(video, 0, 0);
-      const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+      ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+      const base64Image = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+      const fullPhoto = canvas.toDataURL('image/jpeg', 0.6);
       
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
@@ -168,10 +207,10 @@ export default function App() {
         });
 
         const result = JSON.parse(response.text);
-        setScanResult(result);
+        setScanResult({ ...result, photo: fullPhoto });
         
         // Check if coin exists in collection
-        const foundCoin = UK_COINS.find(c => 
+        const foundCoin = allCoins.find(c => 
           c.denomination.toLowerCase() === result.denomination.toLowerCase() && 
           c.year === result.year
         );
@@ -183,6 +222,7 @@ export default function App() {
           // Pre-fill request form
           setReqDenom(result.denomination !== 'unknown' ? result.denomination : '50p');
           setReqYear(result.year || new Date().getFullYear());
+          setReqPhoto(fullPhoto);
         }
       } catch (err) {
         console.error("AI Analysis failed:", err);
@@ -193,7 +233,7 @@ export default function App() {
     }
   };
 
-  const progress = Math.round((collectedIds.length / UK_COINS.length) * 100);
+  const progress = Math.round((collectedIds.length / allCoins.length) * 100);
   const showFolders = !activeDenomination && searchQuery === '' && activeDenomination !== 'Wishlist';
 
   return (
@@ -498,6 +538,17 @@ export default function App() {
                       <div className="flex gap-2">
                         <button 
                           onClick={() => {
+                            setIsAddingToCollection(true);
+                            setIsRequestModalOpen(true);
+                            stopScanner();
+                          }}
+                          className="px-4 py-2 bg-amber-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-amber-200"
+                        >
+                          Add to Collection
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setIsAddingToCollection(false);
                             setIsRequestModalOpen(true);
                             stopScanner();
                           }}
@@ -553,16 +604,33 @@ export default function App() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl"
+              className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Request a Coin</h2>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {isAddingToCollection ? 'Add to Collection' : 'Request a Coin'}
+                </h2>
                 <button onClick={() => setIsRequestModalOpen(false)} className="text-gray-400">
                   <X size={24} />
                 </button>
               </div>
               
               <form onSubmit={handleRequestSubmit} className="space-y-6">
+                {isAddingToCollection && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">
+                      Coin Name (Optional)
+                    </label>
+                    <input 
+                      type="text"
+                      value={reqName}
+                      onChange={(e) => setReqName(e.target.value)}
+                      className="w-full p-4 bg-gray-100 border-none rounded-xl text-lg outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="e.g. My Special Penny"
+                    />
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">
                     Denomination
@@ -594,11 +662,42 @@ export default function App() {
                   />
                 </div>
 
+                {isAddingToCollection && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">
+                      Photo
+                    </label>
+                    {reqPhoto ? (
+                      <div className="relative w-32 h-32 rounded-2xl overflow-hidden border-2 border-amber-500">
+                        <img src={reqPhoto} alt="Captured" className="w-full h-full object-cover" />
+                        <button 
+                          type="button"
+                          onClick={() => setReqPhoto(null)}
+                          className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsRequestModalOpen(false);
+                          startScanner();
+                        }}
+                        className="w-full p-4 bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors"
+                      >
+                        <Camera size={20} /> Take Photo
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   className="w-full py-4 bg-amber-500 text-white rounded-2xl text-xl font-bold shadow-xl shadow-amber-200 hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
                 >
-                  <Send size={20} /> Submit Request
+                  <Send size={20} /> {isAddingToCollection ? 'Add to Collection' : 'Submit Request'}
                 </button>
               </form>
             </motion.div>
