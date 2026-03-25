@@ -1,5 +1,5 @@
 {
   "name": "UK Coin Collector",
   "description": "A lightweight, senior-friendly PWA for tracking your UK coin collection with gamified progress.",
-  "requestFramePermissions": []
+  "requestFramePermissions": ["camera"]
 }

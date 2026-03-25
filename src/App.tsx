@@ -1,7 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Trophy, CheckCircle2, Circle, Info, Filter, X, ChevronRight, Folder, ArrowLeft, Plus, Send, Clipboard } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { 
+  Trophy, Search, Folder, ChevronRight, CheckCircle2, Circle, 
+  ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UK_COINS, Coin } from './data/coins';
+import { GoogleGenAI, Type } from "@google/genai";
 
 interface RequestedCoin {
   id: string;
@@ -30,6 +34,12 @@ export default function App() {
   const [reqYear, setReqYear] = useState(new Date().getFullYear());
 
   const [isZoomed, setIsZoomed] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [scanResult, setScanResult] = useState<{ denomination: string; year: number | null } | null>(null);
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     localStorage.setItem('collected_coins', JSON.stringify(collectedIds));
@@ -94,6 +104,95 @@ export default function App() {
     alert('Requests copied! You can now paste them in the chat.');
   };
 
+  const startScanner = async () => {
+    setIsScanning(true);
+    setScanResult(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      alert("Could not access camera. Please check permissions.");
+      setIsScanning(false);
+    }
+  };
+
+  const stopScanner = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+    }
+    setIsScanning(false);
+  };
+
+  const captureAndAnalyze = async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    setIsAnalyzing(true);
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0);
+      const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+      
+      try {
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+        const response = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: [
+            {
+              parts: [
+                { text: "Identify this UK coin. Return the denomination (e.g., '50p', '£1', '1p', 'Half Crown', '1 Shilling', '3p', '1/2p', '£2') and the year (e.g., 1967). If you are unsure, return 'unknown' for either field." },
+                { inlineData: { mimeType: "image/jpeg", data: base64Image } }
+              ]
+            }
+          ],
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                denomination: { type: Type.STRING },
+                year: { type: Type.INTEGER, nullable: true }
+              },
+              required: ["denomination"]
+            }
+          }
+        });
+
+        const result = JSON.parse(response.text);
+        setScanResult(result);
+        
+        // Check if coin exists in collection
+        const foundCoin = UK_COINS.find(c => 
+          c.denomination.toLowerCase() === result.denomination.toLowerCase() && 
+          c.year === result.year
+        );
+
+        if (foundCoin) {
+          setSelectedCoin(foundCoin);
+          stopScanner();
+        } else {
+          // Pre-fill request form
+          setReqDenom(result.denomination !== 'unknown' ? result.denomination : '50p');
+          setReqYear(result.year || new Date().getFullYear());
+        }
+      } catch (err) {
+        console.error("AI Analysis failed:", err);
+        alert("Could not identify coin. Please try again or add manually.");
+      } finally {
+        setIsAnalyzing(false);
+      }
+    }
+  };
+
   const progress = Math.round((collectedIds.length / UK_COINS.length) * 100);
   const showFolders = !activeDenomination && searchQuery === '' && activeDenomination !== 'Wishlist';
 
@@ -120,13 +219,22 @@ export default function App() {
               {activeDenomination ? activeDenomination : 'Coin Collector'}
             </h1>
           </div>
-          <button 
-            onClick={() => setIsRequestModalOpen(true)}
-            className="bg-amber-500 text-white p-2 rounded-full shadow-lg shadow-amber-200 hover:bg-amber-600 transition-colors"
-            title="Request a new coin"
-          >
-            <Plus size={24} />
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={startScanner}
+              className="bg-gray-900 text-white p-2 rounded-full shadow-lg hover:bg-black transition-colors"
+              title="Scan a coin"
+            >
+              <Camera size={24} />
+            </button>
+            <button 
+              onClick={() => setIsRequestModalOpen(true)}
+              className="bg-amber-500 text-white p-2 rounded-full shadow-lg shadow-amber-200 hover:bg-amber-600 transition-colors"
+              title="Request a new coin"
+            >
+              <Plus size={24} />
+            </button>
+          </div>
         </div>
         
         {/* Progress Bar */}
@@ -337,6 +445,98 @@ export default function App() {
           )}
         </div>
       </main>
+
+      {/* Scanner Overlay */}
+      <AnimatePresence>
+        {isScanning && (
+          <div className="fixed inset-0 z-[60] flex flex-col bg-black">
+            <div className="relative flex-1">
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline 
+                className="w-full h-full object-cover"
+              />
+              <canvas ref={canvasRef} className="hidden" />
+              
+              {/* Scanner Frame */}
+              <div className="absolute inset-0 flex items-center justify-center p-12">
+                <div className="w-full aspect-square border-4 border-amber-500 rounded-full relative">
+                  <div className="absolute inset-0 border-4 border-white/20 rounded-full animate-pulse" />
+                </div>
+              </div>
+
+              {/* Scanner Controls */}
+              <div className="absolute top-6 left-6 right-6 flex justify-between items-center">
+                <button 
+                  onClick={stopScanner}
+                  className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white"
+                >
+                  <X size={24} />
+                </button>
+                <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-bold flex items-center gap-2">
+                  <Sparkles size={16} className="text-amber-400" />
+                  AI Coin Scanner
+                </div>
+              </div>
+
+              {/* Result Preview */}
+              <AnimatePresence>
+                {scanResult && !isAnalyzing && (
+                  <motion.div 
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="absolute bottom-32 left-6 right-6 bg-white rounded-2xl p-4 shadow-2xl"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Identified As</h4>
+                        <p className="text-xl font-bold text-gray-900">
+                          {scanResult.denomination} ({scanResult.year || 'Unknown Year'})
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => {
+                            setIsRequestModalOpen(true);
+                            stopScanner();
+                          }}
+                          className="px-4 py-2 bg-amber-100 text-amber-600 rounded-xl font-bold text-sm"
+                        >
+                          Request
+                        </button>
+                        <button 
+                          onClick={() => setScanResult(null)}
+                          className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl font-bold text-sm"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Scan Button */}
+              <div className="absolute bottom-10 left-0 right-0 flex justify-center">
+                <button
+                  onClick={captureAndAnalyze}
+                  disabled={isAnalyzing}
+                  className={`w-20 h-20 rounded-full border-4 border-white flex items-center justify-center transition-all ${
+                    isAnalyzing ? 'bg-gray-400' : 'bg-amber-500 shadow-xl shadow-amber-500/40'
+                  }`}
+                >
+                  {isAnalyzing ? (
+                    <Loader2 size={40} className="text-white animate-spin" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full border-2 border-white/50" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Request Coin Modal */}
       <AnimatePresence>
