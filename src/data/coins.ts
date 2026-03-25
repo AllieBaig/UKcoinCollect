@@ -93,12 +93,100 @@ export const UK_COINS: Coin[] = [
   },
   // One Penny (1p)
   {
+    id: '1p-1861',
+    name: 'Victoria Bun Penny',
+    denomination: '1p',
+    year: 1861,
+    description: 'Features the "Bun Head" portrait of Queen Victoria.',
+    imageUrl: 'https://picsum.photos/seed/1p-1861/400/400'
+  },
+  {
+    id: '1p-1877',
+    name: 'Victoria Bronze Penny',
+    denomination: '1p',
+    year: 1877,
+    description: 'A classic Victorian bronze penny from the mid-reign.',
+    imageUrl: 'https://picsum.photos/seed/1p-1877/400/400'
+  },
+  {
+    id: '1p-1884',
+    name: 'Victoria Bronze Penny',
+    denomination: '1p',
+    year: 1884,
+    description: 'Late Victorian bronze penny featuring the Bun Head.',
+    imageUrl: 'https://picsum.photos/seed/1p-1884/400/400'
+  },
+  {
+    id: '1p-1893',
+    name: 'Victoria Old Head Penny',
+    denomination: '1p',
+    year: 1893,
+    description: 'Features the final "Old Head" or "Veiled Head" portrait of Victoria.',
+    imageUrl: 'https://picsum.photos/seed/1p-1893/400/400'
+  },
+  {
+    id: '1p-1896',
+    name: 'Victoria Old Head Penny',
+    denomination: '1p',
+    year: 1896,
+    description: 'A late Victorian penny from the Diamond Jubilee era.',
+    imageUrl: 'https://picsum.photos/seed/1p-1896/400/400'
+  },
+  {
+    id: '1p-1897',
+    name: 'Victoria Old Head Penny',
+    denomination: '1p',
+    year: 1897,
+    description: 'Commonly found Victorian penny from the end of the century.',
+    imageUrl: 'https://picsum.photos/seed/1p-1897/400/400'
+  },
+  {
+    id: '1p-1899',
+    name: 'Victoria Old Head Penny',
+    denomination: '1p',
+    year: 1899,
+    description: 'The final penny issued in the 19th century.',
+    imageUrl: 'https://picsum.photos/seed/1p-1899/400/400'
+  },
+  {
+    id: '1p-1906',
+    name: 'Edward VII Penny',
+    denomination: '1p',
+    year: 1906,
+    description: 'Features the portrait of King Edward VII.',
+    imageUrl: 'https://picsum.photos/seed/1p-1906/400/400'
+  },
+  {
+    id: '1p-1908',
+    name: 'Edward VII Penny',
+    denomination: '1p',
+    year: 1908,
+    description: 'A well-known circulation penny from the Edwardian era.',
+    imageUrl: 'https://picsum.photos/seed/1p-1908/400/400'
+  },
+  {
+    id: '1p-1914',
+    name: 'George V Penny',
+    denomination: '1p',
+    year: 1914,
+    description: 'Issued at the start of the First World War.',
+    imageUrl: 'https://picsum.photos/seed/1p-1914/400/400'
+  },
+  {
     id: '1p-1953',
     name: 'Coronation Penny',
     denomination: '1p',
     year: 1953,
     description: 'Issued in the year of Queen Elizabeth II\'s coronation.',
     imageUrl: 'https://picsum.photos/seed/1p-1953/400/400'
+  },
+  {
+    id: '1p-1962',
+    name: 'Elizabeth II Penny',
+    denomination: '1p',
+    year: 1962,
+    description: 'A common bronze penny from the early 1960s.',
+    imageUrl: 'https://picsum.photos/seed/1p-1962/400/400'
   },
   {
     id: '1p-1967',
