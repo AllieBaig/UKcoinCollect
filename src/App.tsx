@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Trophy, Search, Folder, ChevronRight, CheckCircle2, Circle, 
-  ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles
+  ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
+  User, Settings, Award, Calendar, BarChart3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UK_COINS, Coin } from './data/coins';
@@ -12,6 +13,13 @@ interface RequestedCoin {
   denomination: string;
   year: number;
   timestamp: number;
+}
+
+interface UserProfile {
+  name: string;
+  avatar: string;
+  joinDate: string;
+  rank: string;
 }
 
 export default function App() {
@@ -43,6 +51,18 @@ export default function App() {
   const [isZoomed, setIsZoomed] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
+    const saved = localStorage.getItem('user_profile');
+    return saved ? JSON.parse(saved) : {
+      name: 'Coin Collector',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+      joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
+      rank: 'Novice Hunter'
+    };
+  });
+
   const [scanResult, setScanResult] = useState<{ denomination: string; year: number | null; photo?: string } | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -61,7 +81,25 @@ export default function App() {
     localStorage.setItem('requested_coins', JSON.stringify(requestedCoins));
   }, [requestedCoins]);
 
+  useEffect(() => {
+    localStorage.setItem('user_profile', JSON.stringify(userProfile));
+  }, [userProfile]);
+
   const allCoins = useMemo(() => [...UK_COINS, ...customCoins], [customCoins]);
+
+  const progress = Math.round((collectedIds.length / allCoins.length) * 100);
+
+  useEffect(() => {
+    let newRank = 'Novice Hunter';
+    if (progress >= 90) newRank = 'Legend of the Mint';
+    else if (progress >= 60) newRank = 'Master Numismatist';
+    else if (progress >= 30) newRank = 'Expert Collector';
+    else if (progress >= 10) newRank = 'Coin Enthusiast';
+
+    if (newRank !== userProfile.rank) {
+      setUserProfile(prev => ({ ...prev, rank: newRank }));
+    }
+  }, [progress, userProfile.rank]);
 
   const toggleCollected = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -334,7 +372,6 @@ export default function App() {
     }
   };
 
-  const progress = Math.round((collectedIds.length / allCoins.length) * 100);
   const showFolders = !activeDenomination && searchQuery === '' && activeDenomination !== 'Wishlist';
 
   return (
@@ -361,6 +398,13 @@ export default function App() {
             </h1>
           </div>
           <div className="flex gap-2">
+            <button 
+              onClick={() => setIsProfileOpen(true)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              title="View Profile"
+            >
+              <User size={24} className="text-gray-700" />
+            </button>
             <button 
               onClick={() => fileInputRef.current?.click()}
               className="bg-amber-500 text-white p-2 rounded-full shadow-lg hover:bg-amber-600 transition-colors flex items-center gap-2 px-4"
@@ -826,6 +870,150 @@ export default function App() {
                   <Send size={20} /> {isAddingToCollection ? 'Add to Collection' : 'Submit Request'}
                 </button>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Profile Modal */}
+      <AnimatePresence>
+        {isProfileOpen && (
+          <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+            <motion.div 
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              className="bg-gray-50 w-full max-w-2xl rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] flex flex-col"
+            >
+              <div className="p-6 bg-white border-b border-gray-200 flex items-center justify-between sticky top-0 z-10">
+                <h2 className="text-xl font-bold text-gray-900">Your Profile</h2>
+                <button 
+                  onClick={() => setIsProfileOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto space-y-6">
+                {/* Bento Grid Layout */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  
+                  {/* User Info Block */}
+                  <div className="sm:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <img 
+                      src={userProfile.avatar} 
+                      alt="Avatar" 
+                      className="w-20 h-20 rounded-2xl bg-amber-50 border-2 border-amber-100"
+                    />
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">{userProfile.name}</h3>
+                      <p className="text-amber-600 font-bold text-sm uppercase tracking-wider flex items-center gap-1">
+                        <Award size={16} />
+                        {userProfile.rank}
+                      </p>
+                      <p className="text-gray-500 text-sm flex items-center gap-1 mt-1">
+                        <Calendar size={14} />
+                        Joined {userProfile.joinDate}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Progress Block */}
+                  <div className="bg-amber-500 p-6 rounded-3xl shadow-lg text-white flex flex-col justify-between">
+                    <div className="flex justify-between items-start">
+                      <BarChart3 size={24} />
+                      <span className="text-3xl font-black">{progress}%</span>
+                    </div>
+                    <div>
+                      <p className="text-amber-100 text-xs font-bold uppercase tracking-widest">Collection</p>
+                      <p className="text-lg font-bold">Progress</p>
+                    </div>
+                  </div>
+
+                  {/* Stats Block - Total Coins */}
+                  <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                    <p className="text-3xl font-black text-gray-900">{collectedIds.length}</p>
+                    <p className="text-gray-500 text-sm font-medium">Coins Collected</p>
+                    <div className="mt-4 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-amber-500 w-full opacity-20" />
+                    </div>
+                  </div>
+
+                  {/* Stats Block - Unique Denoms */}
+                  <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                    <p className="text-3xl font-black text-gray-900">{denominations.length}</p>
+                    <p className="text-gray-500 text-sm font-medium">Denominations</p>
+                    <div className="mt-4 flex gap-1">
+                      {[1,2,3,4,5].map(i => (
+                        <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= 3 ? 'bg-amber-500' : 'bg-gray-100'}`} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Stats Block - Custom Coins */}
+                  <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                    <p className="text-3xl font-black text-gray-900">{customCoins.length}</p>
+                    <p className="text-gray-500 text-sm font-medium">Custom Finds</p>
+                    <div className="mt-4 flex -space-x-2">
+                      {customCoins.slice(0, 3).map((c, i) => (
+                        <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-100 overflow-hidden">
+                          <img src={c.imageUrl} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                      {customCoins.length > 3 && (
+                        <div className="w-8 h-8 rounded-full border-2 border-white bg-gray-900 flex items-center justify-center text-[10px] text-white font-bold">
+                          +{customCoins.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Recent Activity Block */}
+                  <div className="sm:col-span-3 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                    <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Sparkles size={18} className="text-amber-500" />
+                      Recent Discoveries
+                    </h4>
+                    <div className="space-y-3">
+                      {collectedIds.slice(-3).reverse().map(id => {
+                        const coin = allCoins.find(c => c.id === id);
+                        if (!coin) return null;
+                        return (
+                          <div key={id} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-white border border-gray-200 overflow-hidden">
+                                <img src={coin.imageUrl} alt="" className="w-full h-full object-cover" />
+                              </div>
+                              <div>
+                                <p className="font-bold text-sm text-gray-900">{coin.name}</p>
+                                <p className="text-xs text-gray-500">{coin.denomination} • {coin.year}</p>
+                              </div>
+                            </div>
+                            <CheckCircle2 size={18} className="text-green-500" />
+                          </div>
+                        );
+                      })}
+                      {collectedIds.length === 0 && (
+                        <p className="text-center py-4 text-gray-400 text-sm italic">No coins collected yet. Start scanning!</p>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+
+                <button 
+                  onClick={() => {
+                    // Simple name edit for demo
+                    const newName = prompt("Enter your name:", userProfile.name);
+                    if (newName) setUserProfile(prev => ({ ...prev, name: newName }));
+                  }}
+                  className="w-full py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Settings size={20} />
+                  Edit Profile Settings
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
