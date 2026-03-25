@@ -20,7 +20,16 @@ interface UserProfile {
   avatar: string;
   joinDate: string;
   rank: string;
+  points: number;
+  level: number;
 }
+
+const POINT_VALUES = {
+  COLLECT_COIN: 100,
+  UPLOAD_PHOTO: 250,
+  DAILY_CHECKIN: 50,
+  COMPLETE_FOLDER: 1000
+};
 
 export default function App() {
   const [collectedIds, setCollectedIds] = useState<string[]>(() => {
@@ -52,6 +61,7 @@ export default function App() {
   const [isScanning, setIsScanning] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [pointsNotification, setPointsNotification] = useState<{ amount: number; message: string } | null>(null);
   
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('user_profile');
@@ -59,8 +69,15 @@ export default function App() {
       name: 'Coin Collector',
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
       joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
-      rank: 'Novice Hunter'
+      rank: 'Novice Hunter',
+      points: 0,
+      level: 1
     };
+  });
+
+  const [userCoinImages, setUserCoinImages] = useState<Record<string, string>>(() => {
+    const saved = localStorage.getItem('user_coin_images');
+    return saved ? JSON.parse(saved) : {};
   });
 
   const [scanResult, setScanResult] = useState<{ denomination: string; year: number | null; photo?: string } | null>(null);
@@ -73,6 +90,48 @@ export default function App() {
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = FALLBACK_COIN_IMAGE;
+  };
+
+  const compressImage = (file: File, maxWidth = 600): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          // Use a lower quality to reduce size
+          resolve(canvas.toDataURL('image/jpeg', 0.5));
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
+  };
+
+  const addPoints = (amount: number, message?: string) => {
+    setUserProfile(prev => {
+      const newPoints = prev.points + amount;
+      const newLevel = Math.floor(newPoints / 1000) + 1;
+      return { ...prev, points: newPoints, level: newLevel };
+    });
+    if (message) {
+      setPointsNotification({ amount, message });
+      setTimeout(() => setPointsNotification(null), 3000);
+    }
   };
 
   useEffect(() => {
@@ -91,7 +150,17 @@ export default function App() {
     localStorage.setItem('user_profile', JSON.stringify(userProfile));
   }, [userProfile]);
 
-  const allCoins = useMemo(() => [...UK_COINS, ...customCoins], [customCoins]);
+  useEffect(() => {
+    localStorage.setItem('user_coin_images', JSON.stringify(userCoinImages));
+  }, [userCoinImages]);
+
+  const allCoins = useMemo(() => {
+    const baseCoins = [...UK_COINS, ...customCoins];
+    return baseCoins.map(coin => ({
+      ...coin,
+      imageUrl: userCoinImages[coin.id] || coin.imageUrl
+    }));
+  }, [customCoins, userCoinImages]);
 
   const progress = Math.round((collectedIds.length / allCoins.length) * 100);
 
@@ -109,9 +178,13 @@ export default function App() {
 
   const toggleCollected = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setCollectedIds(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
+    setCollectedIds(prev => {
+      const isCollecting = !prev.includes(id);
+      if (isCollecting) {
+        addPoints(POINT_VALUES.COLLECT_COIN, "Coin Collected!");
+      }
+      return isCollecting ? [...prev, id] : prev.filter(i => i !== id);
+    });
   };
 
   const denominations = useMemo(() => {
@@ -140,7 +213,7 @@ export default function App() {
     });
   }, [searchQuery, filter, collectedIds, activeDenomination, allCoins]);
 
-  const handleRequestSubmit = (e: React.FormEvent) => {
+  const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (isAddingToCollection) {
@@ -154,6 +227,8 @@ export default function App() {
       };
       setCustomCoins(prev => [...prev, newCoin]);
       setCollectedIds(prev => [...prev, newCoin.id]);
+      addPoints(POINT_VALUES.COLLECT_COIN, "New Coin Added!");
+      if (reqPhoto) addPoints(POINT_VALUES.UPLOAD_PHOTO, "Photo Uploaded!");
       setIsRequestModalOpen(false);
       // Reset
       setReqName('');
@@ -212,99 +287,76 @@ export default function App() {
     if (!file) return;
 
     setIsAnalyzing(true);
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const img = new Image();
-      img.onload = async () => {
-        if (!canvasRef.current) return;
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+    try {
+      const compressedBase64 = await compressImage(file);
+      const base64Image = compressedBase64.split(',')[1];
+      const fullPhoto = compressedBase64;
 
-        // Resize for analysis
-        const maxDim = 800;
-        let width = img.width;
-        let height = img.height;
-        if (width > height) {
-          if (width > maxDim) {
-            height *= maxDim / width;
-            width = maxDim;
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: [
+          {
+            parts: [
+              { text: "Identify this UK coin. Return the denomination (e.g., '50p', '£1', '1p', 'Half Crown', '1 Shilling', '3p', '1/2p', '£2'), the year (e.g., 1967), and a short descriptive name for the design (e.g., 'Kew Gardens', 'Britannia', 'Peter Rabbit'). If you are unsure, return 'unknown' for any field." },
+              { inlineData: { mimeType: "image/jpeg", data: base64Image } }
+            ]
           }
-        } else {
-          if (height > maxDim) {
-            width *= maxDim / height;
-            height = maxDim;
+        ],
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              denomination: { type: Type.STRING },
+              year: { type: Type.INTEGER, nullable: true },
+              name: { type: Type.STRING, nullable: true }
+            },
+            required: ["denomination"]
           }
         }
-        canvas.width = width;
-        canvas.height = height;
-        ctx.drawImage(img, 0, 0, width, height);
+      });
 
-        const base64Image = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
-        const fullPhoto = canvas.toDataURL('image/jpeg', 0.6);
+      const result = JSON.parse(response.text);
+      
+      // Find or Create
+      const foundCoin = allCoins.find(c => 
+        c.denomination.toLowerCase() === result.denomination.toLowerCase() && 
+        c.year === result.year &&
+        (result.name && result.name !== 'unknown' ? c.name.toLowerCase().includes(result.name.toLowerCase()) : true)
+      );
 
-        try {
-          const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-          const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: [
-              {
-                parts: [
-                  { text: "Identify this UK coin. Return the denomination (e.g., '50p', '£1', '1p', 'Half Crown', '1 Shilling', '3p', '1/2p', '£2'), the year (e.g., 1967), and a short descriptive name for the design (e.g., 'Kew Gardens', 'Britannia', 'Peter Rabbit'). If you are unsure, return 'unknown' for any field." },
-                  { inlineData: { mimeType: "image/jpeg", data: base64Image } }
-                ]
-              }
-            ],
-            config: {
-              responseMimeType: "application/json",
-              responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                  denomination: { type: Type.STRING },
-                  year: { type: Type.INTEGER, nullable: true },
-                  name: { type: Type.STRING, nullable: true }
-                },
-                required: ["denomination"]
-              }
-            }
-          });
-
-          const result = JSON.parse(response.text);
-          
-          // Find or Create
-          const foundCoin = allCoins.find(c => 
-            c.denomination.toLowerCase() === result.denomination.toLowerCase() && 
-            c.year === result.year &&
-            (result.name && result.name !== 'unknown' ? c.name.toLowerCase().includes(result.name.toLowerCase()) : true)
-          );
-
-          if (foundCoin) {
-            setCollectedIds(prev => prev.includes(foundCoin.id) ? prev : [...prev, foundCoin.id]);
-            setSelectedCoin(foundCoin);
-          } else {
-            const newCoin: Coin = {
-              id: `custom-${Date.now()}`,
-              name: result.name && result.name !== 'unknown' ? result.name : `${result.denomination} (${result.year || 'Unknown Year'})`,
-              denomination: result.denomination !== 'unknown' ? result.denomination : 'Custom',
-              year: result.year || new Date().getFullYear(),
-              description: 'Automatically identified via photo.',
-              imageUrl: fullPhoto
-            };
-            setCustomCoins(prev => [...prev, newCoin]);
-            setCollectedIds(prev => [...prev, newCoin.id]);
-            setSelectedCoin(newCoin);
-          }
-        } catch (err) {
-          console.error("AI Analysis failed:", err);
-          alert("Could not identify coin from photo. Please try again.");
-        } finally {
-          setIsAnalyzing(false);
-          if (fileInputRef.current) fileInputRef.current.value = '';
-        }
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+      if (foundCoin) {
+        setCollectedIds(prev => {
+          const isCollecting = !prev.includes(foundCoin.id);
+          if (isCollecting) addPoints(POINT_VALUES.COLLECT_COIN, "Coin Identified!");
+          return isCollecting ? [...prev, foundCoin.id] : prev;
+        });
+        addPoints(POINT_VALUES.UPLOAD_PHOTO, "Photo Saved!");
+        setUserCoinImages(prev => ({ ...prev, [foundCoin.id]: fullPhoto }));
+        setSelectedCoin({ ...foundCoin, imageUrl: fullPhoto });
+      } else {
+        const newCoin: Coin = {
+          id: `custom-${Date.now()}`,
+          name: result.name && result.name !== 'unknown' ? result.name : `${result.denomination} (${result.year || 'Unknown Year'})`,
+          denomination: result.denomination !== 'unknown' ? result.denomination : 'Custom',
+          year: result.year || new Date().getFullYear(),
+          description: 'Automatically identified via photo.',
+          imageUrl: fullPhoto
+        };
+        setCustomCoins(prev => [...prev, newCoin]);
+        setCollectedIds(prev => [...prev, newCoin.id]);
+        addPoints(POINT_VALUES.COLLECT_COIN, "New Coin Found!");
+        addPoints(POINT_VALUES.UPLOAD_PHOTO, "Photo Saved!");
+        setSelectedCoin(newCoin);
+      }
+    } catch (err) {
+      console.error("AI Analysis failed:", err);
+      alert("Could not identify coin from photo. Please try again.");
+    } finally {
+      setIsAnalyzing(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const captureAndAnalyze = async () => {
@@ -323,8 +375,9 @@ export default function App() {
     const ctx = canvas.getContext('2d');
     if (ctx) {
       ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
-      const base64Image = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
-      const fullPhoto = canvas.toDataURL('image/jpeg', 0.6);
+      // Use lower quality for storage
+      const fullPhoto = canvas.toDataURL('image/jpeg', 0.5);
+      const base64Image = fullPhoto.split(',')[1];
       
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
@@ -361,7 +414,14 @@ export default function App() {
         );
 
         if (foundCoin) {
-          setSelectedCoin(foundCoin);
+          setCollectedIds(prev => {
+            const isCollecting = !prev.includes(foundCoin.id);
+            if (isCollecting) addPoints(POINT_VALUES.COLLECT_COIN, "Coin Identified!");
+            return isCollecting ? [...prev, foundCoin.id] : prev;
+          });
+          addPoints(POINT_VALUES.UPLOAD_PHOTO, "Photo Saved!");
+          setUserCoinImages(prev => ({ ...prev, [foundCoin.id]: fullPhoto }));
+          setSelectedCoin({ ...foundCoin, imageUrl: fullPhoto });
           stopScanner();
         } else {
           // Pre-fill request form
@@ -378,10 +438,53 @@ export default function App() {
     }
   };
 
-  const showFolders = !activeDenomination && searchQuery === '' && activeDenomination !== 'Wishlist';
+  const changeCoinImage = async (coinId: string) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      setIsAnalyzing(true);
+      try {
+        const compressedBase64 = await compressImage(file);
+        setUserCoinImages(prev => ({ ...prev, [coinId]: compressedBase64 }));
+        addPoints(POINT_VALUES.UPLOAD_PHOTO, "Photo Updated!");
+        if (selectedCoin && selectedCoin.id === coinId) {
+          setSelectedCoin({ ...selectedCoin, imageUrl: compressedBase64 });
+        }
+      } catch (err) {
+        console.error("Failed to change image:", err);
+      } finally {
+        setIsAnalyzing(false);
+      }
+    };
+    input.click();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Points Notification */}
+      <AnimatePresence>
+        {pointsNotification && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.8 }}
+            animate={{ opacity: 1, y: 20, scale: 1 }}
+            exit={{ opacity: 0, y: -50, scale: 0.8 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-amber-500 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border-2 border-white/20 backdrop-blur-md"
+          >
+            <div className="bg-white/20 p-1 rounded-full">
+              <Award size={20} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-bold uppercase tracking-tighter opacity-80">{pointsNotification.message}</span>
+              <span className="text-lg font-black leading-none">+{pointsNotification.amount} Points</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10 px-4 py-4 sm:px-6">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
@@ -403,7 +506,11 @@ export default function App() {
               {activeDenomination ? activeDenomination : 'Coin Collector'}
             </h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <div className="hidden sm:flex flex-col items-end mr-2">
+              <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Level {userProfile.level}</span>
+              <span className="text-sm font-bold text-gray-900">{userProfile.points.toLocaleString()} pts</span>
+            </div>
             <button 
               onClick={() => setIsProfileOpen(true)}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -490,7 +597,7 @@ export default function App() {
       <main className="flex-1 p-4 overflow-y-auto">
         <div className="max-w-2xl mx-auto grid gap-4">
           <AnimatePresence mode="popLayout">
-            {showFolders ? (
+            {!activeDenomination ? (
               /* Folder View */
               <>
                 {denominations.map((denom) => {
@@ -638,7 +745,7 @@ export default function App() {
             )}
           </AnimatePresence>
 
-          {!showFolders && filteredCoins.length === 0 && activeDenomination !== 'Wishlist' && (
+          {activeDenomination && filteredCoins.length === 0 && activeDenomination !== 'Wishlist' && (
             <div className="text-center py-12">
               <div className="text-gray-300 mb-4 flex justify-center">
                 <Search size={64} />
@@ -1023,6 +1130,17 @@ export default function App() {
 
                 <button 
                   onClick={() => {
+                    addPoints(POINT_VALUES.DAILY_CHECKIN, "Daily Reward Claimed!");
+                    alert("You've claimed your daily 50 points! Come back tomorrow for more.");
+                  }}
+                  className="w-full py-4 bg-amber-500 text-white font-bold rounded-2xl hover:bg-amber-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-100 mb-4"
+                >
+                  <Award size={20} />
+                  Claim Daily Reward (+50)
+                </button>
+
+                <button 
+                  onClick={() => {
                     // Simple name edit for demo
                     const newName = prompt("Enter your name:", userProfile.name);
                     if (newName) setUserProfile(prev => ({ ...prev, name: newName }));
@@ -1071,6 +1189,16 @@ export default function App() {
                     isZoomed ? 'object-contain bg-black cursor-zoom-out' : ''
                   }`}
                 />
+                <div className="absolute top-4 left-4 flex gap-2">
+                  <button 
+                    onClick={() => changeCoinImage(selectedCoin.id)}
+                    className="flex items-center gap-2 px-4 py-2 bg-black/40 hover:bg-black/60 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group"
+                    title="Change Image"
+                  >
+                    <Camera size={18} className="group-hover:scale-110 transition-transform" />
+                    <span className="text-xs font-bold uppercase tracking-widest">Update Photo</span>
+                  </button>
+                </div>
                 <button 
                   onClick={() => {
                     setSelectedCoin(null);
@@ -1093,6 +1221,22 @@ export default function App() {
               
               {!isZoomed && (
                 <div className="p-6 space-y-6">
+                  <div className="flex items-center justify-between bg-amber-50 p-4 rounded-2xl border border-amber-100">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-amber-500 text-white rounded-xl">
+                        <Award size={24} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-amber-600 uppercase tracking-widest">Collector Points</p>
+                        <p className="text-2xl font-black text-gray-900">{userProfile.points.toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Level</p>
+                      <p className="text-2xl font-black text-amber-500">{userProfile.level}</p>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                       <Info size={14} /> Description
