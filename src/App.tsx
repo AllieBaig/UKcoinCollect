@@ -29,6 +29,8 @@ export default function App() {
   const [reqDenom, setReqDenom] = useState('50p');
   const [reqYear, setReqYear] = useState(new Date().getFullYear());
 
+  const [isZoomed, setIsZoomed] = useState(false);
+
   useEffect(() => {
     localStorage.setItem('collected_coins', JSON.stringify(collectedIds));
   }, [collectedIds]);
@@ -103,7 +105,10 @@ export default function App() {
           <div className="flex items-center gap-3">
             {(activeDenomination || activeDenomination === 'Wishlist') && (
               <button 
-                onClick={() => setActiveDenomination(null)}
+                onClick={() => {
+                  setActiveDenomination(null);
+                  setIsZoomed(false);
+                }}
                 className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
                 aria-label="Back to folders"
               >
@@ -409,68 +414,84 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setSelectedCoin(null)}
+              onClick={() => {
+                setSelectedCoin(null);
+                setIsZoomed(false);
+              }}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              className="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl"
+              className={`relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 ${
+                isZoomed ? 'h-[90vh] sm:h-auto' : ''
+              }`}
             >
-              <div className="relative h-64 sm:h-80">
+              <div className={`relative transition-all duration-500 ${isZoomed ? 'h-full' : 'h-64 sm:h-80'}`}>
                 <img 
                   src={selectedCoin.imageUrl} 
                   alt={selectedCoin.name}
                   referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover"
+                  onClick={() => setIsZoomed(!isZoomed)}
+                  className={`w-full h-full object-cover cursor-zoom-in transition-transform duration-500 ${
+                    isZoomed ? 'object-contain bg-black cursor-zoom-out' : ''
+                  }`}
                 />
                 <button 
-                  onClick={() => setSelectedCoin(null)}
-                  className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md transition-colors"
+                  onClick={() => {
+                    setSelectedCoin(null);
+                    setIsZoomed(false);
+                  }}
+                  className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md transition-colors z-10"
                 >
                   <X size={24} />
                 </button>
-                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent text-white">
-                  <span className="text-sm font-bold uppercase tracking-widest text-amber-400">
-                    {selectedCoin.denomination} • {selectedCoin.year}
-                  </span>
-                  <h2 className="text-3xl font-bold">{selectedCoin.name}</h2>
-                </div>
+                {!isZoomed && (
+                  <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent text-white">
+                    <span className="text-sm font-bold uppercase tracking-widest text-amber-400">
+                      {selectedCoin.denomination} • {selectedCoin.year}
+                    </span>
+                    <h2 className="text-3xl font-bold">{selectedCoin.name}</h2>
+                    <p className="text-xs mt-1 opacity-70">Tap image to compare / zoom</p>
+                  </div>
+                )}
               </div>
               
-              <div className="p-6 space-y-6">
-                <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                    <Info size={14} /> Description
-                  </h4>
-                  <p className="text-lg text-gray-700 leading-relaxed">
-                    {selectedCoin.description}
-                  </p>
-                </div>
+              {!isZoomed && (
+                <div className="p-6 space-y-6">
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                      <Info size={14} /> Description
+                    </h4>
+                    <p className="text-lg text-gray-700 leading-relaxed">
+                      {selectedCoin.description}
+                    </p>
+                  </div>
 
-                <button
-                  onClick={(e) => {
-                    toggleCollected(selectedCoin.id, e as any);
-                    setSelectedCoin(null);
-                  }}
-                  className={`w-full py-4 rounded-2xl text-xl font-bold shadow-xl transition-all flex items-center justify-center gap-3 ${
-                    collectedIds.includes(selectedCoin.id)
-                      ? 'bg-gray-100 text-gray-600'
-                      : 'bg-amber-500 text-white shadow-amber-200'
-                  }`}
-                >
-                  {collectedIds.includes(selectedCoin.id) ? (
-                    <>
-                      <CheckCircle2 size={24} /> Mark as Missing
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 size={24} /> Mark as Collected
-                    </>
-                  )}
-                </button>
-              </div>
+                  <button
+                    onClick={(e) => {
+                      toggleCollected(selectedCoin.id, e as any);
+                      setSelectedCoin(null);
+                    }}
+                    className={`w-full py-4 rounded-2xl text-xl font-bold shadow-xl transition-all flex items-center justify-center gap-3 ${
+                      collectedIds.includes(selectedCoin.id)
+                        ? 'bg-gray-100 text-gray-600'
+                        : 'bg-amber-500 text-white shadow-amber-200'
+                    }`}
+                  >
+                    {collectedIds.includes(selectedCoin.id) ? (
+                      <>
+                        <CheckCircle2 size={24} /> Mark as Missing
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 size={24} /> Mark as Collected
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </motion.div>
           </div>
         )}
