@@ -27,8 +27,15 @@ export default function App() {
   const denominations = useMemo(() => {
     const unique = Array.from(new Set(UK_COINS.map(c => c.denomination)));
     // Sort denominations logically
-    const order = ['£2', '£1', '50p', '20p', '10p', '5p', '2p', '1p', '1/2p'];
-    return unique.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    const order = ['£2', '£1', 'Half Crown', '1 Shilling', '50p', '3p', '1p', '1/2p'];
+    return unique.sort((a, b) => {
+      const indexA = order.indexOf(a);
+      const indexB = order.indexOf(b);
+      if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
   }, []);
 
   const filteredCoins = useMemo(() => {

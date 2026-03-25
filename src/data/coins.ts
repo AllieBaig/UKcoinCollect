@@ -41,6 +41,14 @@ export const UK_COINS: Coin[] = [
     description: 'Part of the 2012 Olympic series, showing a swimmer.',
     imageUrl: 'https://picsum.photos/seed/swimming-coin/400/400'
   },
+  {
+    id: '50p-1969',
+    name: 'First 50p Coin',
+    denomination: '50p',
+    year: 1969,
+    description: 'The world\'s first seven-sided coin, introduced for decimalisation.',
+    imageUrl: 'https://picsum.photos/seed/50p-1969/400/400'
+  },
   // £1 Coins
   {
     id: '1-nations',
@@ -83,38 +91,89 @@ export const UK_COINS: Coin[] = [
     description: 'Features a skull and a rose, representing Shakespeare\'s tragedies.',
     imageUrl: 'https://picsum.photos/seed/shakespeare/400/400'
   },
-  // One Penny
+  // One Penny (1p)
   {
-    id: '1p-victoria',
-    name: 'Queen Victoria Penny',
+    id: '1p-1953',
+    name: 'Coronation Penny',
     denomination: '1p',
-    year: 1895,
-    description: 'A classic "Old Head" penny from the Victorian era.',
-    imageUrl: 'https://picsum.photos/seed/victoria-1p/400/400'
+    year: 1953,
+    description: 'Issued in the year of Queen Elizabeth II\'s coronation.',
+    imageUrl: 'https://picsum.photos/seed/1p-1953/400/400'
   },
   {
-    id: '1p-elizabeth-ii',
-    name: 'New Penny',
+    id: '1p-1967',
+    name: 'Last Pre-Decimal Penny',
     denomination: '1p',
-    year: 1971,
-    description: 'The first decimal penny featuring the portcullis design.',
-    imageUrl: 'https://picsum.photos/seed/elizabeth-1p/400/400'
+    year: 1967,
+    description: 'The final year of the large bronze penny before decimalisation.',
+    imageUrl: 'https://picsum.photos/seed/1p-1967/400/400'
   },
-  // Half Penny
+  // Half Penny (1/2p)
   {
-    id: 'half-p-ship',
-    name: 'Golden Hind',
+    id: 'half-p-1953',
+    name: 'Elizabeth II Half Penny',
     denomination: '1/2p',
-    year: 1937,
-    description: 'Features Sir Francis Drake\'s ship, the Golden Hind.',
-    imageUrl: 'https://picsum.photos/seed/half-p-ship/400/400'
+    year: 1953,
+    description: 'Features the Golden Hind, the ship of Sir Francis Drake.',
+    imageUrl: 'https://picsum.photos/seed/half-p-1953/400/400'
   },
   {
-    id: 'half-p-decimal',
-    name: 'Decimal Half Penny',
+    id: 'half-p-1967',
+    name: 'Last Pre-Decimal Half Penny',
     denomination: '1/2p',
-    year: 1971,
-    description: 'The smallest decimal coin, featuring the Royal Crown.',
-    imageUrl: 'https://picsum.photos/seed/half-p-decimal/400/400'
+    year: 1967,
+    description: 'The final year of the pre-decimal half penny.',
+    imageUrl: 'https://picsum.photos/seed/half-p-1967/400/400'
+  },
+  // Half Crown
+  {
+    id: 'half-crown-1953',
+    name: 'Coronation Half Crown',
+    denomination: 'Half Crown',
+    year: 1953,
+    description: 'A large silver-colored coin worth two shillings and sixpence.',
+    imageUrl: 'https://picsum.photos/seed/half-crown-1953/400/400'
+  },
+  {
+    id: 'half-crown-1967',
+    name: 'Last Half Crown',
+    denomination: 'Half Crown',
+    year: 1967,
+    description: 'The final year of the Half Crown before it was demonetised in 1970.',
+    imageUrl: 'https://picsum.photos/seed/half-crown-1967/400/400'
+  },
+  // 1 Shilling
+  {
+    id: 'shilling-1953',
+    name: 'Elizabeth II Shilling',
+    denomination: '1 Shilling',
+    year: 1953,
+    description: 'Worth 12 pence, featuring the English or Scottish crest.',
+    imageUrl: 'https://picsum.photos/seed/shilling-1953/400/400'
+  },
+  {
+    id: 'shilling-1966',
+    name: '1966 Shilling',
+    denomination: '1 Shilling',
+    year: 1966,
+    description: 'A common circulation coin from the mid-60s.',
+    imageUrl: 'https://picsum.photos/seed/shilling-1966/400/400'
+  },
+  // 3 Pence (Threepence)
+  {
+    id: '3p-1953',
+    name: 'Brass Threepence',
+    denomination: '3p',
+    year: 1953,
+    description: 'The iconic 12-sided brass coin featuring the Tudor thrift plant.',
+    imageUrl: 'https://picsum.photos/seed/3p-1953/400/400'
+  },
+  {
+    id: '3p-1967',
+    name: 'Last Brass Threepence',
+    denomination: '3p',
+    year: 1967,
+    description: 'The final year of the pre-decimal threepence.',
+    imageUrl: 'https://picsum.photos/seed/3p-1967/400/400'
   }
 ];
