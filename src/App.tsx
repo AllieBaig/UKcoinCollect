@@ -1,21 +1,41 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Trophy, CheckCircle2, Circle, Info, Filter, X, ChevronRight, Folder, ArrowLeft } from 'lucide-react';
+import { Search, Trophy, CheckCircle2, Circle, Info, Filter, X, ChevronRight, Folder, ArrowLeft, Plus, Send, Clipboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UK_COINS, Coin } from './data/coins';
+
+interface RequestedCoin {
+  id: string;
+  denomination: string;
+  year: number;
+  timestamp: number;
+}
 
 export default function App() {
   const [collectedIds, setCollectedIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('collected_coins');
     return saved ? JSON.parse(saved) : [];
   });
+  const [requestedCoins, setRequestedCoins] = useState<RequestedCoin[]>(() => {
+    const saved = localStorage.getItem('requested_coins');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'collected' | 'missing'>('all');
   const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null);
   const [activeDenomination, setActiveDenomination] = useState<string | null>(null);
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  
+  // Request Form State
+  const [reqDenom, setReqDenom] = useState('50p');
+  const [reqYear, setReqYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     localStorage.setItem('collected_coins', JSON.stringify(collectedIds));
   }, [collectedIds]);
+
+  useEffect(() => {
+    localStorage.setItem('requested_coins', JSON.stringify(requestedCoins));
+  }, [requestedCoins]);
 
   const toggleCollected = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -26,7 +46,6 @@ export default function App() {
 
   const denominations = useMemo(() => {
     const unique = Array.from(new Set(UK_COINS.map(c => c.denomination)));
-    // Sort denominations logically
     const order = ['£2', '£1', 'Half Crown', '1 Shilling', '50p', '3p', '1p', '1/2p'];
     return unique.sort((a, b) => {
       const indexA = order.indexOf(a);
@@ -51,10 +70,30 @@ export default function App() {
     });
   }, [searchQuery, filter, collectedIds, activeDenomination]);
 
-  const progress = Math.round((collectedIds.length / UK_COINS.length) * 100);
+  const handleRequestSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newRequest: RequestedCoin = {
+      id: `req-${Date.now()}`,
+      denomination: reqDenom,
+      year: reqYear,
+      timestamp: Date.now()
+    };
+    setRequestedCoins(prev => [newRequest, ...prev]);
+    setIsRequestModalOpen(false);
+    // Reset form
+    setReqYear(new Date().getFullYear());
+  };
 
-  // If searching, we show all results, otherwise we show folders
-  const showFolders = !activeDenomination && searchQuery === '';
+  const copyRequestsToClipboard = () => {
+    const text = requestedCoins
+      .map(r => `${r.denomination} (${r.year})`)
+      .join('\n');
+    navigator.clipboard.writeText(`My Coin Requests:\n${text}`);
+    alert('Requests copied! You can now paste them in the chat.');
+  };
+
+  const progress = Math.round((collectedIds.length / UK_COINS.length) * 100);
+  const showFolders = !activeDenomination && searchQuery === '' && activeDenomination !== 'Wishlist';
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -62,7 +101,7 @@ export default function App() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10 px-4 py-4 sm:px-6">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {activeDenomination && (
+            {(activeDenomination || activeDenomination === 'Wishlist') && (
               <button 
                 onClick={() => setActiveDenomination(null)}
                 className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -76,10 +115,13 @@ export default function App() {
               {activeDenomination ? activeDenomination : 'Coin Collector'}
             </h1>
           </div>
-          <div className="text-right">
-            <div className="text-sm font-medium text-gray-500 uppercase tracking-wider">Progress</div>
-            <div className="text-xl font-bold text-gray-900">{progress}%</div>
-          </div>
+          <button 
+            onClick={() => setIsRequestModalOpen(true)}
+            className="bg-amber-500 text-white p-2 rounded-full shadow-lg shadow-amber-200 hover:bg-amber-600 transition-colors"
+            title="Request a new coin"
+          >
+            <Plus size={24} />
+          </button>
         </div>
         
         {/* Progress Bar */}
@@ -134,39 +176,90 @@ export default function App() {
           <AnimatePresence mode="popLayout">
             {showFolders ? (
               /* Folder View */
-              denominations.map((denom) => {
-                const coinsInDenom = UK_COINS.filter(c => c.denomination === denom);
-                const collectedInDenom = coinsInDenom.filter(c => collectedIds.includes(c.id)).length;
-                const denomProgress = Math.round((collectedInDenom / coinsInDenom.length) * 100);
+              <>
+                {denominations.map((denom) => {
+                  const coinsInDenom = UK_COINS.filter(c => c.denomination === denom);
+                  const collectedInDenom = coinsInDenom.filter(c => collectedIds.includes(c.id)).length;
+                  const denomProgress = Math.round((collectedInDenom / coinsInDenom.length) * 100);
 
-                return (
+                  return (
+                    <motion.div
+                      key={denom}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      onClick={() => setActiveDenomination(denom)}
+                      className="bg-white rounded-2xl p-5 shadow-sm border-2 border-transparent hover:border-amber-500 transition-all cursor-pointer flex items-center gap-4"
+                    >
+                      <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center">
+                        <Folder size={32} fill="currentColor" fillOpacity={0.2} />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-900">Coin {denom}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-amber-500" 
+                              style={{ width: `${denomProgress}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-bold text-gray-500">{collectedInDenom}/{coinsInDenom.length}</span>
+                        </div>
+                      </div>
+                      <ChevronRight className="text-gray-300" size={24} />
+                    </motion.div>
+                  );
+                })}
+
+                {/* Wishlist Folder */}
+                {requestedCoins.length > 0 && (
                   <motion.div
-                    key={denom}
+                    key="Wishlist"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    onClick={() => setActiveDenomination(denom)}
-                    className="bg-white rounded-2xl p-5 shadow-sm border-2 border-transparent hover:border-amber-500 transition-all cursor-pointer flex items-center gap-4"
+                    onClick={() => setActiveDenomination('Wishlist')}
+                    className="bg-white rounded-2xl p-5 shadow-sm border-2 border-dashed border-amber-300 hover:border-amber-500 transition-all cursor-pointer flex items-center gap-4"
                   >
-                    <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center">
-                      <Folder size={32} fill="currentColor" fillOpacity={0.2} />
+                    <div className="w-14 h-14 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center">
+                      <Folder size={32} fill="currentColor" fillOpacity={0.1} />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900">Coin {denom}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-amber-500" 
-                            style={{ width: `${denomProgress}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-bold text-gray-500">{collectedInDenom}/{coinsInDenom.length}</span>
-                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 italic">My Wishlist</h3>
+                      <p className="text-sm text-gray-500">{requestedCoins.length} coins requested</p>
                     </div>
                     <ChevronRight className="text-gray-300" size={24} />
                   </motion.div>
-                );
-              })
+                )}
+              </>
+            ) : activeDenomination === 'Wishlist' ? (
+              /* Wishlist View */
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-gray-500">Coins you've requested for future updates:</p>
+                  <button 
+                    onClick={copyRequestsToClipboard}
+                    className="flex items-center gap-2 text-amber-600 font-bold text-sm hover:underline"
+                  >
+                    <Clipboard size={16} /> Copy List
+                  </button>
+                </div>
+                {requestedCoins.map((req) => (
+                  <motion.div
+                    key={req.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between"
+                  >
+                    <div>
+                      <h4 className="text-lg font-bold text-gray-900">{req.denomination}</h4>
+                      <p className="text-sm text-gray-500">Year: {req.year}</p>
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {new Date(req.timestamp).toLocaleDateString()}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             ) : (
               /* Coin List View */
               filteredCoins.map((coin) => {
@@ -228,7 +321,7 @@ export default function App() {
             )}
           </AnimatePresence>
 
-          {!showFolders && filteredCoins.length === 0 && (
+          {!showFolders && filteredCoins.length === 0 && activeDenomination !== 'Wishlist' && (
             <div className="text-center py-12">
               <div className="text-gray-300 mb-4 flex justify-center">
                 <Search size={64} />
@@ -239,6 +332,74 @@ export default function App() {
           )}
         </div>
       </main>
+
+      {/* Request Coin Modal */}
+      <AnimatePresence>
+        {isRequestModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsRequestModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Request a Coin</h2>
+                <button onClick={() => setIsRequestModalOpen(false)} className="text-gray-400">
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <form onSubmit={handleRequestSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">
+                    Denomination
+                  </label>
+                  <select 
+                    value={reqDenom}
+                    onChange={(e) => setReqDenom(e.target.value)}
+                    className="w-full p-4 bg-gray-100 border-none rounded-xl text-lg outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    {['£2', '£1', 'Half Crown', '1 Shilling', '50p', '3p', '1p', '1/2p'].map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">
+                    Year
+                  </label>
+                  <input 
+                    type="number"
+                    value={reqYear}
+                    onChange={(e) => setReqYear(parseInt(e.target.value))}
+                    className="w-full p-4 bg-gray-100 border-none rounded-xl text-lg outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="e.g. 1965"
+                    min="1800"
+                    max="2099"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-4 bg-amber-500 text-white rounded-2xl text-xl font-bold shadow-xl shadow-amber-200 hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
+                >
+                  <Send size={20} /> Submit Request
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Coin Detail Modal */}
       <AnimatePresence>
@@ -301,7 +462,7 @@ export default function App() {
                 >
                   {collectedIds.includes(selectedCoin.id) ? (
                     <>
-                      <Circle size={24} /> Mark as Missing
+                      <CheckCircle2 size={24} /> Mark as Missing
                     </>
                   ) : (
                     <>
