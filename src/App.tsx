@@ -47,6 +47,7 @@ export default function App() {
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     localStorage.setItem('collected_coins', JSON.stringify(collectedIds));
@@ -162,6 +163,106 @@ export default function App() {
     setIsScanning(false);
   };
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsAnalyzing(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const img = new Image();
+      img.onload = async () => {
+        if (!canvasRef.current) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // Resize for analysis
+        const maxDim = 800;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxDim) {
+            height *= maxDim / width;
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width *= maxDim / height;
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const base64Image = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+        const fullPhoto = canvas.toDataURL('image/jpeg', 0.6);
+
+        try {
+          const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+          const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: [
+              {
+                parts: [
+                  { text: "Identify this UK coin. Return the denomination (e.g., '50p', '£1', '1p', 'Half Crown', '1 Shilling', '3p', '1/2p', '£2'), the year (e.g., 1967), and a short descriptive name for the design (e.g., 'Kew Gardens', 'Britannia', 'Peter Rabbit'). If you are unsure, return 'unknown' for any field." },
+                  { inlineData: { mimeType: "image/jpeg", data: base64Image } }
+                ]
+              }
+            ],
+            config: {
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  denomination: { type: Type.STRING },
+                  year: { type: Type.INTEGER, nullable: true },
+                  name: { type: Type.STRING, nullable: true }
+                },
+                required: ["denomination"]
+              }
+            }
+          });
+
+          const result = JSON.parse(response.text);
+          
+          // Find or Create
+          const foundCoin = allCoins.find(c => 
+            c.denomination.toLowerCase() === result.denomination.toLowerCase() && 
+            c.year === result.year &&
+            (result.name && result.name !== 'unknown' ? c.name.toLowerCase().includes(result.name.toLowerCase()) : true)
+          );
+
+          if (foundCoin) {
+            setCollectedIds(prev => prev.includes(foundCoin.id) ? prev : [...prev, foundCoin.id]);
+            setSelectedCoin(foundCoin);
+          } else {
+            const newCoin: Coin = {
+              id: `custom-${Date.now()}`,
+              name: result.name && result.name !== 'unknown' ? result.name : `${result.denomination} (${result.year || 'Unknown Year'})`,
+              denomination: result.denomination !== 'unknown' ? result.denomination : 'Custom',
+              year: result.year || new Date().getFullYear(),
+              description: 'Automatically identified via photo.',
+              imageUrl: fullPhoto
+            };
+            setCustomCoins(prev => [...prev, newCoin]);
+            setCollectedIds(prev => [...prev, newCoin.id]);
+            setSelectedCoin(newCoin);
+          }
+        } catch (err) {
+          console.error("AI Analysis failed:", err);
+          alert("Could not identify coin from photo. Please try again.");
+        } finally {
+          setIsAnalyzing(false);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const captureAndAnalyze = async () => {
     if (!videoRef.current || !canvasRef.current) return;
     
@@ -261,16 +362,28 @@ export default function App() {
           </div>
           <div className="flex gap-2">
             <button 
-              onClick={startScanner}
-              className="bg-gray-900 text-white p-2 rounded-full shadow-lg hover:bg-black transition-colors"
-              title="Scan a coin"
+              onClick={() => fileInputRef.current?.click()}
+              className="bg-amber-500 text-white p-2 rounded-full shadow-lg hover:bg-amber-600 transition-colors flex items-center gap-2 px-4"
+              title="Take a photo of a coin"
             >
               <Camera size={24} />
+              <span className="hidden sm:inline font-bold">Take Photo</span>
             </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*" 
+              capture="environment"
+              onChange={handleFileSelect}
+            />
             <button 
-              onClick={() => setIsRequestModalOpen(true)}
-              className="bg-amber-500 text-white p-2 rounded-full shadow-lg shadow-amber-200 hover:bg-amber-600 transition-colors"
-              title="Request a new coin"
+              onClick={() => {
+                setIsAddingToCollection(false);
+                setIsRequestModalOpen(true);
+              }}
+              className="bg-gray-900 text-white p-2 rounded-full shadow-lg hover:bg-black transition-colors"
+              title="Manual Request"
             >
               <Plus size={24} />
             </button>
@@ -485,6 +598,19 @@ export default function App() {
           )}
         </div>
       </main>
+
+      {/* Loading Overlay for Photo Analysis */}
+      <AnimatePresence>
+        {isAnalyzing && !isScanning && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md">
+            <div className="text-center text-white p-8">
+              <Loader2 size={64} className="mx-auto mb-4 animate-spin text-amber-500" />
+              <h2 className="text-2xl font-bold mb-2">Analyzing Photo...</h2>
+              <p className="text-gray-400">Gemini AI is identifying your coin</p>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Scanner Overlay */}
       <AnimatePresence>
