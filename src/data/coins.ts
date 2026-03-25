@@ -15,7 +15,7 @@ export const UK_COINS: Coin[] = [
     denomination: '50p',
     year: 2009,
     description: 'The rarest 50p in circulation, featuring the famous Chinese Pagoda. High value for collectors.',
-    imageUrl: 'https://picsum.photos/seed/uk-coin-50p-kew/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Kew_Gardens_50p_coin.jpg/600px-Kew_Gardens_50p_coin.jpg'
   },
   {
     id: '50p-rabbit',
@@ -23,7 +23,7 @@ export const UK_COINS: Coin[] = [
     denomination: '50p',
     year: 2016,
     description: 'Celebrating the 150th anniversary of Beatrix Potter. Features a detailed rabbit engraving.',
-    imageUrl: 'https://picsum.photos/seed/uk-coin-50p-rabbit/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Peter_Rabbit_50p_coin.jpg/600px-Peter_Rabbit_50p_coin.jpg'
   },
   {
     id: '50p-brexit',
@@ -31,7 +31,7 @@ export const UK_COINS: Coin[] = [
     denomination: '50p',
     year: 2020,
     description: 'Marking the UK leaving the European Union. Features the inscription "Peace, prosperity and friendship with all nations".',
-    imageUrl: 'https://picsum.photos/seed/uk-coin-50p-brexit/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Brexit_50p_coin.jpg/600px-Brexit_50p_coin.jpg'
   },
   {
     id: '50p-olympic-swimming',
@@ -39,7 +39,7 @@ export const UK_COINS: Coin[] = [
     denomination: '50p',
     year: 2011,
     description: 'Part of the 2012 Olympic series. The original design showed water over the swimmer\'s face.',
-    imageUrl: 'https://picsum.photos/seed/uk-coin-50p-swim/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Olympic_Swimming_50p_coin.jpg/600px-Olympic_Swimming_50p_coin.jpg'
   },
   {
     id: '50p-1969',
@@ -47,7 +47,7 @@ export const UK_COINS: Coin[] = [
     denomination: '50p',
     year: 1969,
     description: 'The world\'s first seven-sided coin, introduced for decimalisation. Features Britannia seated.',
-    imageUrl: 'https://picsum.photos/seed/uk-coin-50p-1969/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/1969_50p_coin.jpg/600px-1969_50p_coin.jpg'
   },
   // £1 Coins
   {
@@ -56,7 +56,7 @@ export const UK_COINS: Coin[] = [
     denomination: '£1',
     year: 2017,
     description: 'The new 12-sided pound coin featuring the four floral emblems: rose, thistle, leek, and shamrock.',
-    imageUrl: 'https://picsum.photos/seed/uk-coin-1p-2017/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/New_1_pound_coin.jpg/600px-New_1_pound_coin.jpg'
   },
   {
     id: '1-edinburgh',
@@ -64,7 +64,7 @@ export const UK_COINS: Coin[] = [
     denomination: '£1',
     year: 2011,
     description: 'Part of the Capital Cities series, featuring the Edinburgh coat of arms on the reverse.',
-    imageUrl: 'https://picsum.photos/seed/uk-coin-1p-edin/600/600'
+    imageUrl: 'https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&q=80&w=600'
   },
   // £2 Coins
   {
@@ -73,7 +73,7 @@ export const UK_COINS: Coin[] = [
     denomination: '£2',
     year: 2002,
     description: 'Features a stylized figure holding a banner. Four versions exist for the different UK nations.',
-    imageUrl: 'https://picsum.photos/seed/uk-coin-2p-common/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Commonwealth_Games_2_pound_coin.jpg/600px-Commonwealth_Games_2_pound_coin.jpg'
   },
   {
     id: '2-fire-london',
@@ -81,7 +81,7 @@ export const UK_COINS: Coin[] = [
     denomination: '£2',
     year: 2016,
     description: 'Commemorating the 350th anniversary of the Great Fire of 1666. Shows the city in flames.',
-    imageUrl: 'https://picsum.photos/seed/uk-coin-2p-fire/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Great_Fire_of_London_2_pound_coin.jpg/600px-Great_Fire_of_London_2_pound_coin.jpg'
   },
   {
     id: '2-shakespeare-tragedies',
@@ -89,7 +89,7 @@ export const UK_COINS: Coin[] = [
     denomination: '£2',
     year: 2016,
     description: 'Features a skull and a rose, representing Shakespeare\'s tragedies. Part of a three-coin set.',
-    imageUrl: 'https://picsum.photos/seed/uk-coin-2p-shake/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Shakespeare_Tragedies_2_pound_coin.jpg/600px-Shakespeare_Tragedies_2_pound_coin.jpg'
   },
   // One Penny (1p)
   {
@@ -98,7 +98,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1p',
     year: 1861,
     description: 'Features the "Bun Head" portrait of Queen Victoria. A classic Victorian bronze penny.',
-    imageUrl: 'https://picsum.photos/seed/uk-penny-1861/600/600'
+    imageUrl: 'https://images.unsplash.com/photo-1589483232748-515c025575bc?auto=format&fit=crop&q=80&w=600'
   },
   {
     id: '1p-1877',
@@ -106,7 +106,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1p',
     year: 1877,
     description: 'A classic Victorian bronze penny from the mid-reign. Features Britannia on the reverse.',
-    imageUrl: 'https://picsum.photos/seed/uk-penny-1877/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Victoria_Penny_1877.jpg/600px-Victoria_Penny_1877.jpg'
   },
   {
     id: '1p-1884',
@@ -114,7 +114,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1p',
     year: 1884,
     description: 'Late Victorian bronze penny featuring the Bun Head portrait. Check for wear on the hair.',
-    imageUrl: 'https://picsum.photos/seed/uk-penny-1884/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/1884_UK_Penny.jpg/600px-1884_UK_Penny.jpg'
   },
   {
     id: '1p-1893',
@@ -122,7 +122,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1p',
     year: 1893,
     description: 'Features the final "Old Head" or "Veiled Head" portrait of Victoria. More mature portrait.',
-    imageUrl: 'https://picsum.photos/seed/uk-penny-1893/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/1893_UK_Penny.jpg/600px-1893_UK_Penny.jpg'
   },
   {
     id: '1p-1896',
@@ -130,7 +130,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1p',
     year: 1896,
     description: 'A late Victorian penny from the Diamond Jubilee era. Britannia is seated on the reverse.',
-    imageUrl: 'https://picsum.photos/seed/uk-penny-1896/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/1896_UK_Penny.jpg/600px-1896_UK_Penny.jpg'
   },
   {
     id: '1p-1897',
@@ -138,7 +138,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1p',
     year: 1897,
     description: 'Commonly found Victorian penny from the end of the century. Look for crisp details in the crown.',
-    imageUrl: 'https://picsum.photos/seed/uk-penny-1897/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/1897_UK_Penny.jpg/600px-1897_UK_Penny.jpg'
   },
   {
     id: '1p-1899',
@@ -146,7 +146,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1p',
     year: 1899,
     description: 'The final penny issued in the 19th century. A significant historical marker.',
-    imageUrl: 'https://picsum.photos/seed/uk-penny-1899/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/1899_UK_Penny.jpg/600px-1899_UK_Penny.jpg'
   },
   {
     id: '1p-1906',
@@ -154,7 +154,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1p',
     year: 1906,
     description: 'Features the portrait of King Edward VII facing right. Britannia is on the reverse.',
-    imageUrl: 'https://picsum.photos/seed/uk-penny-1906/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/1906_UK_Penny.jpg/600px-1906_UK_Penny.jpg'
   },
   {
     id: '1p-1908',
@@ -162,7 +162,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1p',
     year: 1908,
     description: 'A well-known circulation penny from the Edwardian era. Often found in good condition.',
-    imageUrl: 'https://picsum.photos/seed/uk-penny-1908/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/1908_UK_Penny.jpg/600px-1908_UK_Penny.jpg'
   },
   {
     id: '1p-1914',
@@ -170,7 +170,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1p',
     year: 1914,
     description: 'Issued at the start of the First World War. Features King George V facing left.',
-    imageUrl: 'https://picsum.photos/seed/uk-penny-1914/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/1914_UK_Penny.jpg/600px-1914_UK_Penny.jpg'
   },
   {
     id: '1p-1953',
@@ -178,7 +178,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1p',
     year: 1953,
     description: 'Issued in the year of Queen Elizabeth II\'s coronation. Features a young portrait.',
-    imageUrl: 'https://picsum.photos/seed/uk-penny-1953/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/1953_UK_Penny.jpg/600px-1953_UK_Penny.jpg'
   },
   {
     id: '1p-1962',
@@ -186,7 +186,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1p',
     year: 1962,
     description: 'A common bronze penny from the early 1960s. Features the lighthouse and ship.',
-    imageUrl: 'https://picsum.photos/seed/uk-penny-1962/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/1962_UK_Penny.jpg/600px-1962_UK_Penny.jpg'
   },
   {
     id: '1p-1967',
@@ -194,7 +194,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1p',
     year: 1967,
     description: 'The final year of the large bronze penny before decimalisation. Very common.',
-    imageUrl: 'https://picsum.photos/seed/uk-penny-1967/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/1967_penny_reverse.jpg/600px-1967_penny_reverse.jpg'
   },
   // Half Penny (1/2p)
   {
@@ -203,7 +203,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1/2p',
     year: 1953,
     description: 'Features the Golden Hind, the ship of Sir Francis Drake, on the reverse.',
-    imageUrl: 'https://picsum.photos/seed/uk-halfp-1953/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/1967_half_penny_reverse.jpg/600px-1967_half_penny_reverse.jpg'
   },
   {
     id: 'half-p-1967',
@@ -211,7 +211,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1/2p',
     year: 1967,
     description: 'The final year of the pre-decimal half penny. Features the Golden Hind.',
-    imageUrl: 'https://picsum.photos/seed/uk-halfp-1967/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/1967_half_penny_reverse.jpg/600px-1967_half_penny_reverse.jpg'
   },
   // Half Crown
   {
@@ -220,7 +220,7 @@ export const UK_COINS: Coin[] = [
     denomination: 'Half Crown',
     year: 1953,
     description: 'A large silver-colored coin worth two shillings and sixpence. Features the Royal Shield.',
-    imageUrl: 'https://picsum.photos/seed/uk-halfcrown-1953/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/1953_Half_Crown.jpg/600px-1953_Half_Crown.jpg'
   },
   {
     id: 'half-crown-1967',
@@ -228,7 +228,7 @@ export const UK_COINS: Coin[] = [
     denomination: 'Half Crown',
     year: 1967,
     description: 'The final year of the Half Crown before it was demonetised in 1970.',
-    imageUrl: 'https://picsum.photos/seed/uk-halfcrown-1967/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/1967_Half_Crown.jpg/600px-1967_Half_Crown.jpg'
   },
   // 1 Shilling
   {
@@ -237,7 +237,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1 Shilling',
     year: 1953,
     description: 'Worth 12 pence. Two versions exist: one with the English crest and one with the Scottish.',
-    imageUrl: 'https://picsum.photos/seed/uk-shilling-1953/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/1953_Shilling.jpg/600px-1953_Shilling.jpg'
   },
   {
     id: 'shilling-1966',
@@ -245,7 +245,7 @@ export const UK_COINS: Coin[] = [
     denomination: '1 Shilling',
     year: 1966,
     description: 'A common circulation coin from the mid-60s. Part of the pre-decimal system.',
-    imageUrl: 'https://picsum.photos/seed/uk-shilling-1966/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/1966_Shilling.jpg/600px-1966_Shilling.jpg'
   },
   // 3 Pence (Threepence)
   {
@@ -254,7 +254,7 @@ export const UK_COINS: Coin[] = [
     denomination: '3p',
     year: 1953,
     description: 'The iconic 12-sided brass coin featuring the Tudor thrift plant. Very distinctive shape.',
-    imageUrl: 'https://picsum.photos/seed/uk-3p-1953/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/1953_threepence_reverse.jpg/600px-1953_threepence_reverse.jpg'
   },
   {
     id: '3p-1967',
@@ -262,6 +262,6 @@ export const UK_COINS: Coin[] = [
     denomination: '3p',
     year: 1967,
     description: 'The final year of the pre-decimal threepence. Features the Tudor thrift.',
-    imageUrl: 'https://picsum.photos/seed/uk-3p-1967/600/600'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/1953_threepence_reverse.jpg/600px-1953_threepence_reverse.jpg'
   }
 ];

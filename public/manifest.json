@@ -8,12 +8,12 @@
   "theme_color": "#111827",
   "icons": [
     {
-      "src": "https://picsum.photos/seed/coin-192/192/192",
+      "src": "https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&q=80&w=192",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://picsum.photos/seed/coin-512/512/512",
+      "src": "https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&q=80&w=512",
       "sizes": "512x512",
       "type": "image/png"
     }

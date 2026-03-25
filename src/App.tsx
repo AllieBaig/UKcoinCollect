@@ -69,6 +69,12 @@ export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const FALLBACK_COIN_IMAGE = 'https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&q=80&w=600';
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.src = FALLBACK_COIN_IMAGE;
+  };
+
   useEffect(() => {
     localStorage.setItem('collected_coins', JSON.stringify(collectedIds));
   }, [collectedIds]);
@@ -144,7 +150,7 @@ export default function App() {
         denomination: reqDenom,
         year: reqYear,
         description: 'Custom added coin.',
-        imageUrl: reqPhoto || `https://picsum.photos/seed/custom-${reqDenom}-${reqYear}/600/600`
+        imageUrl: reqPhoto || FALLBACK_COIN_IMAGE
       };
       setCustomCoins(prev => [...prev, newCoin]);
       setCollectedIds(prev => [...prev, newCoin.id]);
@@ -592,6 +598,7 @@ export default function App() {
                           src={coin.imageUrl} 
                           alt={coin.name}
                           referrerPolicy="no-referrer"
+                          onError={handleImageError}
                           className={`w-full h-full object-cover rounded-full border-2 border-gray-100 ${
                             !isCollected && 'grayscale opacity-50'
                           }`}
@@ -839,7 +846,7 @@ export default function App() {
                     </label>
                     {reqPhoto ? (
                       <div className="relative w-32 h-32 rounded-2xl overflow-hidden border-2 border-amber-500">
-                        <img src={reqPhoto} alt="Captured" className="w-full h-full object-cover" />
+                        <img src={reqPhoto} alt="Captured" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                         <button 
                           type="button"
                           onClick={() => setReqPhoto(null)}
@@ -904,6 +911,7 @@ export default function App() {
                     <img 
                       src={userProfile.avatar} 
                       alt="Avatar" 
+                      referrerPolicy="no-referrer"
                       className="w-20 h-20 rounded-2xl bg-amber-50 border-2 border-amber-100"
                     />
                     <div>
@@ -958,7 +966,12 @@ export default function App() {
                     <div className="mt-4 flex -space-x-2">
                       {customCoins.slice(0, 3).map((c, i) => (
                         <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-100 overflow-hidden">
-                          <img src={c.imageUrl} alt="" className="w-full h-full object-cover" />
+                          <img 
+                            src={c.imageUrl} 
+                            alt="" 
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover" 
+                          />
                         </div>
                       ))}
                       {customCoins.length > 3 && (
@@ -983,7 +996,13 @@ export default function App() {
                           <div key={id} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-white border border-gray-200 overflow-hidden">
-                                <img src={coin.imageUrl} alt="" className="w-full h-full object-cover" />
+                                <img 
+                                  src={coin.imageUrl} 
+                                  alt="" 
+                                  referrerPolicy="no-referrer"
+                                  onError={handleImageError}
+                                  className="w-full h-full object-cover" 
+                                />
                               </div>
                               <div>
                                 <p className="font-bold text-sm text-gray-900">{coin.name}</p>
@@ -1046,6 +1065,7 @@ export default function App() {
                   src={selectedCoin.imageUrl} 
                   alt={selectedCoin.name}
                   referrerPolicy="no-referrer"
+                  onError={handleImageError}
                   onClick={() => setIsZoomed(!isZoomed)}
                   className={`w-full h-full object-cover cursor-zoom-in transition-transform duration-500 ${
                     isZoomed ? 'object-contain bg-black cursor-zoom-out' : ''
