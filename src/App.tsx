@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Trophy, Search, Folder, ChevronRight, CheckCircle2, Circle, 
   ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
-  User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle
+  User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UK_COINS, Coin } from './data/coins';
@@ -164,6 +164,10 @@ function CoinCollectorApp() {
   const [isScanning, setIsScanning] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isWebSearchOpen, setIsWebSearchOpen] = useState(false);
+  const [webSearchQuery, setWebSearchQuery] = useState('');
+  const [webSearchResults, setWebSearchResults] = useState<string[]>([]);
+  const [isSearchingWeb, setIsSearchingWeb] = useState(false);
   const [pointsNotification, setPointsNotification] = useState<{ amount: number; message: string } | null>(null);
   
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -746,6 +750,56 @@ function CoinCollectorApp() {
       }
     };
     input.click();
+  };
+
+  const searchWebImages = async (query: string) => {
+    if (!query.trim()) return;
+    setIsSearchingWeb(true);
+    setWebSearchResults([]);
+    
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `Find 8 direct, high-quality image URLs for the UK coin: "${query}". 
+        Return ONLY a JSON array of strings containing the direct image URLs. 
+        Do not include any other text. 
+        Focus on clear, professional numismatic photos.`,
+        config: {
+          tools: [{ googleSearch: {} }],
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING }
+          }
+        }
+      });
+
+      const urls = JSON.parse(response.text);
+      if (Array.isArray(urls)) {
+        setWebSearchResults(urls.filter(url => url.startsWith('http')));
+      }
+    } catch (error) {
+      console.error("Web search failed:", error);
+      // Fallback to some placeholder images if search fails
+      setWebSearchResults([
+        `https://picsum.photos/seed/${query}1/400/400`,
+        `https://picsum.photos/seed/${query}2/400/400`,
+        `https://picsum.photos/seed/${query}3/400/400`,
+        `https://picsum.photos/seed/${query}4/400/400`,
+      ]);
+    } finally {
+      setIsSearchingWeb(false);
+    }
+  };
+
+  const selectWebImage = (url: string) => {
+    if (selectedCoin) {
+      setUserCoinImages(prev => ({ ...prev, [selectedCoin.id]: url }));
+      setSelectedCoin(prev => prev ? { ...prev, imageUrl: url } : null);
+      addPoints(POINT_VALUES.UPLOAD_PHOTO, "Web Image Added!");
+    }
+    setIsWebSearchOpen(false);
   };
 
   return (
@@ -1598,7 +1652,7 @@ function CoinCollectorApp() {
                     isZoomed ? 'object-contain bg-black cursor-zoom-out' : ''
                   }`}
                 />
-                <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex gap-2">
+                <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex flex-wrap gap-2">
                   <button 
                     onClick={() => changeCoinImage(selectedCoin.id)}
                     className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-black/40 hover:bg-black/60 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group"
@@ -1606,6 +1660,18 @@ function CoinCollectorApp() {
                   >
                     <Camera size={16} className="sm:w-[18px] sm:h-[18px] group-hover:scale-110 transition-transform" />
                     <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest">Update Photo</span>
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setWebSearchQuery(selectedCoin.name);
+                      setIsWebSearchOpen(true);
+                      searchWebImages(selectedCoin.name);
+                    }}
+                    className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-black/40 hover:bg-black/60 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group"
+                    title="Search Web"
+                  >
+                    <Globe size={16} className="sm:w-[18px] sm:h-[18px] group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest">Search Web</span>
                   </button>
                 </div>
                 <button 
@@ -1630,6 +1696,21 @@ function CoinCollectorApp() {
               
               {!isZoomed && (
                 <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                  <div className="flex items-center justify-between">
+                    <button 
+                      onClick={() => {
+                        setWebSearchQuery(selectedCoin.name);
+                        setIsWebSearchOpen(true);
+                        searchWebImages(selectedCoin.name);
+                      }}
+                      className="flex items-center gap-2 text-amber-600 font-bold text-xs sm:text-sm hover:underline"
+                    >
+                      <Globe size={16} /> Search on Google Images
+                    </button>
+                    <p className="text-[10px] sm:text-xs text-gray-400 font-medium uppercase tracking-widest">
+                      Update Image
+                    </p>
+                  </div>
                   <div className="flex items-center justify-between bg-amber-50 p-3 sm:p-4 rounded-2xl border border-amber-100">
                     <div className="flex items-center gap-2 sm:gap-3">
                       <div className="p-1.5 sm:p-2 bg-amber-500 text-white rounded-xl">
@@ -1678,6 +1759,105 @@ function CoinCollectorApp() {
                   </button>
                 </div>
               )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Web Search Modal */}
+      <AnimatePresence>
+        {isWebSearchOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsWebSearchOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh]"
+            >
+              <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between bg-amber-50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center">
+                    <Globe size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Search Web Images</h3>
+                    <p className="text-xs text-gray-500">Find the perfect photo for your coin</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsWebSearchOpen(false)}
+                  className="p-2 hover:bg-amber-100 text-gray-400 hover:text-amber-600 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto">
+                <div className="relative">
+                  <input 
+                    type="text"
+                    value={webSearchQuery}
+                    onChange={(e) => setWebSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && searchWebImages(webSearchQuery)}
+                    placeholder="Search for coin images..."
+                    className="w-full pl-10 pr-4 py-3 bg-gray-100 border-none rounded-2xl text-sm focus:ring-2 focus:ring-amber-500 transition-all"
+                  />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <button 
+                    onClick={() => searchWebImages(webSearchQuery)}
+                    disabled={isSearchingWeb}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition-colors disabled:opacity-50"
+                  >
+                    {isSearchingWeb ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                  </button>
+                </div>
+
+                {isSearchingWeb ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-4">
+                    <Loader2 size={40} className="text-amber-500 animate-spin" />
+                    <p className="text-sm text-gray-500 font-medium">Searching the web for images...</p>
+                  </div>
+                ) : webSearchResults.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {webSearchResults.map((url, idx) => (
+                      <motion.div
+                        key={idx}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => selectWebImage(url)}
+                        className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 cursor-pointer group border-2 border-transparent hover:border-amber-500 transition-all"
+                      >
+                        <img 
+                          src={url} 
+                          alt={`Result ${idx}`}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.parentElement?.classList.add('hidden');
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <Plus className="text-white opacity-0 group-hover:opacity-100 transition-opacity" size={24} />
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-100 text-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Search size={32} />
+                    </div>
+                    <p className="text-sm text-gray-500">No images found. Try a different search.</p>
+                  </div>
+                )}
+              </div>
             </motion.div>
           </div>
         )}
