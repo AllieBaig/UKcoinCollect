@@ -780,31 +780,31 @@ function CoinCollectorApp() {
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl space-y-4"
+              className="relative w-full max-w-md bg-white rounded-3xl p-5 sm:p-6 shadow-2xl space-y-3 sm:space-y-4"
             >
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
-                    <Trophy size={24} />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
+                    <Trophy size={20} className="sm:w-6 sm:h-6" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg">Install Coin Collector</h3>
-                    <p className="text-sm text-gray-500">Add to your home screen for the best experience.</p>
+                    <h3 className="font-bold text-base sm:text-lg">Install Coin Collector</h3>
+                    <p className="text-xs sm:text-sm text-gray-500">Add to your home screen for the best experience.</p>
                   </div>
                 </div>
                 <button onClick={() => {
                   setShowInstallPrompt(false);
                   localStorage.setItem('last_install_prompt', Date.now().toString());
-                }} className="p-2 hover:bg-gray-100 rounded-full">
-                  <X size={20} />
+                }} className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full">
+                  <X size={18} className="sm:w-5 sm:h-5" />
                 </button>
               </div>
               
-              <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
-                <p className="text-sm text-gray-700 flex items-center gap-2">
-                  1. Tap the <span className="p-1 bg-white rounded border border-gray-200 inline-flex"><Share size={14} className="text-blue-500" /></span> button in the browser bar.
+              <div className="bg-gray-50 rounded-2xl p-3 sm:p-4 space-y-2 sm:space-y-3">
+                <p className="text-xs sm:text-sm text-gray-700 flex items-center gap-2">
+                  1. Tap the <span className="p-1 bg-white rounded border border-gray-200 inline-flex"><Share size={12} className="text-blue-500 sm:w-3.5 sm:h-3.5" /></span> button in the browser bar.
                 </p>
-                <p className="text-sm text-gray-700">
+                <p className="text-xs sm:text-sm text-gray-700">
                   2. Scroll down and tap <span className="font-bold">"Add to Home Screen"</span>.
                 </p>
               </div>
@@ -814,7 +814,7 @@ function CoinCollectorApp() {
                   setShowInstallPrompt(false);
                   localStorage.setItem('last_install_prompt', Date.now().toString());
                 }}
-                className="w-full py-4 bg-gray-900 text-white font-bold rounded-2xl"
+                className="w-full py-3.5 sm:py-4 bg-gray-900 text-white font-bold rounded-2xl text-sm sm:text-base"
               >
                 Got it
               </button>
@@ -830,58 +830,60 @@ function CoinCollectorApp() {
             initial={{ opacity: 0, y: -50, scale: 0.8 }}
             animate={{ opacity: 1, y: 20, scale: 1 }}
             exit={{ opacity: 0, y: -50, scale: 0.8 }}
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-amber-500 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border-2 border-white/20 backdrop-blur-md"
+            className="fixed top-2 sm:top-4 left-1/2 -translate-x-1/2 z-[100] bg-amber-500 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-full shadow-2xl flex items-center gap-2 sm:gap-3 border-2 border-white/20 backdrop-blur-md"
           >
             <div className="bg-white/20 p-1 rounded-full">
-              <Award size={20} />
+              <Award size={16} className="sm:w-5 sm:h-5" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xs font-bold uppercase tracking-tighter opacity-80">{pointsNotification.message}</span>
-              <span className="text-lg font-black leading-none">+{pointsNotification.amount} Points</span>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-tighter opacity-80 leading-tight">{pointsNotification.message}</span>
+              <span className="text-sm sm:text-lg font-black leading-none">+{pointsNotification.amount} Points</span>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10 px-4 py-4 sm:px-6">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10 px-3 py-3 sm:px-6 sm:py-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {(activeDenomination || activeDenomination === 'Wishlist') && (
               <button 
                 onClick={() => {
                   setActiveDenomination(null);
                   setIsZoomed(false);
                 }}
-                className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-1.5 -ml-1 sm:p-2 sm:-ml-2 hover:bg-gray-100 rounded-full transition-colors"
                 aria-label="Back to folders"
               >
-                <ArrowLeft size={24} />
+                <ArrowLeft size={20} className="sm:w-6 sm:h-6" />
               </button>
             )}
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-              <Trophy className="text-amber-500" size={28} />
-              {activeDenomination ? activeDenomination : 'Coin Collector'}
+            <h1 className="text-lg sm:text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-1.5 sm:gap-2">
+              <Trophy className="text-amber-500 w-6 h-6 sm:w-7 sm:h-7" />
+              <span className="truncate max-w-[120px] sm:max-w-none">
+                {activeDenomination ? activeDenomination : 'Coin Collector'}
+              </span>
             </h1>
           </div>
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-1.5 sm:gap-2 items-center">
             <div className="hidden sm:flex flex-col items-end mr-2">
               <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Level {userProfile.level}</span>
               <span className="text-sm font-bold text-gray-900">{userProfile.points.toLocaleString()} pts</span>
             </div>
             <button 
               onClick={() => setIsProfileOpen(true)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
               title="View Profile"
             >
-              <User size={24} className="text-gray-700" />
+              <User size={20} className="text-gray-700 sm:w-6 sm:h-6" />
             </button>
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="bg-amber-500 text-white p-2 rounded-full shadow-lg hover:bg-amber-600 transition-colors flex items-center gap-2 px-4"
+              className="bg-amber-500 text-white p-1.5 sm:p-2 rounded-full shadow-lg hover:bg-amber-600 transition-colors flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4"
               title="Take a photo of a coin"
             >
-              <Camera size={24} />
+              <Camera size={20} className="sm:w-6 sm:h-6" />
               <span className="hidden sm:inline font-bold">Take Photo</span>
             </button>
             <input 
@@ -897,10 +899,10 @@ function CoinCollectorApp() {
                 setIsAddingToCollection(false);
                 setIsRequestModalOpen(true);
               }}
-              className="bg-gray-900 text-white p-2 rounded-full shadow-lg hover:bg-black transition-colors"
+              className="bg-gray-900 text-white p-1.5 sm:p-2 rounded-full shadow-lg hover:bg-black transition-colors"
               title="Manual Request"
             >
-              <Plus size={24} />
+              <Plus size={20} className="sm:w-6 sm:h-6" />
             </button>
           </div>
         </div>
@@ -917,14 +919,14 @@ function CoinCollectorApp() {
       </header>
 
       {/* Search and Filters */}
-      <div className="p-4 bg-white border-b border-gray-200">
-        <div className="max-w-2xl mx-auto space-y-4">
+      <div className="p-3 sm:p-4 bg-white border-b border-gray-200">
+        <div className="max-w-2xl mx-auto space-y-3 sm:space-y-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input 
               type="text"
               placeholder="Search all coins..."
-              className="w-full pl-10 pr-4 py-3 bg-gray-100 border-none rounded-xl text-lg focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-gray-100 border-none rounded-xl text-base sm:text-lg focus:ring-2 focus:ring-amber-500 outline-none transition-all"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -933,12 +935,12 @@ function CoinCollectorApp() {
             />
           </div>
           
-          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-1 no-scrollbar">
             {(['all', 'collected', 'missing'] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide whitespace-nowrap transition-colors ${
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[11px] sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap transition-colors ${
                   filter === f 
                     ? 'bg-gray-900 text-white' 
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -973,13 +975,13 @@ function CoinCollectorApp() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 20 }}
                       onClick={() => setActiveDenomination(denom)}
-                      className="bg-white rounded-2xl p-5 shadow-sm border-2 border-transparent hover:border-amber-500 transition-all cursor-pointer flex items-center gap-4"
+                      className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border-2 border-transparent hover:border-amber-500 transition-all cursor-pointer flex items-center gap-3 sm:gap-4"
                     >
-                      <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center">
-                        <Folder size={32} fill="currentColor" fillOpacity={0.2} />
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center">
+                        <Folder size={28} className="sm:w-8 sm:h-8" fill="currentColor" fillOpacity={0.2} />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-900">Coin {denom}</h3>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900">Coin {denom}</h3>
                         <div className="flex items-center gap-2 mt-1">
                           <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                             <div 
@@ -987,10 +989,10 @@ function CoinCollectorApp() {
                               style={{ width: `${denomProgress}%` }}
                             />
                           </div>
-                          <span className="text-xs font-bold text-gray-500">{collectedInDenom}/{coinsInDenom.length}</span>
+                          <span className="text-[10px] sm:text-xs font-bold text-gray-500">{collectedInDenom}/{coinsInDenom.length}</span>
                         </div>
                       </div>
-                      <ChevronRight className="text-gray-300" size={24} />
+                      <ChevronRight className="text-gray-300 sm:w-6 sm:h-6" size={20} />
                     </motion.div>
                   ))}
 
@@ -1001,16 +1003,16 @@ function CoinCollectorApp() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     onClick={() => setActiveDenomination('Wishlist')}
-                    className="bg-white rounded-2xl p-5 shadow-sm border-2 border-dashed border-amber-300 hover:border-amber-500 transition-all cursor-pointer flex items-center gap-4"
+                    className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border-2 border-dashed border-amber-300 hover:border-amber-500 transition-all cursor-pointer flex items-center gap-3 sm:gap-4"
                   >
-                    <div className="w-14 h-14 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center">
-                      <Folder size={32} fill="currentColor" fillOpacity={0.1} />
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center">
+                      <Folder size={28} className="sm:w-8 sm:h-8" fill="currentColor" fillOpacity={0.1} />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 italic">My Wishlist</h3>
-                      <p className="text-sm text-gray-500">{requestedCoins.length} coins requested</p>
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 italic">My Wishlist</h3>
+                      <p className="text-xs sm:text-sm text-gray-500">{requestedCoins.length} coins requested</p>
                     </div>
-                    <ChevronRight className="text-gray-300" size={24} />
+                    <ChevronRight className="text-gray-300 sm:w-6 sm:h-6" size={20} />
                   </motion.div>
                 )}
               </>
@@ -1055,12 +1057,12 @@ function CoinCollectorApp() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     onClick={() => setSelectedCoin(coin)}
-                    className={`group relative bg-white rounded-2xl p-4 shadow-sm border-2 transition-all cursor-pointer ${
+                    className={`group relative bg-white rounded-2xl p-3 sm:p-4 shadow-sm border-2 transition-all cursor-pointer ${
                       isCollected ? 'border-amber-500 bg-amber-50/30' : 'border-transparent'
                     }`}
                   >
-                    <div className="flex gap-4 items-center">
-                      <div className="relative w-20 h-20 flex-shrink-0">
+                    <div className="flex gap-3 sm:gap-4 items-center">
+                      <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
                         <img 
                           src={coin.imageUrl} 
                           alt={coin.name}
@@ -1071,32 +1073,32 @@ function CoinCollectorApp() {
                           }`}
                         />
                         {isCollected && (
-                          <div className="absolute -top-1 -right-1 bg-amber-500 text-white rounded-full p-1 shadow-md">
-                            <CheckCircle2 size={16} />
+                          <div className="absolute -top-1 -right-1 bg-amber-500 text-white rounded-full p-0.5 sm:p-1 shadow-md">
+                            <CheckCircle2 size={14} className="sm:w-4 sm:h-4" />
                           </div>
                         )}
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-bold text-amber-600 uppercase tracking-widest">
+                        <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                          <span className="text-[10px] sm:text-xs font-bold text-amber-600 uppercase tracking-widest">
                             {coin.denomination} • {coin.year}
                           </span>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 truncate">{coin.name}</h3>
-                        <p className="text-sm text-gray-500 line-clamp-1">{coin.description}</p>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">{coin.name}</h3>
+                        <p className="text-xs sm:text-sm text-gray-500 line-clamp-1">{coin.description}</p>
                       </div>
 
                       <button
                         onClick={(e) => toggleCollected(coin.id, e)}
-                        className={`p-3 rounded-xl transition-all ${
+                        className={`p-2.5 sm:p-3 rounded-xl transition-all ${
                           isCollected 
                             ? 'bg-amber-500 text-white shadow-lg shadow-amber-200' 
                             : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                         }`}
                         aria-label={isCollected ? "Mark as missing" : "Mark as collected"}
                       >
-                        {isCollected ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+                        {isCollected ? <CheckCircle2 size={20} className="sm:w-6 sm:h-6" /> : <Circle size={20} className="sm:w-6 sm:h-6" />}
                       </button>
                     </div>
                   </motion.div>
@@ -1170,12 +1172,12 @@ function CoinCollectorApp() {
                   <motion.div 
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    className="absolute bottom-32 left-6 right-6 bg-white rounded-2xl p-4 shadow-2xl"
+                    className="absolute bottom-28 sm:bottom-32 left-4 right-4 sm:left-6 sm:right-6 bg-white rounded-2xl p-3 sm:p-4 shadow-2xl"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
-                        <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Identified As</h4>
-                        <p className="text-xl font-bold text-gray-900">
+                        <h4 className="text-[10px] sm:text-sm font-bold text-gray-400 uppercase tracking-widest">Identified As</h4>
+                        <p className="text-lg sm:text-xl font-bold text-gray-900">
                           {scanResult.denomination} ({scanResult.year || 'Unknown Year'})
                         </p>
                       </div>
@@ -1186,9 +1188,9 @@ function CoinCollectorApp() {
                             setIsRequestModalOpen(true);
                             stopScanner();
                           }}
-                          className="px-4 py-2 bg-amber-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-amber-200"
+                          className="flex-1 sm:flex-none px-3 py-2 bg-amber-500 text-white rounded-xl font-bold text-xs sm:text-sm shadow-lg shadow-amber-200"
                         >
-                          Add to Collection
+                          Add
                         </button>
                         <button 
                           onClick={() => {
@@ -1196,13 +1198,13 @@ function CoinCollectorApp() {
                             setIsRequestModalOpen(true);
                             stopScanner();
                           }}
-                          className="px-4 py-2 bg-amber-100 text-amber-600 rounded-xl font-bold text-sm"
+                          className="flex-1 sm:flex-none px-3 py-2 bg-amber-100 text-amber-600 rounded-xl font-bold text-xs sm:text-sm"
                         >
                           Request
                         </button>
                         <button 
                           onClick={() => setScanResult(null)}
-                          className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl font-bold text-sm"
+                          className="flex-1 sm:flex-none px-3 py-2 bg-gray-100 text-gray-600 rounded-xl font-bold text-xs sm:text-sm"
                         >
                           Retry
                         </button>
@@ -1359,45 +1361,45 @@ function CoinCollectorApp() {
               exit={{ y: "100%" }}
               className="bg-gray-50 w-full max-w-2xl rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] flex flex-col"
             >
-              <div className="p-6 bg-white border-b border-gray-200 flex items-center justify-between sticky top-0 z-10">
-                <h2 className="text-xl font-bold text-gray-900">Your Profile</h2>
+              <div className="p-4 sm:p-6 bg-white border-b border-gray-200 flex items-center justify-between sticky top-0 z-10">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Your Profile</h2>
                 <button 
                   onClick={() => setIsProfileOpen(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
                 >
-                  <X size={24} />
+                  <X size={20} className="sm:w-6 sm:h-6" />
                 </button>
               </div>
 
-              <div className="p-6 overflow-y-auto space-y-6">
+              <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6">
                 {/* Bento Grid Layout */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                   
                   {/* User Info Block */}
-                  <div className="sm:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
+                  <div className="sm:col-span-2 bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-3 sm:gap-4">
                     <img 
                       src={userProfile.avatar} 
                       alt="Avatar" 
                       referrerPolicy="no-referrer"
-                      className="w-20 h-20 rounded-2xl bg-amber-50 border-2 border-amber-100"
+                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-50 border-2 border-amber-100"
                     />
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-900">{userProfile.name}</h3>
-                      <p className="text-amber-600 font-bold text-sm uppercase tracking-wider flex items-center gap-1">
-                        <Award size={16} />
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{userProfile.name}</h3>
+                      <p className="text-amber-600 font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center gap-1">
+                        <Award size={14} className="sm:w-4 sm:h-4" />
                         {userProfile.rank}
                       </p>
-                      <p className="text-gray-500 text-sm flex items-center gap-1 mt-1">
-                        <Calendar size={14} />
+                      <p className="text-gray-500 text-xs sm:text-sm flex items-center gap-1 mt-0.5 sm:mt-1">
+                        <Calendar size={12} className="sm:w-3.5 sm:h-3.5" />
                         Joined {userProfile.joinDate}
                       </p>
                     </div>
                   </div>
 
                   {/* Streak Block */}
-                  <div className="bg-orange-500 p-6 rounded-3xl shadow-lg text-white flex flex-col justify-between">
+                  <div className="bg-orange-500 p-4 sm:p-6 rounded-3xl shadow-lg text-white flex flex-col justify-between">
                     <div className="flex justify-between items-start">
-                      <Award size={24} />
+                      <Award size={20} className="sm:w-6 sm:h-6" />
                       <span className="text-3xl font-black">{userProfile.streak}</span>
                     </div>
                     <div>
@@ -1463,15 +1465,15 @@ function CoinCollectorApp() {
 
                   {/* Badges Block */}
                   {userProfile.badges.length > 0 && (
-                    <div className="sm:col-span-3 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                      <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <Trophy size={18} className="text-amber-500" />
+                    <div className="sm:col-span-3 bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100">
+                      <h4 className="font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
+                        <Trophy size={16} className="text-amber-500 sm:w-[18px] sm:h-[18px]" />
                         Achievement Badges
                       </h4>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         {userProfile.badges.map(badge => (
-                          <div key={badge} className="px-4 py-2 bg-amber-50 text-amber-700 rounded-full text-xs font-bold border border-amber-100 flex items-center gap-2">
-                            <Award size={14} />
+                          <div key={badge} className="px-3 py-1.5 sm:px-4 sm:py-2 bg-amber-50 text-amber-700 rounded-full text-[10px] sm:text-xs font-bold border border-amber-100 flex items-center gap-1.5 sm:gap-2">
+                            <Award size={12} className="sm:w-3.5 sm:h-3.5" />
                             {badge}
                           </div>
                         ))}
@@ -1480,19 +1482,19 @@ function CoinCollectorApp() {
                   )}
 
                   {/* Recent Activity Block */}
-                  <div className="sm:col-span-3 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                    <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <Sparkles size={18} className="text-amber-500" />
+                  <div className="sm:col-span-3 bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100">
+                    <h4 className="font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
+                      <Sparkles size={16} className="text-amber-500 sm:w-[18px] sm:h-[18px]" />
                       Recent Discoveries
                     </h4>
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       {collectedIds.slice(-3).reverse().map(id => {
                         const coin = allCoins.find(c => c.id === id);
                         if (!coin) return null;
                         return (
-                          <div key={id} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl bg-white border border-gray-200 overflow-hidden">
+                          <div key={id} className="flex items-center justify-between p-2.5 sm:p-3 bg-gray-50 rounded-2xl">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white border border-gray-200 overflow-hidden">
                                 <img 
                                   src={coin.imageUrl} 
                                   alt="" 
@@ -1502,35 +1504,35 @@ function CoinCollectorApp() {
                                 />
                               </div>
                               <div>
-                                <p className="font-bold text-sm text-gray-900">{coin.name}</p>
-                                <p className="text-xs text-gray-500">{coin.denomination} • {coin.year}</p>
+                                <p className="font-bold text-xs sm:text-sm text-gray-900 leading-tight">{coin.name}</p>
+                                <p className="text-[10px] sm:text-xs text-gray-500">{coin.denomination} • {coin.year}</p>
                               </div>
                             </div>
-                            <CheckCircle2 size={18} className="text-green-500" />
+                            <CheckCircle2 size={16} className="text-green-500 sm:w-[18px] sm:h-[18px]" />
                           </div>
                         );
                       })}
                       {collectedIds.length === 0 && (
-                        <p className="text-center py-4 text-gray-400 text-sm italic">No coins collected yet. Start scanning!</p>
+                        <p className="text-center py-4 text-gray-400 text-xs sm:text-sm italic">No coins collected yet. Start scanning!</p>
                       )}
                     </div>
                   </div>
 
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
                   <button 
                     onClick={exportCollection}
-                    className="py-4 bg-gray-900 text-white font-bold rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg"
+                    className="py-3 sm:py-4 bg-gray-900 text-white font-bold rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
                   >
-                    <Share size={20} />
+                    <Share size={18} className="sm:w-5 sm:h-5" />
                     Export
                   </button>
                   <button 
                     onClick={importCollection}
-                    className="py-4 bg-white text-gray-900 border-2 border-gray-100 font-bold rounded-2xl hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                    className="py-3 sm:py-4 bg-white text-gray-900 border-2 border-gray-100 font-bold rounded-2xl hover:bg-gray-50 transition-all flex items-center justify-center gap-1.5 sm:gap-2 text-sm sm:text-base"
                   >
-                    <RefreshCw size={20} />
+                    <RefreshCw size={18} className="sm:w-5 sm:h-5" />
                     Import
                   </button>
                 </div>
@@ -1540,9 +1542,9 @@ function CoinCollectorApp() {
                     addPoints(POINT_VALUES.DAILY_CHECKIN, "Daily Reward Claimed!");
                     alert("You've claimed your daily 50 points! Come back tomorrow for more.");
                   }}
-                  className="w-full py-4 bg-amber-500 text-white font-bold rounded-2xl hover:bg-amber-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-100 mb-4"
+                  className="w-full py-3.5 sm:py-4 bg-amber-500 text-white font-bold rounded-2xl hover:bg-amber-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-100 mb-3 sm:mb-4 text-sm sm:text-base"
                 >
-                  <Award size={20} />
+                  <Award size={18} className="sm:w-5 sm:h-5" />
                   Claim Daily Reward (+50)
                 </button>
 
@@ -1552,9 +1554,9 @@ function CoinCollectorApp() {
                     const newName = prompt("Enter your name:", userProfile.name);
                     if (newName) setUserProfile(prev => ({ ...prev, name: newName }));
                   }}
-                  className="w-full py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3.5 sm:py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
-                  <Settings size={20} />
+                  <Settings size={18} className="sm:w-5 sm:h-5" />
                   Edit Profile Settings
                 </button>
               </div>
@@ -1585,7 +1587,7 @@ function CoinCollectorApp() {
                 isZoomed ? 'h-[90vh] sm:h-auto' : ''
               }`}
             >
-              <div className={`relative transition-all duration-500 ${isZoomed ? 'h-full' : 'h-64 sm:h-80'}`}>
+              <div className={`relative transition-all duration-500 ${isZoomed ? 'h-full' : 'h-56 sm:h-80'}`}>
                 <img 
                   src={selectedCoin.imageUrl} 
                   alt={selectedCoin.name}
@@ -1596,14 +1598,14 @@ function CoinCollectorApp() {
                     isZoomed ? 'object-contain bg-black cursor-zoom-out' : ''
                   }`}
                 />
-                <div className="absolute top-4 left-4 flex gap-2">
+                <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex gap-2">
                   <button 
                     onClick={() => changeCoinImage(selectedCoin.id)}
-                    className="flex items-center gap-2 px-4 py-2 bg-black/40 hover:bg-black/60 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group"
+                    className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-black/40 hover:bg-black/60 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group"
                     title="Change Image"
                   >
-                    <Camera size={18} className="group-hover:scale-110 transition-transform" />
-                    <span className="text-xs font-bold uppercase tracking-widest">Update Photo</span>
+                    <Camera size={16} className="sm:w-[18px] sm:h-[18px] group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest">Update Photo</span>
                   </button>
                 </div>
                 <button 
@@ -1611,44 +1613,44 @@ function CoinCollectorApp() {
                     setSelectedCoin(null);
                     setIsZoomed(false);
                   }}
-                  className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md transition-colors z-10"
+                  className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md transition-colors z-10"
                 >
-                  <X size={24} />
+                  <X size={20} className="sm:w-6 sm:h-6" />
                 </button>
                 {!isZoomed && (
-                  <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent text-white">
-                    <span className="text-sm font-bold uppercase tracking-widest text-amber-400">
+                  <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/80 to-transparent text-white">
+                    <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-amber-400">
                       {selectedCoin.denomination} • {selectedCoin.year}
                     </span>
-                    <h2 className="text-3xl font-bold">{selectedCoin.name}</h2>
-                    <p className="text-xs mt-1 opacity-70">Tap image to compare / zoom</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold">{selectedCoin.name}</h2>
+                    <p className="text-[10px] sm:text-xs mt-0.5 sm:mt-1 opacity-70">Tap image to compare / zoom</p>
                   </div>
                 )}
               </div>
               
               {!isZoomed && (
-                <div className="p-6 space-y-6">
-                  <div className="flex items-center justify-between bg-amber-50 p-4 rounded-2xl border border-amber-100">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-amber-500 text-white rounded-xl">
-                        <Award size={24} />
+                <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                  <div className="flex items-center justify-between bg-amber-50 p-3 sm:p-4 rounded-2xl border border-amber-100">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="p-1.5 sm:p-2 bg-amber-500 text-white rounded-xl">
+                        <Award size={20} className="sm:w-6 sm:h-6" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-amber-600 uppercase tracking-widest">Collector Points</p>
-                        <p className="text-2xl font-black text-gray-900">{userProfile.points.toLocaleString()}</p>
+                        <p className="text-[10px] sm:text-xs font-bold text-amber-600 uppercase tracking-widest leading-tight">Collector Points</p>
+                        <p className="text-xl sm:text-2xl font-black text-gray-900 leading-none">{userProfile.points.toLocaleString()}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Level</p>
-                      <p className="text-2xl font-black text-amber-500">{userProfile.level}</p>
+                      <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest leading-tight">Level</p>
+                      <p className="text-xl sm:text-2xl font-black text-amber-500 leading-none">{userProfile.level}</p>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                      <Info size={14} /> Description
+                  <div className="space-y-1 sm:space-y-2">
+                    <h4 className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5 sm:gap-2">
+                      <Info size={12} className="sm:w-3.5 sm:h-3.5" /> Description
                     </h4>
-                    <p className="text-lg text-gray-700 leading-relaxed">
+                    <p className="text-base sm:text-lg text-gray-700 leading-relaxed">
                       {selectedCoin.description}
                     </p>
                   </div>
@@ -1658,7 +1660,7 @@ function CoinCollectorApp() {
                       toggleCollected(selectedCoin.id, e as any);
                       setSelectedCoin(null);
                     }}
-                    className={`w-full py-4 rounded-2xl text-xl font-bold shadow-xl transition-all flex items-center justify-center gap-3 ${
+                    className={`w-full py-3.5 sm:py-4 rounded-2xl text-lg sm:text-xl font-bold shadow-xl transition-all flex items-center justify-center gap-2 sm:gap-3 ${
                       collectedIds.includes(selectedCoin.id)
                         ? 'bg-gray-100 text-gray-600'
                         : 'bg-amber-500 text-white shadow-amber-200'
@@ -1666,11 +1668,11 @@ function CoinCollectorApp() {
                   >
                     {collectedIds.includes(selectedCoin.id) ? (
                       <>
-                        <CheckCircle2 size={24} /> Mark as Missing
+                        <CheckCircle2 size={20} className="sm:w-6 sm:h-6" /> Mark as Missing
                       </>
                     ) : (
                       <>
-                        <CheckCircle2 size={24} /> Mark as Collected
+                        <CheckCircle2 size={20} className="sm:w-6 sm:h-6" /> Mark as Collected
                       </>
                     )}
                   </button>
