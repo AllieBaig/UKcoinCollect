@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Trophy, Search, Folder, ChevronRight, CheckCircle2, Circle, 
   ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
-  User, Settings, Award, Calendar, BarChart3
+  User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UK_COINS, Coin } from './data/coins';
@@ -31,7 +31,64 @@ const POINT_VALUES = {
   COMPLETE_FOLDER: 1000
 };
 
+// Error Boundary Component
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
+          <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full space-y-6">
+            <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto">
+              <AlertTriangle size={40} />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">Something went wrong</h1>
+            <p className="text-gray-600">The application encountered an unexpected error. Don't worry, your collection is safe.</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full py-4 bg-amber-500 text-white font-bold rounded-2xl hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
+            >
+              <RefreshCw size={20} />
+              Reload Application
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export default function App() {
+  return (
+    <ErrorBoundary>
+      <CoinCollectorApp />
+    </ErrorBoundary>
+  );
+}
+
+function CoinCollectorApp() {
   const [collectedIds, setCollectedIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('collected_coins');
     return saved ? JSON.parse(saved) : [];
@@ -63,6 +120,39 @@ export default function App() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [pointsNotification, setPointsNotification] = useState<{ amount: number; message: string } | null>(null);
   
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Check if running in standalone mode (PWA)
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                 (window.navigator as any).standalone || 
+                 document.referrer.includes('android-app://');
+    setIsStandalone(isPWA);
+
+    // Show install prompt for iOS users not in standalone mode
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    if (isIOS && !isPWA) {
+      const lastPrompt = localStorage.getItem('last_install_prompt');
+      const now = Date.now();
+      // Show prompt every 3 days if not installed
+      if (!lastPrompt || now - parseInt(lastPrompt) > 3 * 24 * 60 * 60 * 1000) {
+        setShowInstallPrompt(true);
+      }
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('user_profile');
     return saved ? JSON.parse(saved) : {
@@ -464,7 +554,80 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col" style={{ paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
+      {/* Offline Indicator */}
+      <AnimatePresence>
+        {isOffline && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-red-500 text-white text-center py-1 text-xs font-bold flex items-center justify-center gap-2 z-[110]"
+          >
+            <WifiOff size={12} />
+            You are currently offline. Some features may be limited.
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* iOS Install Prompt */}
+      <AnimatePresence>
+        {showInstallPrompt && (
+          <div className="fixed inset-0 z-[100] flex items-end justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowInstallPrompt(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl space-y-4"
+            >
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
+                    <Trophy size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg">Install Coin Collector</h3>
+                    <p className="text-sm text-gray-500">Add to your home screen for the best experience.</p>
+                  </div>
+                </div>
+                <button onClick={() => {
+                  setShowInstallPrompt(false);
+                  localStorage.setItem('last_install_prompt', Date.now().toString());
+                }} className="p-2 hover:bg-gray-100 rounded-full">
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
+                <p className="text-sm text-gray-700 flex items-center gap-2">
+                  1. Tap the <span className="p-1 bg-white rounded border border-gray-200 inline-flex"><Share size={14} className="text-blue-500" /></span> button in the browser bar.
+                </p>
+                <p className="text-sm text-gray-700">
+                  2. Scroll down and tap <span className="font-bold">"Add to Home Screen"</span>.
+                </p>
+              </div>
+
+              <button 
+                onClick={() => {
+                  setShowInstallPrompt(false);
+                  localStorage.setItem('last_install_prompt', Date.now().toString());
+                }}
+                className="w-full py-4 bg-gray-900 text-white font-bold rounded-2xl"
+              >
+                Got it
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Points Notification */}
       <AnimatePresence>
         {pointsNotification && (

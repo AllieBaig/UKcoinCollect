@@ -12,11 +12,34 @@
     <link rel="apple-touch-icon" href="https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&q=80&w=180">
     <style>
       /* iOS Safari specific fixes */
+      :root {
+        --safe-top: env(safe-area-inset-top);
+        --safe-bottom: env(safe-area-inset-bottom);
+      }
+      
+      html, body {
+        overscroll-behavior: none;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      #root {
+        height: 100%;
+        width: 100%;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
       body {
         -webkit-tap-highlight-color: transparent;
         -webkit-touch-callout: none;
         -webkit-text-size-adjust: 100%;
-        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      }
+
+      /* Prevent zooming on focus in iOS */
+      input, select, textarea {
+        font-size: 16px !important;
       }
     </style>
   </head>
