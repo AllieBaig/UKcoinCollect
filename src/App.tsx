@@ -22,13 +22,19 @@ interface UserProfile {
   rank: string;
   points: number;
   level: number;
+  streak: number;
+  lastLoginDate: string;
+  badges: string[];
+  collectionStreak?: number;
+  lastCollectionDate?: string;
 }
 
 const POINT_VALUES = {
   COLLECT_COIN: 100,
   UPLOAD_PHOTO: 250,
   DAILY_CHECKIN: 50,
-  COMPLETE_FOLDER: 1000
+  COMPLETE_FOLDER: 1000,
+  STREAK_BONUS: 100
 };
 
 // Error Boundary Component
@@ -161,9 +167,52 @@ function CoinCollectorApp() {
       joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
       rank: 'Novice Hunter',
       points: 0,
-      level: 1
+      level: 1,
+      streak: 0,
+      lastLoginDate: '',
+      badges: [],
+      collectionStreak: 0,
+      lastCollectionDate: ''
     };
   });
+
+  // Streak Logic
+  useEffect(() => {
+    const today = new Date().toDateString();
+    if (userProfile.lastLoginDate !== today) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toDateString();
+
+      let newStreak = 1;
+      let bonusPoints = 0;
+      let message = "Welcome back!";
+
+      if (userProfile.lastLoginDate === yesterdayStr) {
+        newStreak = userProfile.streak + 1;
+        bonusPoints = POINT_VALUES.STREAK_BONUS;
+        message = `Day ${newStreak} Streak!`;
+      }
+
+      const newBadges = [...userProfile.badges];
+      if (newStreak === 3 && !newBadges.includes('3-Day Streak')) newBadges.push('3-Day Streak');
+      if (newStreak === 7 && !newBadges.includes('7-Day Streak')) newBadges.push('7-Day Streak');
+      if (newStreak === 30 && !newBadges.includes('30-Day Streak')) newBadges.push('30-Day Streak');
+
+      setUserProfile(prev => ({
+        ...prev,
+        streak: newStreak,
+        lastLoginDate: today,
+        points: prev.points + bonusPoints,
+        badges: newBadges
+      }));
+
+      if (bonusPoints > 0) {
+        setPointsNotification({ amount: bonusPoints, message });
+        setTimeout(() => setPointsNotification(null), 3000);
+      }
+    }
+  }, []);
 
   const [userCoinImages, setUserCoinImages] = useState<Record<string, string>>(() => {
     const saved = localStorage.getItem('user_coin_images');
@@ -268,10 +317,45 @@ function CoinCollectorApp() {
 
   const toggleCollected = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    const coin = allCoins.find(c => c.id === id);
+    
     setCollectedIds(prev => {
       const isCollecting = !prev.includes(id);
       if (isCollecting) {
         addPoints(POINT_VALUES.COLLECT_COIN, "Coin Collected!");
+        
+        // Collection Streak Logic
+        const today = new Date().toDateString();
+        setUserProfile(up => {
+          let newCollStreak = up.collectionStreak || 0;
+          if (up.lastCollectionDate !== today) {
+            newCollStreak += 1;
+            const newBadges = [...up.badges];
+            if (newCollStreak === 5 && !newBadges.includes('5-Day Collector')) newBadges.push('5-Day Collector');
+            return { ...up, collectionStreak: newCollStreak, lastCollectionDate: today, badges: newBadges };
+          }
+          return up;
+        });
+
+        // Navigate to folder if not already in one
+        if (!activeDenomination && coin) {
+          setActiveDenomination(coin.denomination);
+        }
+
+        // Folder Completion Check
+        if (coin) {
+          const coinsInDenom = UK_COINS.filter(c => c.denomination === coin.denomination);
+          const collectedInDenom = coinsInDenom.filter(c => [...prev, id].includes(c.id)).length;
+          if (collectedInDenom === coinsInDenom.length) {
+            addPoints(POINT_VALUES.COMPLETE_FOLDER, `${coin.denomination} Folder Complete!`);
+            setUserProfile(up => {
+              const newBadges = [...up.badges];
+              const badgeName = `${coin.denomination} Master`;
+              if (!newBadges.includes(badgeName)) newBadges.push(badgeName);
+              return { ...up, badges: newBadges };
+            });
+          }
+        }
       }
       return isCollecting ? [...prev, id] : prev.filter(i => i !== id);
     });
@@ -300,6 +384,12 @@ function CoinCollectorApp() {
       const matchesDenom = activeDenomination ? coin.denomination === activeDenomination : true;
       
       return matchesSearch && matchesFilter && matchesDenom;
+    }).sort((a, b) => {
+      // Sort by collection status: collected first
+      const aCollected = collectedIds.includes(a.id);
+      const bCollected = collectedIds.includes(b.id);
+      if (aCollected === bCollected) return 0;
+      return aCollected ? -1 : 1;
     });
   }, [searchQuery, filter, collectedIds, activeDenomination, allCoins]);
 
@@ -763,12 +853,15 @@ function CoinCollectorApp() {
             {!activeDenomination ? (
               /* Folder View */
               <>
-                {denominations.map((denom) => {
-                  const coinsInDenom = UK_COINS.filter(c => c.denomination === denom);
-                  const collectedInDenom = coinsInDenom.filter(c => collectedIds.includes(c.id)).length;
-                  const denomProgress = Math.round((collectedInDenom / coinsInDenom.length) * 100);
-
-                  return (
+                {denominations
+                  .map(denom => {
+                    const coinsInDenom = UK_COINS.filter(c => c.denomination === denom);
+                    const collectedInDenom = coinsInDenom.filter(c => collectedIds.includes(c.id)).length;
+                    const denomProgress = Math.round((collectedInDenom / coinsInDenom.length) * 100);
+                    return { denom, coinsInDenom, collectedInDenom, denomProgress };
+                  })
+                  .sort((a, b) => b.denomProgress - a.denomProgress)
+                  .map(({ denom, coinsInDenom, collectedInDenom, denomProgress }) => (
                     <motion.div
                       key={denom}
                       initial={{ opacity: 0, x: -20 }}
@@ -794,8 +887,7 @@ function CoinCollectorApp() {
                       </div>
                       <ChevronRight className="text-gray-300" size={24} />
                     </motion.div>
-                  );
-                })}
+                  ))}
 
                 {/* Wishlist Folder */}
                 {requestedCoins.length > 0 && (
@@ -1197,6 +1289,18 @@ function CoinCollectorApp() {
                     </div>
                   </div>
 
+                  {/* Streak Block */}
+                  <div className="bg-orange-500 p-6 rounded-3xl shadow-lg text-white flex flex-col justify-between">
+                    <div className="flex justify-between items-start">
+                      <Award size={24} />
+                      <span className="text-3xl font-black">{userProfile.streak}</span>
+                    </div>
+                    <div>
+                      <p className="text-orange-100 text-xs font-bold uppercase tracking-widest">Daily</p>
+                      <p className="text-lg font-bold">Streak</p>
+                    </div>
+                  </div>
+
                   {/* Progress Block */}
                   <div className="bg-amber-500 p-6 rounded-3xl shadow-lg text-white flex flex-col justify-between">
                     <div className="flex justify-between items-start">
@@ -1251,6 +1355,24 @@ function CoinCollectorApp() {
                       )}
                     </div>
                   </div>
+
+                  {/* Badges Block */}
+                  {userProfile.badges.length > 0 && (
+                    <div className="sm:col-span-3 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                      <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <Trophy size={18} className="text-amber-500" />
+                        Achievement Badges
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {userProfile.badges.map(badge => (
+                          <div key={badge} className="px-4 py-2 bg-amber-50 text-amber-700 rounded-full text-xs font-bold border border-amber-100 flex items-center gap-2">
+                            <Award size={14} />
+                            {badge}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Recent Activity Block */}
                   <div className="sm:col-span-3 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
