@@ -44,6 +44,7 @@ interface ErrorBoundaryProps {
 
 interface ErrorBoundaryState {
   hasError: boolean;
+  error?: Error;
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -52,31 +53,55 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError() {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
   }
 
-  componentDidCatch(error: any, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
   }
+
+  handleReset = () => {
+    if (confirm("This will clear all your collection data. Are you sure?")) {
+      localStorage.clear();
+      window.location.reload();
+    }
+  };
 
   render() {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
-          <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full space-y-6">
+          <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full space-y-6 border-t-4 border-red-500">
             <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto">
               <AlertTriangle size={40} />
             </div>
             <h1 className="text-2xl font-bold text-gray-900">Something went wrong</h1>
-            <p className="text-gray-600">The application encountered an unexpected error. Don't worry, your collection is safe.</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="w-full py-4 bg-amber-500 text-white font-bold rounded-2xl hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
-            >
-              <RefreshCw size={20} />
-              Reload Application
-            </button>
+            <p className="text-gray-600 text-sm">The application encountered an unexpected error. Your data is likely safe, but the app needs to restart.</p>
+            
+            <div className="space-y-3">
+              <button 
+                onClick={() => window.location.reload()}
+                className="w-full py-4 bg-amber-500 text-white font-bold rounded-2xl hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={20} />
+                Try Reloading
+              </button>
+              
+              <button 
+                onClick={this.handleReset}
+                className="w-full py-4 bg-gray-100 text-red-600 font-bold rounded-2xl hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+              >
+                <X size={20} />
+                Reset All Data
+              </button>
+            </div>
+
+            {this.state.error && (
+              <p className="text-[10px] text-gray-400 font-mono break-all opacity-50">
+                {this.state.error.message}
+              </p>
+            )}
           </div>
         </div>
       );
@@ -96,16 +121,31 @@ export default function App() {
 
 function CoinCollectorApp() {
   const [collectedIds, setCollectedIds] = useState<string[]>(() => {
-    const saved = localStorage.getItem('collected_coins');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('collected_coins');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Failed to load collected_coins", e);
+      return [];
+    }
   });
   const [customCoins, setCustomCoins] = useState<Coin[]>(() => {
-    const saved = localStorage.getItem('custom_coins');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('custom_coins');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Failed to load custom_coins", e);
+      return [];
+    }
   });
   const [requestedCoins, setRequestedCoins] = useState<RequestedCoin[]>(() => {
-    const saved = localStorage.getItem('requested_coins');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('requested_coins');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Failed to load requested_coins", e);
+      return [];
+    }
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'collected' | 'missing'>('all');
@@ -160,20 +200,37 @@ function CoinCollectorApp() {
   }, []);
 
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
-    const saved = localStorage.getItem('user_profile');
-    return saved ? JSON.parse(saved) : {
-      name: 'Coin Collector',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-      joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
-      rank: 'Novice Hunter',
-      points: 0,
-      level: 1,
-      streak: 0,
-      lastLoginDate: '',
-      badges: [],
-      collectionStreak: 0,
-      lastCollectionDate: ''
-    };
+    try {
+      const saved = localStorage.getItem('user_profile');
+      return saved ? JSON.parse(saved) : {
+        name: 'Coin Collector',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+        joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
+        rank: 'Novice Hunter',
+        points: 0,
+        level: 1,
+        streak: 0,
+        lastLoginDate: '',
+        badges: [],
+        collectionStreak: 0,
+        lastCollectionDate: ''
+      };
+    } catch (e) {
+      console.error("Failed to load user_profile", e);
+      return {
+        name: 'Coin Collector',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+        joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
+        rank: 'Novice Hunter',
+        points: 0,
+        level: 1,
+        streak: 0,
+        lastLoginDate: '',
+        badges: [],
+        collectionStreak: 0,
+        lastCollectionDate: ''
+      };
+    }
   });
 
   // Streak Logic
@@ -215,8 +272,13 @@ function CoinCollectorApp() {
   }, []);
 
   const [userCoinImages, setUserCoinImages] = useState<Record<string, string>>(() => {
-    const saved = localStorage.getItem('user_coin_images');
-    return saved ? JSON.parse(saved) : {};
+    try {
+      const saved = localStorage.getItem('user_coin_images');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      console.error("Failed to load user_coin_images", e);
+      return {};
+    }
   });
 
   const [scanResult, setScanResult] = useState<{ denomination: string; year: number | null; photo?: string } | null>(null);
@@ -435,6 +497,49 @@ function CoinCollectorApp() {
       .join('\n');
     navigator.clipboard.writeText(`My Coin Requests:\n${text}`);
     alert('Requests copied! You can now paste them in the chat.');
+  };
+
+  const exportCollection = () => {
+    const data = {
+      collectedIds,
+      customCoins,
+      requestedCoins,
+      userProfile,
+      userCoinImages
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `coin-collection-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importCollection = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target?.result as string);
+          if (data.collectedIds) setCollectedIds(data.collectedIds);
+          if (data.customCoins) setCustomCoins(data.customCoins);
+          if (data.requestedCoins) setRequestedCoins(data.requestedCoins);
+          if (data.userProfile) setUserProfile(data.userProfile);
+          if (data.userCoinImages) setUserCoinImages(data.userCoinImages);
+          alert("Collection imported successfully!");
+        } catch (err) {
+          alert("Failed to import collection. Invalid file format.");
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
   };
 
   const startScanner = async () => {
@@ -1411,6 +1516,23 @@ function CoinCollectorApp() {
                     </div>
                   </div>
 
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <button 
+                    onClick={exportCollection}
+                    className="py-4 bg-gray-900 text-white font-bold rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg"
+                  >
+                    <Share size={20} />
+                    Export
+                  </button>
+                  <button 
+                    onClick={importCollection}
+                    className="py-4 bg-white text-gray-900 border-2 border-gray-100 font-bold rounded-2xl hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw size={20} />
+                    Import
+                  </button>
                 </div>
 
                 <button 
