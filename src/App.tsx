@@ -27,11 +27,24 @@ interface UserProfile {
   badges: string[];
   collectionStreak?: number;
   lastCollectionDate?: string;
+  totalSpend?: number;
   settings?: {
     showBottomMenu: boolean;
     isDarkMode: boolean;
+    followSystemTheme?: boolean;
+    isCompactUI?: boolean;
   };
   safeModeBackup?: string;
+}
+
+interface PurchasedCoin {
+  id: string;
+  coinId: string;
+  name: string;
+  denomination: string;
+  amountPaid: number;
+  date: string;
+  month: string;
 }
 
 const POINT_VALUES = {
@@ -208,6 +221,15 @@ function CoinCollectorApp() {
       return [];
     }
   });
+  const [purchasedCoins, setPurchasedCoins] = useState<PurchasedCoin[]>(() => {
+    try {
+      const saved = localStorage.getItem('purchased_coins');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Failed to load purchased_coins", e);
+      return [];
+    }
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'collected' | 'missing'>('all');
   const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null);
@@ -230,10 +252,17 @@ function CoinCollectorApp() {
   const [webSearchResults, setWebSearchResults] = useState<string[]>([]);
   const [isSearchingWeb, setIsSearchingWeb] = useState(false);
   const [isManualAddOpen, setIsManualAddOpen] = useState(false);
+  const [isPurchasedAddOpen, setIsPurchasedAddOpen] = useState(false);
+  const [isPhotoLibraryOpen, setIsPhotoLibraryOpen] = useState(false);
+  const [importProgress, setImportProgress] = useState<number | null>(null);
+  
   const [manualCoinName, setManualCoinName] = useState('');
   const [manualCoinDenom, setManualCoinDenom] = useState('50p');
   const [manualCoinYear, setManualCoinYear] = useState(new Date().getFullYear());
   const [manualCoinPhoto, setManualCoinPhoto] = useState<string | null>(null);
+  const [manualCoinAmount, setManualCoinAmount] = useState<string>('');
+  const [isPurchased, setIsPurchased] = useState(false);
+  
   const [pointsNotification, setPointsNotification] = useState<{ amount: number; message: string } | null>(null);
   
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -253,11 +282,28 @@ function CoinCollectorApp() {
     setIsStandalone(isPWA);
 
     // Apply Dark Mode
-    if (userProfile.settings?.isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    const applyTheme = () => {
+      const isDark = userProfile.settings?.followSystemTheme 
+        ? window.matchMedia('(prefers-color-scheme: dark)').matches 
+        : userProfile.settings?.isDarkMode;
+      
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
+
+    applyTheme();
+
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleThemeChange = () => {
+      if (userProfile.settings?.followSystemTheme) {
+        applyTheme();
+      }
+    };
+    mediaQuery.addEventListener('change', handleThemeChange);
 
     // Periodically save a "Safe Mode" backup
     const saveBackup = () => {
@@ -268,6 +314,7 @@ function CoinCollectorApp() {
           requested_coins: localStorage.getItem('requested_coins'),
           user_profile: localStorage.getItem('user_profile'),
           user_coin_images: localStorage.getItem('user_coin_images'),
+          purchased_coins: localStorage.getItem('purchased_coins'),
         };
         localStorage.setItem('safe_mode_backup', JSON.stringify(data));
       } catch (e) {
@@ -539,6 +586,14 @@ function CoinCollectorApp() {
     });
   }, [allCoins]);
 
+  const monthlyTotal = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+    return purchasedCoins
+      .filter(p => p.month === currentMonth)
+      .reduce((sum, p) => sum + p.amountPaid, 0);
+  }, [purchasedCoins]);
+
   const filteredCoins = useMemo(() => {
     return allCoins.filter(coin => {
       const matchesSearch = coin.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -608,13 +663,16 @@ function CoinCollectorApp() {
       customCoins,
       requestedCoins,
       userProfile,
-      userCoinImages
+      userCoinImages,
+      purchasedCoins
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `coin-collection-${new Date().toISOString().split('T')[0]}.json`;
+    const now = new Date();
+    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+    a.download = `coin-collection-${now.toISOString().split('T')[0]}-${timeStr}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -627,16 +685,39 @@ function CoinCollectorApp() {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
       const reader = new FileReader();
+      
+      setImportProgress(0);
+      
+      reader.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          setImportProgress(progress);
+        }
+      };
+
       reader.onload = (event) => {
         try {
           const data = JSON.parse(event.target?.result as string);
-          if (data.collectedIds) setCollectedIds(data.collectedIds);
-          if (data.customCoins) setCustomCoins(data.customCoins);
-          if (data.requestedCoins) setRequestedCoins(data.requestedCoins);
-          if (data.userProfile) setUserProfile(data.userProfile);
-          if (data.userCoinImages) setUserCoinImages(data.userCoinImages);
-          alert("Collection imported successfully!");
+          
+          // Simulate a bit of progress for UX if it's too fast
+          let p = 0;
+          const interval = setInterval(() => {
+            p += 10;
+            setImportProgress(p);
+            if (p >= 100) {
+              clearInterval(interval);
+              if (data.collectedIds) setCollectedIds(data.collectedIds);
+              if (data.customCoins) setCustomCoins(data.customCoins);
+              if (data.requestedCoins) setRequestedCoins(data.requestedCoins);
+              if (data.userProfile) setUserProfile(data.userProfile);
+              if (data.userCoinImages) setUserCoinImages(data.userCoinImages);
+              if (data.purchasedCoins) setPurchasedCoins(data.purchasedCoins);
+              setImportProgress(null);
+              alert("Collection imported successfully!");
+            }
+          }, 50);
         } catch (err) {
+          setImportProgress(null);
           alert("Failed to import collection. Invalid file format.");
         }
       };
@@ -906,11 +987,32 @@ function CoinCollectorApp() {
     setIsWebSearchOpen(false);
   };
 
+  const logPurchase = (coin: Coin, amount: number) => {
+    const now = new Date();
+    const month = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+    const purchase: PurchasedCoin = {
+      id: `purchase-${Date.now()}`,
+      coinId: coin.id,
+      name: coin.name,
+      denomination: coin.denomination,
+      amountPaid: amount,
+      date: now.toISOString(),
+      month: month
+    };
+    setPurchasedCoins(prev => [...prev, purchase]);
+    setUserProfile(prev => ({
+      ...prev,
+      totalSpend: (prev.totalSpend || 0) + amount
+    }));
+    addPoints(POINT_VALUES.COLLECT_COIN, "Purchase Logged!");
+  };
+
   const addManualCoin = async () => {
     if (!manualCoinName.trim()) return;
     
+    const newId = `custom-${Date.now()}`;
     const newCoin: Coin = {
-      id: `custom-${Date.now()}`,
+      id: newId,
       name: manualCoinName,
       denomination: manualCoinDenom,
       year: manualCoinYear,
@@ -921,11 +1023,21 @@ function CoinCollectorApp() {
 
     setCustomCoins(prev => [...prev, newCoin]);
     setCollectedIds(prev => [...prev, newCoin.id]);
-    addPoints(POINT_VALUES.COLLECT_COIN, "Manual Coin Added!");
+    
+    if (isPurchased && manualCoinAmount) {
+      const amount = parseFloat(manualCoinAmount);
+      if (!isNaN(amount)) {
+        logPurchase(newCoin, amount);
+      }
+    } else {
+      addPoints(POINT_VALUES.COLLECT_COIN, "Manual Coin Added!");
+    }
     
     // Reset form
     setManualCoinName('');
     setManualCoinPhoto(null);
+    setManualCoinAmount('');
+    setIsPurchased(false);
     setIsManualAddOpen(false);
   };
 
@@ -1253,23 +1365,29 @@ function CoinCollectorApp() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     onClick={() => setSelectedCoin(coin)}
-                    className={`group relative bg-white rounded-2xl p-3 sm:p-4 shadow-sm border-2 transition-all cursor-pointer ${
-                      isCollected ? 'border-amber-500 bg-amber-50/30' : 'border-transparent'
+                    className={`group relative bg-white dark:bg-gray-900 rounded-2xl shadow-sm border-2 transition-all cursor-pointer ${
+                      isCollected ? 'border-amber-500 bg-amber-50/30 dark:bg-amber-900/10' : 'border-transparent'
+                    } ${
+                      userProfile.settings?.isCompactUI ? 'p-2 sm:p-3' : 'p-3 sm:p-4'
                     }`}
                   >
                     <div className="flex gap-3 sm:gap-4 items-center">
-                      <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
+                      <div className={`relative flex-shrink-0 ${
+                        userProfile.settings?.isCompactUI ? 'w-12 h-12 sm:w-16 sm:h-16' : 'w-16 h-16 sm:w-20 sm:h-20'
+                      }`}>
                         <img 
                           src={coin.imageUrl} 
                           alt={coin.name}
                           referrerPolicy="no-referrer"
                           onError={handleImageError}
-                          className={`w-full h-full object-cover rounded-full border-2 border-gray-100 ${
+                          className={`w-full h-full object-cover rounded-full border-2 border-gray-100 dark:border-gray-800 ${
                             !isCollected && 'grayscale opacity-50'
                           }`}
                         />
                         {isCollected && (
-                          <div className="absolute -top-1 -right-1 bg-amber-500 text-white rounded-full p-0.5 sm:p-1 shadow-md">
+                          <div className={`absolute -top-1 -right-1 bg-amber-500 text-white rounded-full p-0.5 sm:p-1 shadow-md ${
+                            userProfile.settings?.isCompactUI ? 'scale-75' : ''
+                          }`}>
                             <CheckCircle2 size={14} className="sm:w-4 sm:h-4" />
                           </div>
                         )}
@@ -1281,20 +1399,26 @@ function CoinCollectorApp() {
                             {coin.denomination} • {coin.year}
                           </span>
                         </div>
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">{coin.name}</h3>
-                        <p className="text-xs sm:text-sm text-gray-500 line-clamp-1">{coin.description}</p>
+                        <h3 className={`font-bold text-gray-900 dark:text-white truncate ${
+                          userProfile.settings?.isCompactUI ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'
+                        }`}>{coin.name}</h3>
+                        <p className={`text-gray-500 dark:text-gray-400 line-clamp-1 ${
+                          userProfile.settings?.isCompactUI ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'
+                        }`}>{coin.description}</p>
                       </div>
 
                       <button
                         onClick={(e) => toggleCollected(coin.id, e)}
-                        className={`p-2.5 sm:p-3 rounded-xl transition-all ${
+                        className={`rounded-xl transition-all ${
                           isCollected 
-                            ? 'bg-amber-500 text-white shadow-lg shadow-amber-200' 
-                            : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                            ? 'bg-amber-500 text-white shadow-lg shadow-amber-200 dark:shadow-none' 
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                        } ${
+                          userProfile.settings?.isCompactUI ? 'p-2 sm:p-2.5' : 'p-2.5 sm:p-3'
                         }`}
                         aria-label={isCollected ? "Mark as missing" : "Mark as collected"}
                       >
-                        {isCollected ? <CheckCircle2 size={20} className="sm:w-6 sm:h-6" /> : <Circle size={20} className="sm:w-6 sm:h-6" />}
+                        {isCollected ? <CheckCircle2 size={userProfile.settings?.isCompactUI ? 18 : 20} className="sm:w-6 sm:h-6" /> : <Circle size={userProfile.settings?.isCompactUI ? 18 : 20} className="sm:w-6 sm:h-6" />}
                       </button>
                     </div>
                   </motion.div>
@@ -1592,6 +1716,18 @@ function CoinCollectorApp() {
                     </div>
                   </div>
 
+                  {/* Spend Block */}
+                  <div className="sm:col-span-3 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Total Spend</h4>
+                      <p className="text-2xl font-black text-gray-900 dark:text-white">£{(userProfile.totalSpend || 0).toFixed(2)}</p>
+                    </div>
+                    <div className="text-right">
+                      <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Monthly Total</h4>
+                      <p className="text-xl font-bold text-amber-600 dark:text-amber-400">£{monthlyTotal.toFixed(2)}</p>
+                    </div>
+                  </div>
+
                   {/* Streak Block */}
                   <div className="bg-orange-500 p-4 sm:p-6 rounded-3xl shadow-lg text-white flex flex-col justify-between">
                     <div className="flex justify-between items-start">
@@ -1718,6 +1854,23 @@ function CoinCollectorApp() {
 
                 <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
                   <button 
+                    onClick={() => setIsPurchasedAddOpen(true)}
+                    className="py-3 sm:py-4 bg-blue-500 text-white font-bold rounded-2xl hover:bg-blue-600 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
+                  >
+                    <Folder size={18} className="sm:w-5 sm:h-5" />
+                    Purchased
+                  </button>
+                  <button 
+                    onClick={() => setIsPhotoLibraryOpen(true)}
+                    className="py-3 sm:py-4 bg-purple-500 text-white font-bold rounded-2xl hover:bg-purple-600 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
+                  >
+                    <Camera size={18} className="sm:w-5 sm:h-5" />
+                    Library
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
+                  <button 
                     onClick={exportCollection}
                     className="py-3 sm:py-4 bg-gray-900 text-white font-bold rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
                   >
@@ -1751,6 +1904,58 @@ function CoinCollectorApp() {
                     App Settings
                   </h4>
                   <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
+                          <Settings size={16} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Follow System Theme</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Sync with device settings</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setUserProfile(prev => ({
+                            ...prev,
+                            settings: {
+                              ...prev.settings,
+                              followSystemTheme: !prev.settings?.followSystemTheme
+                            }
+                          }));
+                        }}
+                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.followSystemTheme ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.followSystemTheme ? 'right-1' : 'left-1'}`} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
+                          <BarChart3 size={16} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Compact UI</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Reduce spacing and sizes</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setUserProfile(prev => ({
+                            ...prev,
+                            settings: {
+                              ...prev.settings,
+                              isCompactUI: !prev.settings?.isCompactUI
+                            }
+                          }));
+                        }}
+                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.isCompactUI ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isCompactUI ? 'right-1' : 'left-1'}`} />
+                      </button>
+                    </div>
+
                     <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
@@ -1970,6 +2175,173 @@ function CoinCollectorApp() {
                 </div>
               )}
             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Purchased Coins Modal */}
+      <AnimatePresence>
+        {isPurchasedAddOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsPurchasedAddOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
+            >
+              <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400">
+                    <Folder size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white">Purchased Coins</h2>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Collection History</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsPurchasedAddOpen(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                >
+                  <X size={24} className="text-gray-400" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                {purchasedCoins.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                      <Folder size={40} />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">No purchases logged</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Log your coin purchases when adding them manually.</p>
+                  </div>
+                ) : (
+                  purchasedCoins.slice().reverse().map((p) => (
+                    <div key={p.id} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-3xl border border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-2xl flex items-center justify-center text-amber-500 font-bold text-xs border border-gray-100 dark:border-gray-600">
+                          {p.denomination}
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900 dark:text-white leading-tight">{p.name}</p>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider">{p.date}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-black text-amber-600 dark:text-amber-400">£{p.amountPaid.toFixed(2)}</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase">Paid</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Photo Library Modal */}
+      <AnimatePresence>
+        {isPhotoLibraryOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsPhotoLibraryOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl bg-white dark:bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-[85vh]"
+            >
+              <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center text-purple-600 dark:text-purple-400">
+                    <Camera size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white">Coin Photo Library</h2>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Your Collection Gallery</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsPhotoLibraryOpen(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                >
+                  <X size={24} className="text-gray-400" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                  {customCoins.map((c) => (
+                    <div 
+                      key={c.id} 
+                      onClick={() => {
+                        setSelectedCoin(c);
+                        setIsPhotoLibraryOpen(false);
+                      }}
+                      className="group relative aspect-square rounded-3xl overflow-hidden bg-gray-100 dark:bg-gray-800 border-2 border-transparent hover:border-amber-500 transition-all cursor-pointer shadow-sm"
+                    >
+                      <img 
+                        src={c.imageUrl} 
+                        alt={c.name} 
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                        <p className="text-white font-bold text-xs truncate">{c.name}</p>
+                        <p className="text-white/70 text-[10px]">{c.denomination}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {customCoins.length === 0 && (
+                    <div className="col-span-full text-center py-20">
+                      <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                        <Camera size={40} />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">No custom photos yet</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Add coins manually with photos to see them here.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Import Progress Overlay */}
+      <AnimatePresence>
+        {importProgress !== null && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
+            <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 text-center shadow-2xl">
+              <div className="w-20 h-20 bg-amber-100 dark:bg-amber-900/30 rounded-3xl flex items-center justify-center mx-auto mb-6 text-amber-600 dark:text-amber-400">
+                <RefreshCw size={40} className="animate-spin" />
+              </div>
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Importing Collection</h2>
+              <p className="text-gray-500 dark:text-gray-400 mb-8 font-medium">Please wait while we restore your data...</p>
+              
+              <div className="relative h-4 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mb-4">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${importProgress}%` }}
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-400 to-amber-600 shadow-lg"
+                />
+              </div>
+              <p className="text-amber-600 dark:text-amber-400 font-black text-xl">{importProgress}%</p>
+            </div>
           </div>
         )}
       </AnimatePresence>
