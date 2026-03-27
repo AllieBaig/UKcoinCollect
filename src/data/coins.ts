@@ -5,6 +5,7 @@ export interface Coin {
   year: number;
   description: string;
   imageUrl: string;
+  rarity?: string;
 }
 
 export const UK_COINS: Coin[] = [

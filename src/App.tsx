@@ -27,6 +27,9 @@ interface UserProfile {
   badges: string[];
   collectionStreak?: number;
   lastCollectionDate?: string;
+  settings?: {
+    showBottomMenu: boolean;
+  };
 }
 
 const POINT_VALUES = {
@@ -168,6 +171,11 @@ function CoinCollectorApp() {
   const [webSearchQuery, setWebSearchQuery] = useState('');
   const [webSearchResults, setWebSearchResults] = useState<string[]>([]);
   const [isSearchingWeb, setIsSearchingWeb] = useState(false);
+  const [isManualAddOpen, setIsManualAddOpen] = useState(false);
+  const [manualCoinName, setManualCoinName] = useState('');
+  const [manualCoinDenom, setManualCoinDenom] = useState('50p');
+  const [manualCoinYear, setManualCoinYear] = useState(new Date().getFullYear());
+  const [manualCoinPhoto, setManualCoinPhoto] = useState<string | null>(null);
   const [pointsNotification, setPointsNotification] = useState<{ amount: number; message: string } | null>(null);
   
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -217,7 +225,10 @@ function CoinCollectorApp() {
         lastLoginDate: '',
         badges: [],
         collectionStreak: 0,
-        lastCollectionDate: ''
+        lastCollectionDate: '',
+        settings: {
+          showBottomMenu: true
+        }
       };
     } catch (e) {
       console.error("Failed to load user_profile", e);
@@ -232,7 +243,10 @@ function CoinCollectorApp() {
         lastLoginDate: '',
         badges: [],
         collectionStreak: 0,
-        lastCollectionDate: ''
+        lastCollectionDate: '',
+        settings: {
+          showBottomMenu: true
+        }
       };
     }
   });
@@ -757,11 +771,16 @@ function CoinCollectorApp() {
     setIsSearchingWeb(true);
     setWebSearchResults([]);
     
+    // Include denomination and year if available to refine search
+    const fullQuery = selectedCoin 
+      ? `${selectedCoin.denomination} ${selectedCoin.year} ${query}` 
+      : query;
+
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Find 8 direct, high-quality image URLs for the UK coin: "${query}". 
+        contents: `Find 8 direct, high-quality image URLs for the UK coin: "${fullQuery}". 
         Return ONLY a JSON array of strings containing the direct image URLs. 
         Do not include any other text. 
         Focus on clear, professional numismatic photos.`,
@@ -800,6 +819,44 @@ function CoinCollectorApp() {
       addPoints(POINT_VALUES.UPLOAD_PHOTO, "Web Image Added!");
     }
     setIsWebSearchOpen(false);
+  };
+
+  const addManualCoin = async () => {
+    if (!manualCoinName.trim()) return;
+    
+    const newCoin: Coin = {
+      id: `custom-${Date.now()}`,
+      name: manualCoinName,
+      denomination: manualCoinDenom,
+      year: manualCoinYear,
+      description: `Manually added coin: ${manualCoinName}`,
+      imageUrl: manualCoinPhoto || FALLBACK_COIN_IMAGE,
+      rarity: 'Common'
+    };
+
+    setCustomCoins(prev => [...prev, newCoin]);
+    setCollectedIds(prev => [...prev, newCoin.id]);
+    addPoints(POINT_VALUES.COLLECT_COIN, "Manual Coin Added!");
+    
+    // Reset form
+    setManualCoinName('');
+    setManualCoinPhoto(null);
+    setIsManualAddOpen(false);
+  };
+
+  const handleManualPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsAnalyzing(true);
+    try {
+      const compressed = await compressImage(file);
+      setManualCoinPhoto(compressed);
+    } catch (err) {
+      console.error("Failed to compress manual photo:", err);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   return (
@@ -1602,6 +1659,41 @@ function CoinCollectorApp() {
                   Claim Daily Reward (+50)
                 </button>
 
+                {/* Settings Section */}
+                <div className="bg-gray-50 p-4 sm:p-6 rounded-3xl border border-gray-100 mb-4">
+                  <h4 className="font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
+                    <Settings size={16} className="text-gray-500 sm:w-[18px] sm:h-[18px]" />
+                    App Settings
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-white rounded-2xl border border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500">
+                          <BarChart3 size={16} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-xs sm:text-sm text-gray-900">Bottom Navigation</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500">Enable bottom menu bar</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setUserProfile(prev => ({
+                            ...prev,
+                            settings: {
+                              ...prev.settings,
+                              showBottomMenu: !prev.settings?.showBottomMenu
+                            }
+                          }));
+                        }}
+                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.showBottomMenu ? 'bg-amber-500' : 'bg-gray-200'}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showBottomMenu ? 'right-1' : 'left-1'}`} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <button 
                   onClick={() => {
                     // Simple name edit for demo
@@ -1860,6 +1952,158 @@ function CoinCollectorApp() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Manual Add Modal */}
+      <AnimatePresence>
+        {isManualAddOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsManualAddOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+            >
+              <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between bg-amber-50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center">
+                    <Plus size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Add Coin Manually</h3>
+                    <p className="text-xs text-gray-500">Enter details for your custom find</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsManualAddOpen(false)}
+                  className="p-2 hover:bg-amber-100 text-gray-400 hover:text-amber-600 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Coin Name</label>
+                  <input 
+                    type="text"
+                    value={manualCoinName}
+                    onChange={(e) => setManualCoinName(e.target.value)}
+                    placeholder="e.g. Rare 50p Find"
+                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm focus:border-amber-500 focus:ring-0 transition-all"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Denomination</label>
+                    <select 
+                      value={manualCoinDenom}
+                      onChange={(e) => setManualCoinDenom(e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm focus:border-amber-500 focus:ring-0 transition-all"
+                    >
+                      {['1p', '2p', '5p', '10p', '20p', '50p', '£1', '£2'].map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Year</label>
+                    <input 
+                      type="number"
+                      value={manualCoinYear}
+                      onChange={(e) => setManualCoinYear(parseInt(e.target.value))}
+                      className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm focus:border-amber-500 focus:ring-0 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Coin Photo</label>
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="relative aspect-video rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-amber-500 transition-all overflow-hidden"
+                  >
+                    {manualCoinPhoto ? (
+                      <img src={manualCoinPhoto} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <Camera size={32} className="text-gray-300 mb-2" />
+                        <p className="text-xs text-gray-400 font-medium">Tap to upload photo</p>
+                      </>
+                    )}
+                    <input 
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleManualPhoto}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  onClick={addManualCoin}
+                  disabled={!manualCoinName.trim() || isAnalyzing}
+                  className="w-full py-4 bg-amber-500 text-white font-bold rounded-2xl hover:bg-amber-600 transition-all shadow-lg shadow-amber-100 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isAnalyzing ? <Loader2 className="animate-spin" /> : <CheckCircle2 size={20} />}
+                  Add to Collection
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Bottom Navigation Menu */}
+      <AnimatePresence>
+        {userProfile.settings?.showBottomMenu && (
+          <motion.div 
+            initial={{ y: 100 }}
+            animate={{ y: 0 }}
+            exit={{ y: 100 }}
+            className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-gray-100 px-6 py-3 sm:py-4 flex items-center justify-around z-[90] pb-[calc(12px+var(--safe-bottom))]"
+          >
+            <button 
+              onClick={() => {
+                setActiveDenomination(null);
+                setSearchQuery('');
+              }}
+              className={`flex flex-col items-center gap-1 transition-colors ${!activeDenomination ? 'text-amber-500' : 'text-gray-400'}`}
+            >
+              <Folder size={20} />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Home</span>
+            </button>
+            <button 
+              onClick={() => setIsScanning(true)}
+              className="w-12 h-12 bg-amber-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-amber-200 -mt-8 border-4 border-white"
+            >
+              <Camera size={24} />
+            </button>
+            <button 
+              onClick={() => setIsManualAddOpen(true)}
+              className="flex flex-col items-center gap-1 text-gray-400 hover:text-amber-500 transition-colors"
+            >
+              <Plus size={20} />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Add</span>
+            </button>
+            <button 
+              onClick={() => setIsProfileOpen(true)}
+              className={`flex flex-col items-center gap-1 transition-colors ${isProfileOpen ? 'text-amber-500' : 'text-gray-400'}`}
+            >
+              <User size={20} />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Profile</span>
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
 
