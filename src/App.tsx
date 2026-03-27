@@ -1016,7 +1016,7 @@ function CoinCollectorApp() {
       name: manualCoinName,
       denomination: manualCoinDenom,
       year: manualCoinYear,
-      description: `Manually added coin: ${manualCoinName}`,
+      description: `User-added: ${manualCoinName} (${manualCoinDenom})`,
       imageUrl: manualCoinPhoto || FALLBACK_COIN_IMAGE,
       rarity: 'Common'
     };
@@ -1187,8 +1187,14 @@ function CoinCollectorApp() {
               <User size={20} className="text-gray-700 sm:w-6 sm:h-6" />
             </button>
             <button 
-              onClick={() => fileInputRef.current?.click()}
-              className="bg-amber-500 text-white p-1.5 sm:p-2 rounded-full shadow-lg hover:bg-amber-600 transition-colors flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4"
+              onClick={() => {
+                if (isOffline) {
+                  alert("Scanning requires an internet connection for AI analysis. Please try again when online.");
+                  return;
+                }
+                fileInputRef.current?.click();
+              }}
+              className={`bg-amber-500 text-white p-1.5 sm:p-2 rounded-full shadow-lg hover:bg-amber-600 transition-colors flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 ${isOffline ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
               title="Take a photo of a coin"
             >
               <Camera size={20} className="sm:w-6 sm:h-6" />
@@ -2206,12 +2212,24 @@ function CoinCollectorApp() {
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Collection History</p>
                   </div>
                 </div>
-                <button 
-                  onClick={() => setIsPurchasedAddOpen(false)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
-                >
-                  <X size={24} className="text-gray-400" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => {
+                      setIsPurchased(true);
+                      setIsManualAddOpen(true);
+                    }}
+                    className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors shadow-lg"
+                    title="Add New Purchase"
+                  >
+                    <Plus size={20} />
+                  </button>
+                  <button 
+                    onClick={() => setIsPurchasedAddOpen(false)}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                  >
+                    <X size={24} className="text-gray-400" />
+                  </button>
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
@@ -2285,7 +2303,8 @@ function CoinCollectorApp() {
 
               <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                  {customCoins.map((c) => (
+                  {/* Show all coins that have custom images */}
+                  {allCoins.filter(c => userCoinImages[c.id] || customCoins.some(cc => cc.id === c.id)).map((c) => (
                     <div 
                       key={c.id} 
                       onClick={() => {
@@ -2306,13 +2325,13 @@ function CoinCollectorApp() {
                       </div>
                     </div>
                   ))}
-                  {customCoins.length === 0 && (
+                  {allCoins.filter(c => userCoinImages[c.id] || customCoins.some(cc => cc.id === c.id)).length === 0 && (
                     <div className="col-span-full text-center py-20">
                       <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
                         <Camera size={40} />
                       </div>
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white">No custom photos yet</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Add coins manually with photos to see them here.</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Add coins manually or change images to see them here.</p>
                     </div>
                   )}
                 </div>
@@ -2574,8 +2593,14 @@ function CoinCollectorApp() {
               <span className="text-[10px] font-bold uppercase tracking-widest">Home</span>
             </button>
             <button 
-              onClick={() => setIsScanning(true)}
-              className="w-12 h-12 bg-amber-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-amber-200 -mt-8 border-4 border-white"
+              onClick={() => {
+                if (isOffline) {
+                  alert("Scanning requires an internet connection for AI analysis. Please try again when online.");
+                  return;
+                }
+                setIsScanning(true);
+              }}
+              className={`w-12 h-12 bg-amber-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-amber-200 -mt-8 border-4 border-white ${isOffline ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
             >
               <Camera size={24} />
             </button>
