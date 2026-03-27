@@ -6,6 +6,7 @@ export interface Coin {
   description: string;
   imageUrl: string;
   rarity?: string;
+  summary?: string;
 }
 
 export const UK_COINS: Coin[] = [
@@ -16,7 +17,8 @@ export const UK_COINS: Coin[] = [
     denomination: '50p',
     year: 2009,
     description: 'The rarest 50p in circulation, featuring the famous Chinese Pagoda. High value for collectors.',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Kew_Gardens_50p_coin.jpg/600px-Kew_Gardens_50p_coin.jpg'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Kew_Gardens_50p_coin.jpg/600px-Kew_Gardens_50p_coin.jpg',
+    summary: 'The holy grail of 50p coins. Only 210,000 were minted, making it exceptionally rare.'
   },
   {
     id: '50p-rabbit',
@@ -24,7 +26,8 @@ export const UK_COINS: Coin[] = [
     denomination: '50p',
     year: 2016,
     description: 'Celebrating the 150th anniversary of Beatrix Potter. Features a detailed rabbit engraving.',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Peter_Rabbit_50p_coin.jpg/600px-Peter_Rabbit_50p_coin.jpg'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Peter_Rabbit_50p_coin.jpg/600px-Peter_Rabbit_50p_coin.jpg',
+    summary: 'A beloved commemorative coin. It features the iconic Beatrix Potter character.'
   },
   {
     id: '50p-brexit',
@@ -32,7 +35,8 @@ export const UK_COINS: Coin[] = [
     denomination: '50p',
     year: 2020,
     description: 'Marking the UK leaving the European Union. Features the inscription "Peace, prosperity and friendship with all nations".',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Brexit_50p_coin.jpg/600px-Brexit_50p_coin.jpg'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Brexit_50p_coin.jpg/600px-Brexit_50p_coin.jpg',
+    summary: 'Commemorates the UK\'s exit from the EU. It is a significant historical marker.'
   },
   {
     id: '50p-olympic-swimming',
@@ -40,7 +44,8 @@ export const UK_COINS: Coin[] = [
     denomination: '50p',
     year: 2011,
     description: 'Part of the 2012 Olympic series. The original design showed water over the swimmer\'s face.',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Olympic_Swimming_50p_coin.jpg/600px-Olympic_Swimming_50p_coin.jpg'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Olympic_Swimming_50p_coin.jpg/600px-Olympic_Swimming_50p_coin.jpg',
+    summary: 'A rare Olympic 50p. The first version with water over the face is highly sought after.'
   },
   {
     id: '50p-1969',
@@ -48,7 +53,8 @@ export const UK_COINS: Coin[] = [
     denomination: '50p',
     year: 1969,
     description: 'The world\'s first seven-sided coin, introduced for decimalisation. Features Britannia seated.',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/1969_50p_coin.jpg/600px-1969_50p_coin.jpg'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/1969_50p_coin.jpg/600px-1969_50p_coin.jpg',
+    summary: 'The original seven-sided 50p. It marked the beginning of a new era in British currency.'
   },
   // £1 Coins
   {
@@ -57,7 +63,8 @@ export const UK_COINS: Coin[] = [
     denomination: '£1',
     year: 2017,
     description: 'The new 12-sided pound coin featuring the four floral emblems: rose, thistle, leek, and shamrock.',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/New_1_pound_coin.jpg/600px-New_1_pound_coin.jpg'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/New_1_pound_coin.jpg/600px-New_1_pound_coin.jpg',
+    summary: 'The modern 12-sided pound coin. It is designed to be the most secure coin in the world.'
   },
   {
     id: '1-edinburgh',
@@ -65,7 +72,8 @@ export const UK_COINS: Coin[] = [
     denomination: '£1',
     year: 2011,
     description: 'Part of the Capital Cities series, featuring the Edinburgh coat of arms on the reverse.',
-    imageUrl: 'https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&q=80&w=600'
+    imageUrl: 'https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&q=80&w=600',
+    summary: 'Part of the Capital Cities series. It features the historic Edinburgh coat of arms.'
   },
   // £2 Coins
   {
@@ -74,7 +82,8 @@ export const UK_COINS: Coin[] = [
     denomination: '£2',
     year: 2002,
     description: 'Features a stylized figure holding a banner. Four versions exist for the different UK nations.',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Commonwealth_Games_2_pound_coin.jpg/600px-Commonwealth_Games_2_pound_coin.jpg'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Commonwealth_Games_2_pound_coin.jpg/600px-Commonwealth_Games_2_pound_coin.jpg',
+    summary: 'Commemorates the 2002 Commonwealth Games. Four distinct versions represent the UK nations.'
   },
   {
     id: '2-fire-london',
@@ -82,7 +91,8 @@ export const UK_COINS: Coin[] = [
     denomination: '£2',
     year: 2016,
     description: 'Commemorating the 350th anniversary of the Great Fire of 1666. Shows the city in flames.',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Great_Fire_of_London_2_pound_coin.jpg/600px-Great_Fire_of_London_2_pound_coin.jpg'
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Great_Fire_of_London_2_pound_coin.jpg/600px-Great_Fire_of_London_2_pound_coin.jpg',
+    summary: 'Marking the 350th anniversary of the Fire of London. It depicts the city in flames.'
   },
   {
     id: '2-shakespeare-tragedies',

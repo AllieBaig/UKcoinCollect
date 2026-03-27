@@ -29,7 +29,9 @@ interface UserProfile {
   lastCollectionDate?: string;
   settings?: {
     showBottomMenu: boolean;
+    isDarkMode: boolean;
   };
+  safeModeBackup?: string;
 }
 
 const POINT_VALUES = {
@@ -71,6 +73,46 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     }
   };
 
+  handleExportData = () => {
+    try {
+      const data = {
+        collected_coins: JSON.parse(localStorage.getItem('collected_coins') || '[]'),
+        custom_coins: JSON.parse(localStorage.getItem('custom_coins') || '[]'),
+        requested_coins: JSON.parse(localStorage.getItem('requested_coins') || '[]'),
+        user_profile: JSON.parse(localStorage.getItem('user_profile') || '{}'),
+        user_coin_images: JSON.parse(localStorage.getItem('user_coin_images') || '{}'),
+        exportedAt: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `coin-collector-emergency-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+    } catch (e) {
+      alert("Failed to export data: " + e);
+    }
+  };
+
+  handleRestoreSafeMode = () => {
+    const backup = localStorage.getItem('safe_mode_backup');
+    if (backup) {
+      if (confirm("Restore from last working version? This will overwrite current data.")) {
+        try {
+          const data = JSON.parse(backup);
+          Object.entries(data).forEach(([key, value]) => {
+            if (value) localStorage.setItem(key, value as string);
+          });
+          window.location.reload();
+        } catch (e) {
+          alert("Failed to restore backup: " + e);
+        }
+      }
+    } else {
+      alert("No safe mode backup found.");
+    }
+  };
+
   render() {
     if (this.state.hasError) {
       return (
@@ -89,6 +131,22 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
               >
                 <RefreshCw size={20} />
                 Try Reloading
+              </button>
+
+              <button 
+                onClick={this.handleRestoreSafeMode}
+                className="w-full py-4 bg-blue-500 text-white font-bold rounded-2xl hover:bg-blue-600 transition-all flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={20} />
+                Use Safe Mode App
+              </button>
+
+              <button 
+                onClick={this.handleExportData}
+                className="w-full py-4 bg-green-500 text-white font-bold rounded-2xl hover:bg-green-600 transition-all flex items-center justify-center gap-2"
+              >
+                <Share size={20} />
+                Export Data (Backup)
               </button>
               
               <button 
@@ -194,6 +252,31 @@ function CoinCollectorApp() {
                  document.referrer.includes('android-app://');
     setIsStandalone(isPWA);
 
+    // Apply Dark Mode
+    if (userProfile.settings?.isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+
+    // Periodically save a "Safe Mode" backup
+    const saveBackup = () => {
+      try {
+        const data = {
+          collected_coins: localStorage.getItem('collected_coins'),
+          custom_coins: localStorage.getItem('custom_coins'),
+          requested_coins: localStorage.getItem('requested_coins'),
+          user_profile: localStorage.getItem('user_profile'),
+          user_coin_images: localStorage.getItem('user_coin_images'),
+        };
+        localStorage.setItem('safe_mode_backup', JSON.stringify(data));
+      } catch (e) {
+        console.error("Failed to save safe mode backup", e);
+      }
+    };
+
+    const timer = setTimeout(saveBackup, 10000); // Save after 10s of working
+
     // Show install prompt for iOS users not in standalone mode
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     if (isIOS && !isPWA) {
@@ -227,7 +310,8 @@ function CoinCollectorApp() {
         collectionStreak: 0,
         lastCollectionDate: '',
         settings: {
-          showBottomMenu: true
+          showBottomMenu: true,
+          isDarkMode: false
         }
       };
     } catch (e) {
@@ -245,7 +329,8 @@ function CoinCollectorApp() {
         collectionStreak: 0,
         lastCollectionDate: '',
         settings: {
-          showBottomMenu: true
+          showBottomMenu: true,
+          isDarkMode: false
         }
       };
     }
@@ -860,7 +945,7 @@ function CoinCollectorApp() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col" style={{ paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 dark:text-white flex flex-col transition-colors duration-300" style={{ paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
       {/* Offline Indicator */}
       <AnimatePresence>
         {isOffline && (
@@ -891,7 +976,7 @@ function CoinCollectorApp() {
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              className="relative w-full max-w-md bg-white rounded-3xl p-5 sm:p-6 shadow-2xl space-y-3 sm:space-y-4"
+              className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-3 sm:space-y-4"
             >
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
@@ -1470,15 +1555,15 @@ function CoinCollectorApp() {
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              className="bg-gray-50 w-full max-w-2xl rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] flex flex-col"
+              className="bg-gray-50 dark:bg-gray-950 w-full max-w-2xl rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] flex flex-col"
             >
-              <div className="p-4 sm:p-6 bg-white border-b border-gray-200 flex items-center justify-between sticky top-0 z-10">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Your Profile</h2>
+              <div className="p-4 sm:p-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between sticky top-0 z-10">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Your Profile</h2>
                 <button 
                   onClick={() => setIsProfileOpen(false)}
-                  className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
                 >
-                  <X size={20} className="sm:w-6 sm:h-6" />
+                  <X size={20} className="sm:w-6 sm:h-6 text-gray-500" />
                 </button>
               </div>
 
@@ -1487,20 +1572,20 @@ function CoinCollectorApp() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                   
                   {/* User Info Block */}
-                  <div className="sm:col-span-2 bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-3 sm:gap-4">
+                  <div className="sm:col-span-2 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-3 sm:gap-4">
                     <img 
                       src={userProfile.avatar} 
                       alt="Avatar" 
                       referrerPolicy="no-referrer"
-                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-50 border-2 border-amber-100"
+                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-100 dark:border-amber-900/30"
                     />
                     <div>
-                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{userProfile.name}</h3>
-                      <p className="text-amber-600 font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center gap-1">
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{userProfile.name}</h3>
+                      <p className="text-amber-600 dark:text-amber-400 font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center gap-1">
                         <Award size={14} className="sm:w-4 sm:h-4" />
                         {userProfile.rank}
                       </p>
-                      <p className="text-gray-500 text-xs sm:text-sm flex items-center gap-1 mt-0.5 sm:mt-1">
+                      <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm flex items-center gap-1 mt-0.5 sm:mt-1">
                         <Calendar size={12} className="sm:w-3.5 sm:h-3.5" />
                         Joined {userProfile.joinDate}
                       </p>
@@ -1532,32 +1617,32 @@ function CoinCollectorApp() {
                   </div>
 
                   {/* Stats Block - Total Coins */}
-                  <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                    <p className="text-3xl font-black text-gray-900">{collectedIds.length}</p>
-                    <p className="text-gray-500 text-sm font-medium">Coins Collected</p>
-                    <div className="mt-4 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <p className="text-3xl font-black text-gray-900 dark:text-white">{collectedIds.length}</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Coins Collected</p>
+                    <div className="mt-4 h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                       <div className="h-full bg-amber-500 w-full opacity-20" />
                     </div>
                   </div>
 
                   {/* Stats Block - Unique Denoms */}
-                  <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                    <p className="text-3xl font-black text-gray-900">{denominations.length}</p>
-                    <p className="text-gray-500 text-sm font-medium">Denominations</p>
+                  <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <p className="text-3xl font-black text-gray-900 dark:text-white">{denominations.length}</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Denominations</p>
                     <div className="mt-4 flex gap-1">
                       {[1,2,3,4,5].map(i => (
-                        <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= 3 ? 'bg-amber-500' : 'bg-gray-100'}`} />
+                        <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= 3 ? 'bg-amber-500' : 'bg-gray-100 dark:bg-gray-800'}`} />
                       ))}
                     </div>
                   </div>
 
                   {/* Stats Block - Custom Coins */}
-                  <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                    <p className="text-3xl font-black text-gray-900">{customCoins.length}</p>
-                    <p className="text-gray-500 text-sm font-medium">Custom Finds</p>
+                  <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <p className="text-3xl font-black text-gray-900 dark:text-white">{customCoins.length}</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Custom Finds</p>
                     <div className="mt-4 flex -space-x-2">
                       {customCoins.slice(0, 3).map((c, i) => (
-                        <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-100 overflow-hidden">
+                        <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-900 bg-gray-100 dark:bg-gray-800 overflow-hidden">
                           <img 
                             src={c.imageUrl} 
                             alt="" 
@@ -1567,7 +1652,7 @@ function CoinCollectorApp() {
                         </div>
                       ))}
                       {customCoins.length > 3 && (
-                        <div className="w-8 h-8 rounded-full border-2 border-white bg-gray-900 flex items-center justify-center text-[10px] text-white font-bold">
+                        <div className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-900 bg-gray-900 dark:bg-gray-100 flex items-center justify-center text-[10px] text-white dark:text-gray-900 font-bold">
                           +{customCoins.length - 3}
                         </div>
                       )}
@@ -1576,14 +1661,14 @@ function CoinCollectorApp() {
 
                   {/* Badges Block */}
                   {userProfile.badges.length > 0 && (
-                    <div className="sm:col-span-3 bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100">
-                      <h4 className="font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
+                    <div className="sm:col-span-3 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+                      <h4 className="font-bold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
                         <Trophy size={16} className="text-amber-500 sm:w-[18px] sm:h-[18px]" />
                         Achievement Badges
                       </h4>
                       <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         {userProfile.badges.map(badge => (
-                          <div key={badge} className="px-3 py-1.5 sm:px-4 sm:py-2 bg-amber-50 text-amber-700 rounded-full text-[10px] sm:text-xs font-bold border border-amber-100 flex items-center gap-1.5 sm:gap-2">
+                          <div key={badge} className="px-3 py-1.5 sm:px-4 sm:py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-full text-[10px] sm:text-xs font-bold border border-amber-100 dark:border-amber-900/30 flex items-center gap-1.5 sm:gap-2">
                             <Award size={12} className="sm:w-3.5 sm:h-3.5" />
                             {badge}
                           </div>
@@ -1593,8 +1678,8 @@ function CoinCollectorApp() {
                   )}
 
                   {/* Recent Activity Block */}
-                  <div className="sm:col-span-3 bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100">
-                    <h4 className="font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
+                  <div className="sm:col-span-3 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <h4 className="font-bold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
                       <Sparkles size={16} className="text-amber-500 sm:w-[18px] sm:h-[18px]" />
                       Recent Discoveries
                     </h4>
@@ -1603,9 +1688,9 @@ function CoinCollectorApp() {
                         const coin = allCoins.find(c => c.id === id);
                         if (!coin) return null;
                         return (
-                          <div key={id} className="flex items-center justify-between p-2.5 sm:p-3 bg-gray-50 rounded-2xl">
+                          <div key={id} className="flex items-center justify-between p-2.5 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl">
                             <div className="flex items-center gap-2 sm:gap-3">
-                              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white border border-gray-200 overflow-hidden">
+                              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 overflow-hidden">
                                 <img 
                                   src={coin.imageUrl} 
                                   alt="" 
@@ -1615,8 +1700,8 @@ function CoinCollectorApp() {
                                 />
                               </div>
                               <div>
-                                <p className="font-bold text-xs sm:text-sm text-gray-900 leading-tight">{coin.name}</p>
-                                <p className="text-[10px] sm:text-xs text-gray-500">{coin.denomination} • {coin.year}</p>
+                                <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white leading-tight">{coin.name}</p>
+                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{coin.denomination} • {coin.year}</p>
                               </div>
                             </div>
                             <CheckCircle2 size={16} className="text-green-500 sm:w-[18px] sm:h-[18px]" />
@@ -1660,20 +1745,20 @@ function CoinCollectorApp() {
                 </button>
 
                 {/* Settings Section */}
-                <div className="bg-gray-50 p-4 sm:p-6 rounded-3xl border border-gray-100 mb-4">
-                  <h4 className="font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 sm:p-6 rounded-3xl border border-gray-100 dark:border-gray-700 mb-4">
+                  <h4 className="font-bold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
                     <Settings size={16} className="text-gray-500 sm:w-[18px] sm:h-[18px]" />
                     App Settings
                   </h4>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-white rounded-2xl border border-gray-100">
+                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500">
+                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
                           <BarChart3 size={16} />
                         </div>
                         <div>
-                          <p className="font-bold text-xs sm:text-sm text-gray-900">Bottom Navigation</p>
-                          <p className="text-[10px] sm:text-xs text-gray-500">Enable bottom menu bar</p>
+                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Bottom Navigation</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Enable bottom menu bar</p>
                         </div>
                       </div>
                       <button 
@@ -1686,9 +1771,35 @@ function CoinCollectorApp() {
                             }
                           }));
                         }}
-                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.showBottomMenu ? 'bg-amber-500' : 'bg-gray-200'}`}
+                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.showBottomMenu ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                       >
                         <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showBottomMenu ? 'right-1' : 'left-1'}`} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
+                          {userProfile.settings?.isDarkMode ? <Sparkles size={16} /> : <Award size={16} />}
+                        </div>
+                        <div>
+                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Dark Mode</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Enable night theme</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setUserProfile(prev => ({
+                            ...prev,
+                            settings: {
+                              ...prev.settings,
+                              isDarkMode: !prev.settings?.isDarkMode
+                            }
+                          }));
+                        }}
+                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.isDarkMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isDarkMode ? 'right-1' : 'left-1'}`} />
                       </button>
                     </div>
                   </div>
@@ -1778,7 +1889,7 @@ function CoinCollectorApp() {
                 {!isZoomed && (
                   <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/80 to-transparent text-white">
                     <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-amber-400">
-                      {selectedCoin.denomination} • {selectedCoin.year}
+                      {selectedCoin.id.startsWith('custom-') ? 'Personal Discovery' : `${selectedCoin.denomination} • ${selectedCoin.year}`}
                     </span>
                     <h2 className="text-2xl sm:text-3xl font-bold">{selectedCoin.name}</h2>
                     <p className="text-[10px] sm:text-xs mt-0.5 sm:mt-1 opacity-70">Tap image to compare / zoom</p>
@@ -1827,6 +1938,13 @@ function CoinCollectorApp() {
                       {selectedCoin.description}
                     </p>
                   </div>
+
+                  {selectedCoin.summary && (
+                    <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                      <h4 className="text-[10px] sm:text-xs font-bold text-amber-700 uppercase tracking-widest mb-1">Quick Summary</h4>
+                      <p className="text-xs sm:text-sm text-amber-800 leading-relaxed italic">"{selectedCoin.summary}"</p>
+                    </div>
+                  )}
 
                   <button
                     onClick={(e) => {
@@ -1970,7 +2088,7 @@ function CoinCollectorApp() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
             >
               <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between bg-amber-50">
                 <div className="flex items-center gap-3">
