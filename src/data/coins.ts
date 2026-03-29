@@ -8,6 +8,7 @@ export interface Coin {
   rarity?: string;
   summary?: string;
   value?: number;
+  clue?: string;
 }
 
 export const UK_COINS: Coin[] = [
@@ -20,7 +21,8 @@ export const UK_COINS: Coin[] = [
     description: 'The rarest 50p in circulation, featuring the famous Chinese Pagoda. High value for collectors.',
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Kew_Gardens_50p_coin.jpg/600px-Kew_Gardens_50p_coin.jpg',
     summary: 'The holy grail of 50p coins. Only 210,000 were minted, making it exceptionally rare.',
-    value: 250.00
+    value: 250.00,
+    clue: "Look for the Chinese Pagoda in the Royal Botanic Gardens."
   },
   {
     id: '50p-rabbit',
@@ -30,7 +32,8 @@ export const UK_COINS: Coin[] = [
     description: 'Celebrating the 150th anniversary of Beatrix Potter. Features a detailed rabbit engraving.',
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Peter_Rabbit_50p_coin.jpg/600px-Peter_Rabbit_50p_coin.jpg',
     summary: 'A beloved commemorative coin. It features the iconic Beatrix Potter character.',
-    value: 5.00
+    value: 5.00,
+    clue: "A mischievous rabbit is hiding in the garden."
   },
   {
     id: '50p-brexit',

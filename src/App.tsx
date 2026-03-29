@@ -3,7 +3,7 @@ import {
   Trophy, Search, Folder, ChevronRight, CheckCircle2, Circle, 
   ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
   User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle, TrendingUp, Trash2, Shield, Copy, Edit,
-  Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle, ShoppingCart, Tag, Table, History
+  Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle, ShoppingCart, Tag, Table, History, Moon, HelpCircle, ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UK_COINS, Coin } from './data/coins';
@@ -43,6 +43,8 @@ interface UserProfile {
   lastCollectionDate?: string;
   totalSpend?: number;
   recoveryCode?: string;
+  dnaScore: number;
+  unlockedClues: string[];
   settings: {
     showBottomMenu: boolean;
     isDarkMode: boolean;
@@ -53,9 +55,17 @@ interface UserProfile {
     isBackgroundRemovalEnabled?: boolean;
     isPurchaseMode?: boolean;
     showCoinPrice?: boolean;
+    isNightBonusActive: boolean;
     sortBy?: 'recent-added' | 'recent-opened' | 'name';
   };
   safeModeBackup?: string;
+}
+
+interface TradeOffer {
+  id: string;
+  give: string[];
+  get: string;
+  expiresAt: number;
 }
 
 interface PurchasedCoin {
@@ -342,6 +352,16 @@ function CoinCollectorApp() {
   const [discoveryFact, setDiscoveryFact] = useState<string | null>(null);
   const [conversionData, setConversionData] = useState<any>(null);
 
+  // New features state
+  const [isFusionMode, setIsFusionMode] = useState(false);
+  const [isFusionModalOpen, setIsFusionModalOpen] = useState(false);
+  const [fusionSelection, setFusionSelection] = useState<string[]>([]);
+  const [tradeOffer, setTradeOffer] = useState<TradeOffer | null>(null);
+  const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
+  const [isNightBonus, setIsNightBonus] = useState(false);
+  const [dnaScore, setDnaScore] = useState(0);
+  const [unlockedClues, setUnlockedClues] = useState<string[]>([]);
+
   const COIN_FACTS = [
     "The 50p coin was the world's first seven-sided coin.",
     "The 2009 Kew Gardens 50p is one of the rarest in circulation.",
@@ -503,8 +523,11 @@ function CoinCollectorApp() {
           isTextMode: false,
           isBackgroundRemovalEnabled: true,
           isPurchaseMode: false,
-          showCoinPrice: true
-        }
+          showCoinPrice: true,
+          isNightBonusActive: true
+        },
+        dnaScore: 0,
+        unlockedClues: []
       };
 
       if (!saved) return defaultProfile;
@@ -518,7 +541,9 @@ function CoinCollectorApp() {
           ...defaultProfile.settings,
           ...parsed.settings
         },
-        missions: parsed.missions || defaultProfile.missions
+        missions: parsed.missions || defaultProfile.missions,
+        dnaScore: parsed.dnaScore || 0,
+        unlockedClues: parsed.unlockedClues || []
       };
     } catch (e) {
       console.error("Failed to load user_profile", e);
@@ -776,6 +801,150 @@ function CoinCollectorApp() {
     }
   }, [collectedIds.length]);
 
+  // Night Bonus Mode Logic
+  useEffect(() => {
+    const checkNightMode = () => {
+      const hour = new Date().getHours();
+      const isNight = hour >= 20 || hour < 6;
+      if (isNight !== isNightBonus) {
+        setIsNightBonus(isNight);
+        if (isNight && userProfile.settings.isNightBonusActive) {
+          setPointsNotification({ amount: 0, message: "🌙 Night Bonus Active! 1.5x XP" });
+          setTimeout(() => setPointsNotification(null), 3000);
+        }
+      }
+    };
+
+    checkNightMode();
+    const interval = setInterval(checkNightMode, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [isNightBonus, userProfile.settings.isNightBonusActive]);
+
+  // Mystery Trade Offers Logic
+  useEffect(() => {
+    const generateTradeOffer = () => {
+      if (collectedIds.length < 5) return;
+
+      const collectedUnique = Array.from(new Set(collectedIds));
+      if (collectedUnique.length === 0) return;
+
+      const randomGiveId = collectedUnique[Math.floor(Math.random() * collectedUnique.length)];
+      const missingCoins = allCoins.filter(c => !collectedIds.includes(c.id));
+      if (missingCoins.length === 0) return;
+
+      const randomGet = missingCoins[Math.floor(Math.random() * missingCoins.length)];
+
+      const newOffer: TradeOffer = {
+        id: Math.random().toString(36).substr(2, 9),
+        give: [randomGiveId, randomGiveId],
+        get: randomGet.id,
+        expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
+      };
+
+      setTradeOffer(newOffer);
+      setPointsNotification({ amount: 0, message: "New Mystery Trade Offer available!" });
+    };
+
+    const interval = setInterval(() => {
+      if (!tradeOffer || Date.now() > tradeOffer.expiresAt) {
+        generateTradeOffer();
+      }
+    }, 300000); // Every 5 minutes
+    
+    if (!tradeOffer) generateTradeOffer(); // Initial offer
+    return () => clearInterval(interval);
+  }, [collectedIds, tradeOffer, allCoins]);
+
+  const acceptTrade = () => {
+    if (!tradeOffer) return;
+    
+    // Check if user still has the coins
+    const giveId = tradeOffer.give[0];
+    const count = tradeOffer.give.length;
+    const userHasCount = collectedIds.filter(id => id === giveId).length;
+    
+    if (userHasCount < count) {
+      alert(`You need ${count} of ${allCoins.find(c => c.id === giveId)?.name} to trade!`);
+      setTradeOffer(null);
+      return;
+    }
+
+    setCollectedIds(prev => {
+      const next = [...prev];
+      for (let i = 0; i < count; i++) {
+        const index = next.indexOf(giveId);
+        if (index > -1) next.splice(index, 1);
+      }
+      next.push(tradeOffer.get);
+      return next;
+    });
+
+    addPoints(250, "🤝 Trade Successful!");
+    setTradeOffer(null);
+    setIsTradeModalOpen(false);
+  };
+
+  const fuseCoins = () => {
+    if (fusionSelection.length !== 3) return;
+    
+    const coinId = fusionSelection[0];
+    const sourceCoin = allCoins.find(c => c.id === coinId);
+    if (!sourceCoin) return;
+
+    // Check if user has enough
+    const userHasCount = collectedIds.filter(id => id === coinId).length;
+    if (userHasCount < 3) {
+      alert("You don't have enough duplicates for fusion!");
+      return;
+    }
+
+    // Find a rarer version or a related rare coin
+    const rarities = ['Common', 'Uncommon', 'Rare', 'Ultra Rare'];
+    const currentRarityIndex = rarities.indexOf(sourceCoin.rarity || 'Common');
+    const nextRarity = rarities[Math.min(currentRarityIndex + 1, rarities.length - 1)];
+
+    const possibleRewards = allCoins.filter(c => (c.rarity || 'Common') === nextRarity && c.id !== coinId);
+    const resultCoin = possibleRewards[Math.floor(Math.random() * possibleRewards.length)] || sourceCoin;
+
+    setCollectedIds(prev => {
+      const next = [...prev];
+      // Remove 3 instances
+      for (let i = 0; i < 3; i++) {
+        const index = next.indexOf(coinId);
+        if (index > -1) next.splice(index, 1);
+      }
+      // Add 1 new
+      next.push(resultCoin.id);
+      return next;
+    });
+
+    addPoints(500, `✨ Fusion Success! Created ${resultCoin.name}`);
+    setFusionSelection([]);
+    setIsFusionModalOpen(false);
+    setIsFusionMode(false);
+  };
+
+  // DNA Score Calculation
+  const dnaScoreValue = useMemo(() => {
+    if (collectedIds.length === 0) return 0;
+    const uniqueCount = new Set(collectedIds).size;
+    const rarityScore = collectedIds.reduce((acc, id) => {
+      const coin = allCoins.find(c => c.id === id);
+      const rarity = coin?.rarity || 'Common';
+      const scores = { 'Common': 1, 'Uncommon': 3, 'Rare': 10, 'Ultra Rare': 25 };
+      return acc + (scores[rarity as keyof typeof scores] || 1);
+    }, 0);
+    const diversity = uniqueCount / allCoins.length;
+    return Math.floor((rarityScore * diversity) + (collectedIds.length * 2));
+  }, [collectedIds, allCoins]);
+
+  useEffect(() => {
+    if (dnaScoreValue !== userProfile.dnaScore) {
+      setUserProfile(prev => ({ ...prev, dnaScore: dnaScoreValue }));
+      setDnaScore(dnaScoreValue);
+    }
+  }, [dnaScoreValue, userProfile.dnaScore]);
+
   // Automatic Backup Logic
   useEffect(() => {
     // 1. Stability Check: If app runs for 5 seconds without crashing, save as "last working"
@@ -886,14 +1055,135 @@ function CoinCollectorApp() {
     });
   };
 
+  // Night Bonus Logic
+  useEffect(() => {
+    const checkNightBonus = () => {
+      const hour = new Date().getHours();
+      const isNight = hour >= 20 || hour < 6;
+      if (isNight !== isNightBonus) {
+        setIsNightBonus(isNight);
+        if (isNight && userProfile.settings.isNightBonusActive) {
+          setPointsNotification({ amount: 0, message: "🌙 Night Bonus Active! 1.5x XP" });
+          setTimeout(() => setPointsNotification(null), 3000);
+        }
+      }
+    };
+
+    checkNightBonus();
+    const interval = setInterval(checkNightBonus, 60000);
+    return () => clearInterval(interval);
+  }, [isNightBonus, userProfile.settings.isNightBonusActive]);
+
+  // DNA Score Calculation
+  const dnaScoreValue = useMemo(() => {
+    const totalCoins = collectedIds.length;
+    const uniqueDenominations = new Set(allCoins.filter(c => collectedIds.includes(c.id)).map(c => c.denomination)).size;
+    const rareCoins = allCoins.filter(c => collectedIds.includes(c.id) && (c.rarity === 'Rare' || c.rarity === 'Ultra Rare')).length;
+    
+    // Simple algorithm for unique DNA score
+    return Math.floor((totalCoins * 10) + (uniqueDenominations * 50) + (rareCoins * 100));
+  }, [collectedIds, allCoins]);
+
+  useEffect(() => {
+    setUserProfile(prev => ({ ...prev, dnaScore: dnaScoreValue }));
+  }, [dnaScoreValue]);
+
+  // Mystery Trade Logic
+  useEffect(() => {
+    const generateTrade = () => {
+      const collectedUnique = Array.from(new Set(collectedIds));
+      if (collectedUnique.length < 5) return;
+
+      const randomGiveId = collectedUnique[Math.floor(Math.random() * collectedUnique.length)];
+      const uncollected = allCoins.filter(c => !collectedIds.includes(c.id));
+      if (uncollected.length === 0) return;
+      
+      const randomGetId = uncollected[Math.floor(Math.random() * uncollected.length)].id;
+
+      setTradeOffer({
+        id: Math.random().toString(36).substr(2, 9),
+        give: { coinId: randomGiveId, count: 2 },
+        get: { coinId: randomGetId },
+        expiresAt: Date.now() + 1000 * 60 * 5 // 5 minutes
+      });
+    };
+
+    const interval = setInterval(() => {
+      if (!tradeOffer || Date.now() > tradeOffer.expiresAt) {
+        generateTrade();
+      }
+    }, 300000); // Check every 5 mins
+
+    return () => clearInterval(interval);
+  }, [collectedIds, tradeOffer, allCoins]);
+
+  const acceptTrade = () => {
+    if (!tradeOffer) return;
+    
+    // Check if user still has the coins
+    const count = collectedIds.filter(id => id === tradeOffer.give.coinId).length;
+    if (count < tradeOffer.give.count) {
+      alert("You no longer have the required coins for this trade.");
+      setTradeOffer(null);
+      return;
+    }
+
+    setCollectedIds(prev => {
+      const next = [...prev];
+      // Remove 2 instances
+      for (let i = 0; i < tradeOffer.give.count; i++) {
+        const index = next.indexOf(tradeOffer.give.coinId);
+        if (index > -1) next.splice(index, 1);
+      }
+      // Add 1 new
+      next.push(tradeOffer.get.coinId);
+      return next;
+    });
+
+    addPoints(250, "🤝 Trade Successful!");
+    setTradeOffer(null);
+    setIsTradeModalOpen(false);
+  };
+
+  const fuseCoins = () => {
+    if (fusionSelection.length !== 3) return;
+    
+    const coinId = fusionSelection[0];
+    const sourceCoin = allCoins.find(c => c.id === coinId);
+    if (!sourceCoin) return;
+
+    // Find a rarer version or a related rare coin
+    const rarerCoins = allCoins.filter(c => c.rarity === 'Rare' || c.rarity === 'Ultra Rare');
+    const resultCoin = rarerCoins[Math.floor(Math.random() * rarerCoins.length)];
+
+    setCollectedIds(prev => {
+      const next = [...prev];
+      // Remove 3 instances
+      for (let i = 0; i < 3; i++) {
+        const index = next.indexOf(coinId);
+        if (index > -1) next.splice(index, 1);
+      }
+      // Add 1 new
+      next.push(resultCoin.id);
+      return next;
+    });
+
+    addPoints(500, `✨ Fusion Success! Created ${resultCoin.name}`);
+    setFusionSelection([]);
+    setIsFusionModalOpen(false);
+    setIsFusionMode(false);
+  };
+
   const addPoints = (amount: number, message?: string) => {
+    const multiplier = (isNightBonus && userProfile.settings.isNightBonusActive) ? 1.5 : 1;
+    const finalAmount = Math.floor(amount * multiplier);
     setUserProfile(prev => {
-      const newPoints = prev.points + amount;
+      const newPoints = prev.points + finalAmount;
       const { level, name } = getLevelInfo(newPoints);
       return { ...prev, points: newPoints, level, rank: name };
     });
     if (message) {
-      setPointsNotification({ amount, message });
+      setPointsNotification({ amount: finalAmount, message });
       setTimeout(() => setPointsNotification(null), 3000);
     }
   };
@@ -948,7 +1238,17 @@ function CoinCollectorApp() {
       const isCollecting = !prev.includes(id);
       if (isCollecting) {
         setCollectionHistory(ch => ({ ...ch, [id]: new Date().toISOString() }));
-        addPoints(POINT_VALUES.COLLECT_COIN, "Coin Collected!");
+        
+        let pointsToAdd = POINT_VALUES.COLLECT_COIN;
+        if (isNightBonus) pointsToAdd = Math.floor(pointsToAdd * 1.5);
+        addPoints(pointsToAdd, isNightBonus ? "Night Bonus! Coin Collected!" : "Coin Collected!");
+        
+        // Clue Logic
+        if (coin?.clue && !unlockedClues.includes(coin.id)) {
+          setUnlockedClues(curr => [...curr, coin.id]);
+          setPointsNotification({ amount: 0, message: `Clue Unlocked: ${coin.clue}` });
+        }
+
         completeMission('m1');
         completeMission('m3');
         if (coin && ['Rare', 'Epic', 'Legendary', 'Ultra Rare'].includes(coin.rarity || '')) {
@@ -987,16 +1287,100 @@ function CoinCollectorApp() {
             });
           }
         }
+        return [...prev, id];
       } else {
-        setCollectionHistory(ch => {
-          const newHistory = { ...ch };
-          delete newHistory[id];
-          return newHistory;
-        });
+        // Remove only one instance
+        const index = prev.indexOf(id);
+        if (index > -1) {
+          const next = [...prev];
+          next.splice(index, 1);
+          setCollectionHistory(ch => {
+            const newHistory = { ...ch };
+            delete newHistory[id];
+            return newHistory;
+          });
+          return next;
+        }
+        return prev;
       }
-      return isCollecting ? [...prev, id] : prev.filter(i => i !== id);
     });
   };
+
+  const fuseCoins = (coinId: string) => {
+    const count = collectedIds.filter(id => id === coinId).length;
+    if (count < 3) {
+      alert("You need at least 3 duplicates to fuse!");
+      return;
+    }
+
+    const coin = allCoins.find(c => c.id === coinId);
+    if (!coin) return;
+
+    const rarities = ['Common', 'Uncommon', 'Rare', 'Ultra Rare'];
+    const currentRarityIndex = rarities.indexOf(coin.rarity || 'Common');
+    const nextRarity = rarities[Math.min(currentRarityIndex + 1, rarities.length - 1)];
+
+    const possibleRewards = allCoins.filter(c => (c.rarity || 'Common') === nextRarity && c.id !== coinId);
+    const reward = possibleRewards[Math.floor(Math.random() * possibleRewards.length)] || coin;
+
+    setCollectedIds(prev => {
+      let removedCount = 0;
+      const next = prev.filter(id => {
+        if (id === coinId && removedCount < 3) {
+          removedCount++;
+          return false;
+        }
+        return true;
+      });
+      return [...next, reward.id];
+    });
+
+    addPoints(500, `Fusion Successful! Created: ${reward.name}`);
+    setIsFusionModalOpen(false);
+  };
+
+  const acceptTrade = () => {
+    if (!tradeOffer) return;
+
+    const count = collectedIds.filter(id => id === tradeOffer.give.coinId).length;
+    if (count < tradeOffer.give.count) {
+      alert(`You need ${tradeOffer.give.count} of ${allCoins.find(c => c.id === tradeOffer.give.coinId)?.name} to trade!`);
+      return;
+    }
+
+    setCollectedIds(prev => {
+      let removedCount = 0;
+      const next = prev.filter(id => {
+        if (id === tradeOffer.give.coinId && removedCount < tradeOffer.give.count) {
+          removedCount++;
+          return false;
+        }
+        return true;
+      });
+      return [...next, tradeOffer.get.coinId];
+    });
+
+    addPoints(300, "Trade Successful!");
+    setTradeOffer(null);
+    setIsTradeModalOpen(false);
+  };
+
+  const dnaScoreValue = useMemo(() => {
+    if (collectedIds.length === 0) return 0;
+    const uniqueCount = new Set(collectedIds).size;
+    const rarityScore = collectedIds.reduce((acc, id) => {
+      const coin = allCoins.find(c => c.id === id);
+      const rarity = coin?.rarity || 'Common';
+      const scores = { 'Common': 1, 'Uncommon': 3, 'Rare': 10, 'Ultra Rare': 25 };
+      return acc + (scores[rarity as keyof typeof scores] || 1);
+    }, 0);
+    const diversity = uniqueCount / allCoins.length;
+    return Math.floor((rarityScore * diversity) + (collectedIds.length * 2));
+  }, [collectedIds, allCoins]);
+
+  useEffect(() => {
+    setDnaScore(dnaScoreValue);
+  }, [dnaScoreValue]);
 
   const denominations = useMemo(() => {
     const unique = Array.from(new Set(allCoins.map(c => c.denomination))) as string[];
@@ -1887,7 +2271,17 @@ function CoinCollectorApp() {
               </span>
             </h1>
           </div>
-          <div className="flex gap-2 sm:gap-3 items-center">
+            <div className="flex gap-2 sm:gap-3 items-center">
+            {isNightBonus && userProfile.settings.isNightBonusActive && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center gap-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded-full"
+              >
+                <Moon size={12} className="fill-current" />
+                <span className="text-[8px] font-black uppercase tracking-widest">Night Bonus</span>
+              </motion.div>
+            )}
             <div className="hidden md:flex flex-col items-end mr-2">
               <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Level {userProfile.level}</span>
               <span className="text-sm font-black text-gray-900 dark:text-white">{userProfile.points.toLocaleString()} pts</span>
@@ -2661,6 +3055,18 @@ function CoinCollectorApp() {
                     <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                       <span>{userProfile.points % 2000} XP</span>
                       <span>2,000 XP</span>
+                    </div>
+                  </div>
+
+                  {/* Stats Block - DNA Score */}
+                  <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-3xl shadow-lg text-white flex flex-col justify-between">
+                    <div className="flex justify-between items-start">
+                      <Zap size={24} />
+                      <span className="text-3xl font-black">{dnaScore}</span>
+                    </div>
+                    <div>
+                      <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest">Collection</p>
+                      <p className="text-lg font-bold">DNA Score</p>
                     </div>
                   </div>
 
@@ -3442,9 +3848,43 @@ function CoinCollectorApp() {
                     >
                       {collectedIds.includes(selectedCoin.id) ? 'Remove from Collection' : 'Add to Collection'}
                     </button>
+                    {collectedIds.includes(selectedCoin.id) && (
+                      <button 
+                        onClick={(e) => {
+                          toggleCollected(selectedCoin.id, e, true);
+                          setSelectedCoin(null);
+                        }}
+                        className="flex-1 py-4 bg-amber-500 text-white font-black rounded-2xl hover:bg-amber-600 shadow-lg uppercase tracking-widest text-sm"
+                      >
+                        Add Duplicate
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Fusion Button */}
+                  {collectedIds.filter(id => id === selectedCoin.id).length >= 3 && (
+                    <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-100 dark:border-amber-800 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-black text-amber-600 uppercase tracking-widest">Fusion Available</p>
+                        <p className="text-[10px] text-amber-500 font-bold">Combine 3 duplicates for a rare coin!</p>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setFusionSelection([selectedCoin.id, selectedCoin.id, selectedCoin.id]);
+                          setIsFusionModalOpen(true);
+                          setSelectedCoin(null);
+                        }}
+                        className="px-4 py-2 bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-amber-600 transition-all shadow-md"
+                      >
+                        Fuse Now
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="mt-8 flex gap-3">
                     <button 
                       onClick={() => setSelectedCoin(null)}
-                      className="px-6 py-4 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-black rounded-2xl hover:bg-gray-200 transition-all uppercase tracking-widest text-sm"
+                      className="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-black rounded-2xl hover:bg-gray-200 transition-all uppercase tracking-widest text-sm"
                     >
                       Close
                     </button>
@@ -4161,6 +4601,153 @@ function CoinCollectorApp() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Coin Fusion Modal */}
+      <AnimatePresence>
+        {isFusionModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsFusionModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 shadow-2xl space-y-8"
+            >
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Zap size={32} />
+                </div>
+                <h2 className="text-2xl font-black uppercase tracking-tight">Coin Fusion</h2>
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Combine 3 duplicates for a rare coin</p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                {[0, 1, 2].map(i => (
+                  <div key={i} className="aspect-square rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-800/50">
+                    {fusionSelection[i] ? (
+                      <img 
+                        src={userCoinImages[fusionSelection[i]] || allCoins.find(c => c.id === fusionSelection[i])?.imageUrl} 
+                        className="w-full h-full object-cover"
+                        alt="Selected"
+                      />
+                    ) : (
+                      <Plus size={20} className="text-gray-300" />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <button 
+                disabled={fusionSelection.length < 3}
+                onClick={fuseCoins}
+                className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest transition-all ${
+                  fusionSelection.length === 3 
+                    ? 'bg-amber-500 text-white shadow-lg shadow-amber-200 dark:shadow-none hover:scale-105' 
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {fusionSelection.length === 3 ? 'Start Fusion' : 'Select 3 Coins'}
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Mystery Trade Modal */}
+      <AnimatePresence>
+        {isTradeModalOpen && tradeOffer && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsTradeModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 shadow-2xl space-y-8"
+            >
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <RefreshCw size={32} />
+                </div>
+                <h2 className="text-2xl font-black uppercase tracking-tight">Mystery Trade</h2>
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Limited time offer</p>
+              </div>
+
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 space-y-2">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">You Give</p>
+                  <div className="flex justify-center -space-x-4">
+                    {tradeOffer.give.map(id => (
+                      <div key={id} className="w-12 h-12 rounded-full border-2 border-white dark:border-gray-900 overflow-hidden bg-gray-100 shadow-sm">
+                        <img src={userCoinImages[id] || allCoins.find(c => c.id === id)?.imageUrl} className="w-full h-full object-cover" alt="Give" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <ArrowRight className="text-gray-300" />
+                <div className="flex-1 space-y-2">
+                  <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest text-center">You Get</p>
+                  <div className="flex justify-center">
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden bg-amber-50 shadow-inner p-1">
+                      <div className="w-full h-full rounded-xl overflow-hidden relative">
+                        <img src={allCoins.find(c => c.id === tradeOffer.get)?.imageUrl} className="w-full h-full object-cover blur-sm" alt="Get" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                          <HelpCircle className="text-white" size={24} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setIsTradeModalOpen(false)}
+                  className="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 font-black uppercase tracking-widest rounded-2xl"
+                >
+                  Decline
+                </button>
+                <button 
+                  onClick={acceptTrade}
+                  className="flex-1 py-4 bg-indigo-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-indigo-200 dark:shadow-none hover:scale-105 transition-all"
+                >
+                  Accept
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Trade Offer Floating Button */}
+      <AnimatePresence>
+        {tradeOffer && !isTradeModalOpen && (
+          <motion.button
+            initial={{ x: 100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 100, opacity: 0 }}
+            onClick={() => setIsTradeModalOpen(true)}
+            className="fixed right-6 bottom-24 z-[80] bg-indigo-600 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 hover:scale-105 transition-all"
+          >
+            <RefreshCw size={20} className="animate-spin-slow" />
+            <div className="text-left">
+              <p className="text-[8px] font-black uppercase tracking-widest opacity-70">New Trade</p>
+              <p className="text-[10px] font-bold">Mystery Offer Available</p>
+            </div>
+          </motion.button>
         )}
       </AnimatePresence>
 
