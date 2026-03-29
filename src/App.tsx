@@ -3,7 +3,7 @@ import {
   Trophy, Search, Folder, ChevronRight, CheckCircle2, Circle, 
   ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
   User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle, TrendingUp, Trash2, Shield, Copy, Edit,
-  Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle, ShoppingCart, Tag, Table
+  Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle, ShoppingCart, Tag, Table, History
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UK_COINS, Coin } from './data/coins';
@@ -168,15 +168,25 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     }
   };
 
+  handleEnterSafeMode = () => {
+    localStorage.setItem('force_safe_mode', 'true');
+    window.location.reload();
+  };
+
   handleRestoreSafeMode = () => {
     const backup = localStorage.getItem('safe_mode_backup');
     if (backup) {
       if (confirm("Restore from last working version? This will overwrite current data.")) {
         try {
           const data = JSON.parse(backup);
-          Object.entries(data).forEach(([key, value]) => {
-            if (value) localStorage.setItem(key, value as string);
-          });
+          // Map keys correctly
+          if (data.collectedIds) localStorage.setItem('collected_coins', JSON.stringify(data.collectedIds));
+          if (data.customCoins) localStorage.setItem('custom_coins', JSON.stringify(data.customCoins));
+          if (data.requestedCoins) localStorage.setItem('requested_coins', JSON.stringify(data.requestedCoins));
+          if (data.userProfile) localStorage.setItem('user_profile', JSON.stringify(data.userProfile));
+          if (data.userCoinImages) localStorage.setItem('user_coin_images', JSON.stringify(data.userCoinImages));
+          if (data.purchasedCoins) localStorage.setItem('purchased_coins', JSON.stringify(data.purchasedCoins));
+          
           window.location.reload();
         } catch (e) {
           alert("Failed to restore backup: " + e);
@@ -191,51 +201,54 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
-          <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full space-y-6 border-t-4 border-red-500">
-            <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto">
-              <AlertTriangle size={40} />
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl max-w-sm w-full space-y-6 border-t-8 border-amber-500">
+            <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto">
+              <Shield size={40} />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Something went wrong</h1>
-            <p className="text-gray-600 text-sm">The application encountered an unexpected error. Your data is likely safe, but the app needs to restart.</p>
+            <div className="space-y-2">
+              <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">App Recovery</h1>
+              <p className="text-gray-500 text-sm leading-relaxed">The application encountered a problem. Don't worry, your data is protected. Choose an option below to continue.</p>
+            </div>
             
             <div className="space-y-3">
               <button 
-                onClick={() => window.location.reload()}
-                className="w-full py-4 bg-amber-500 text-white font-bold rounded-2xl hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
+                onClick={this.handleEnterSafeMode}
+                className="w-full py-4 bg-amber-500 text-white font-black rounded-2xl hover:bg-amber-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-100 uppercase tracking-widest text-xs"
               >
-                <RefreshCw size={20} />
-                Try Reloading
+                <Shield size={18} />
+                Enter Safe Mode
               </button>
 
               <button 
                 onClick={this.handleRestoreSafeMode}
-                className="w-full py-4 bg-blue-500 text-white font-bold rounded-2xl hover:bg-blue-600 transition-all flex items-center justify-center gap-2"
+                className="w-full py-4 bg-blue-500 text-white font-black rounded-2xl hover:bg-blue-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-100 uppercase tracking-widest text-xs"
               >
-                <RefreshCw size={20} />
-                Use Safe Mode App
+                <Clock size={18} />
+                Restore Last Working
               </button>
 
               <button 
                 onClick={this.handleExportData}
-                className="w-full py-4 bg-green-500 text-white font-bold rounded-2xl hover:bg-green-600 transition-all flex items-center justify-center gap-2"
+                className="w-full py-4 bg-green-500 text-white font-black rounded-2xl hover:bg-green-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-100 uppercase tracking-widest text-xs"
               >
-                <Share size={20} />
-                Export Data (Backup)
+                <Share size={18} />
+                Export My Data
               </button>
               
               <button 
-                onClick={this.handleReset}
-                className="w-full py-4 bg-gray-100 text-red-600 font-bold rounded-2xl hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                onClick={() => window.location.reload()}
+                className="w-full py-3 text-gray-400 font-bold hover:text-gray-600 transition-all text-xs uppercase tracking-widest"
               >
-                <X size={20} />
-                Reset All Data
+                Try Normal Reload
               </button>
             </div>
 
             {this.state.error && (
-              <p className="text-[10px] text-gray-400 font-mono break-all opacity-50">
-                {this.state.error.message}
-              </p>
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-[10px] text-gray-400 font-mono break-all opacity-70">
+                  Error: {this.state.error.message}
+                </p>
+              </div>
             )}
           </div>
         </div>
@@ -291,6 +304,10 @@ function CoinCollectorApp() {
       return [];
     }
   });
+  const [isSafeMode, setIsSafeMode] = useState(() => {
+    return localStorage.getItem('force_safe_mode') === 'true';
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'collected' | 'missing'>('all');
   const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null);
@@ -707,6 +724,43 @@ function CoinCollectorApp() {
       return {};
     }
   });
+
+  // Automatic Backup Logic
+  useEffect(() => {
+    // 1. Stability Check: If app runs for 5 seconds without crashing, save as "last working"
+    const stabilityTimer = setTimeout(() => {
+      const state = {
+        collectedIds,
+        customCoins,
+        requestedCoins,
+        userProfile,
+        userCoinImages,
+        purchasedCoins,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('safe_mode_backup', JSON.stringify(state));
+    }, 5000);
+
+    // 2. Daily Backup: Save a separate backup once per day
+    const lastDailyBackup = localStorage.getItem('last_daily_backup_date');
+    const today = new Date().toISOString().split('T')[0];
+    
+    if (lastDailyBackup !== today) {
+      const state = {
+        collectedIds,
+        customCoins,
+        requestedCoins,
+        userProfile,
+        userCoinImages,
+        purchasedCoins,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(`daily_backup_${today}`, JSON.stringify(state));
+      localStorage.setItem('last_daily_backup_date', today);
+    }
+
+    return () => clearTimeout(stabilityTimer);
+  }, [collectedIds, customCoins, requestedCoins, userProfile, userCoinImages, purchasedCoins]);
 
   const [scanResult, setScanResult] = useState<{ denomination: string; year: number | null; photo?: string } | null>(null);
   
@@ -1462,6 +1516,24 @@ function CoinCollectorApp() {
     window.location.reload();
   };
 
+  const exportData = () => {
+    const data = {
+      collectedIds,
+      customCoins,
+      requestedCoins,
+      userProfile,
+      userCoinImages,
+      purchasedCoins,
+      exportedAt: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `coin-collector-backup-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    a.click();
+  };
+
   const clearCache = () => {
     if ('caches' in window) {
       caches.keys().then(names => {
@@ -1472,6 +1544,86 @@ function CoinCollectorApp() {
   };
 
   const { level: currentLevel, name: levelName, nextLevelPoints, progress: levelProgress } = getLevelInfo(userProfile.points);
+
+  if (isSafeMode) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        {/* Safe Mode Header */}
+        <header className="bg-amber-500 text-white p-4 flex items-center justify-between shadow-lg sticky top-0 z-50">
+          <div className="flex items-center gap-3">
+            <Shield size={24} />
+            <div>
+              <h1 className="text-xl font-black uppercase tracking-widest">Safe Mode</h1>
+              <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest">Minimal Core Features Only</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => {
+              localStorage.removeItem('force_safe_mode');
+              window.location.reload();
+            }}
+            className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-black uppercase tracking-widest transition-colors"
+          >
+            Exit Safe Mode
+          </button>
+        </header>
+
+        <main className="flex-1 p-6 max-w-2xl mx-auto w-full space-y-6">
+          <div className="bg-white p-6 rounded-3xl shadow-sm border-2 border-amber-100">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Welcome to Safe Mode</h2>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Safe Mode is active because the app encountered a problem. You can still view your collection and export your data safely.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Core Actions</h3>
+             <div className="grid grid-cols-2 gap-4">
+                <button 
+                  onClick={exportData}
+                  className="p-4 bg-green-500 text-white rounded-2xl flex flex-col items-center gap-2 shadow-lg shadow-green-100"
+                >
+                  <Share size={24} />
+                  <span className="text-xs font-bold uppercase tracking-widest">Export Data</span>
+                </button>
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem('force_safe_mode');
+                    window.location.reload();
+                  }}
+                  className="p-4 bg-amber-500 text-white rounded-2xl flex flex-col items-center gap-2 shadow-lg shadow-amber-100"
+                >
+                  <RefreshCw size={24} />
+                  <span className="text-xs font-bold uppercase tracking-widest">Try Normal Mode</span>
+                </button>
+             </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Your Collection</h3>
+            <div className="space-y-2">
+              {allCoins.filter(c => collectedIds.includes(c.id)).length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
+                  <Folder size={40} className="mx-auto text-gray-200 mb-2" />
+                  <p className="text-gray-400 text-sm">No coins collected yet.</p>
+                </div>
+              ) : (
+                allCoins.filter(c => collectedIds.includes(c.id)).map(coin => (
+                  <div key={coin.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-gray-900">{coin.name}</p>
+                      <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">{coin.denomination} • {coin.year}</p>
+                    </div>
+                    <CheckCircle2 className="text-amber-500" size={20} />
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen bg-gray-50 dark:bg-gray-950 dark:text-white flex flex-col transition-colors duration-300 ${userProfile.settings?.isCompactUI ? 'text-sm' : 'text-base'}`} style={{ paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
