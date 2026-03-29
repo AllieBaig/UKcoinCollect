@@ -774,13 +774,11 @@ function CoinCollectorApp() {
     e.currentTarget.src = FALLBACK_COIN_IMAGE;
   };
 
-  const compressImage = (file: File, maxWidth = 600): Promise<string> => {
+  const compressImage = (source: File | string, maxWidth = 600): Promise<string> => {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
+      const processImage = (src: string) => {
         const img = new Image();
-        img.src = event.target?.result as string;
+        img.src = src;
         img.onload = () => {
           const canvas = document.createElement('canvas');
           let width = img.width;
@@ -796,12 +794,28 @@ function CoinCollectorApp() {
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
           // Use a lower quality to reduce size
-          resolve(canvas.toDataURL('image/jpeg', 0.5));
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
         };
         img.onerror = reject;
       };
-      reader.onerror = reject;
+
+      if (source instanceof File) {
+        const reader = new FileReader();
+        reader.readAsDataURL(source);
+        reader.onload = (event) => processImage(event.target?.result as string);
+        reader.onerror = reject;
+      } else {
+        processImage(source);
+      }
     });
+  };
+
+  const checkDuplicate = (name: string, denomination: string, year: number) => {
+    return allCoins.some(c => 
+      c.name.toLowerCase().trim() === name.toLowerCase().trim() && 
+      c.denomination.toLowerCase().trim() === denomination.toLowerCase().trim() && 
+      c.year === year
+    );
   };
 
   const completeMission = (missionId: string, amount: number = 1) => {
@@ -994,9 +1008,16 @@ function CoinCollectorApp() {
     e.preventDefault();
     
     if (isAddingToCollection) {
+      const coinName = reqName || `${reqDenom} (${reqYear})`;
+      
+      if (checkDuplicate(coinName, reqDenom, reqYear)) {
+        alert("This coin already exists in your collection!");
+        return;
+      }
+
       const newCoin: Coin = {
         id: `custom-${Date.now()}`,
-        name: reqName || `${reqDenom} (${reqYear})`,
+        name: coinName,
         denomination: reqDenom,
         year: reqYear,
         description: 'Custom added coin.',
@@ -1104,14 +1125,53 @@ function CoinCollectorApp() {
             setImportProgress(p);
             if (p >= 100) {
               clearInterval(interval);
-              if (data.collectedIds) setCollectedIds(data.collectedIds);
-              if (data.customCoins) setCustomCoins(data.customCoins);
-              if (data.requestedCoins) setRequestedCoins(data.requestedCoins);
-              if (data.userProfile) setUserProfile(data.userProfile);
-              if (data.userCoinImages) setUserCoinImages(data.userCoinImages);
-              if (data.purchasedCoins) setPurchasedCoins(data.purchasedCoins);
+              
+              // Merge logic with duplicate prevention
+              if (data.customCoins) {
+                setCustomCoins(prev => {
+                  const newCustom = data.customCoins.filter((nc: Coin) => 
+                    !prev.some(pc => pc.name === nc.name && pc.denomination === nc.denomination && pc.year === nc.year)
+                  );
+                  return [...prev, ...newCustom];
+                });
+              }
+
+              if (data.collectedIds) {
+                setCollectedIds(prev => Array.from(new Set([...prev, ...data.collectedIds])));
+              }
+
+              if (data.requestedCoins) {
+                setRequestedCoins(prev => {
+                  const newReqs = data.requestedCoins.filter((nr: RequestedCoin) => 
+                    !prev.some(pr => pr.denomination === nr.denomination && pr.year === nr.year)
+                  );
+                  return [...prev, ...newReqs];
+                });
+              }
+
+              if (data.userCoinImages) {
+                setUserCoinImages(prev => ({ ...prev, ...data.userCoinImages }));
+              }
+
+              if (data.purchasedCoins) {
+                setPurchasedCoins(prev => {
+                  const newPurchased = data.purchasedCoins.filter((np: PurchasedCoin) => 
+                    !prev.some(pp => pp.id === np.id)
+                  );
+                  return [...prev, ...newPurchased];
+                });
+              }
+
+              if (data.userProfile) {
+                setUserProfile(prev => ({
+                  ...data.userProfile,
+                  points: Math.max(prev.points, data.userProfile.points || 0),
+                  badges: Array.from(new Set([...prev.badges, ...(data.userProfile.badges || [])]))
+                }));
+              }
+
               setImportProgress(null);
-              alert("Collection imported successfully!");
+              alert("Collection imported and merged successfully!");
             }
           }, 50);
         } catch (err) {
@@ -1252,7 +1312,7 @@ function CoinCollectorApp() {
     if (ctx) {
       ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
       // Use lower quality for storage
-      const fullPhoto = canvas.toDataURL('image/jpeg', 0.5);
+      const fullPhoto = canvas.toDataURL('image/jpeg', 0.6);
       const base64Image = fullPhoto.split(',')[1];
       
       try {
@@ -1433,6 +1493,11 @@ function CoinCollectorApp() {
   const addManualCoin = async () => {
     if (!manualCoinName.trim()) return;
     
+    if (!editingCoinId && checkDuplicate(manualCoinName, manualCoinDenom, manualCoinYear)) {
+      alert("This coin already exists in your collection!");
+      return;
+    }
+
     const newId = editingCoinId || `custom-${Date.now()}`;
     const newCoin: Coin = {
       id: newId,
