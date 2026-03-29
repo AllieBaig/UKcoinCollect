@@ -49,6 +49,7 @@ interface UserProfile {
     followSystemTheme?: boolean;
     isCompactUI?: boolean;
     isTextMode?: boolean;
+    isFocusMode?: boolean;
     isBackgroundRemovalEnabled?: boolean;
     isPurchaseMode?: boolean;
     showCoinPrice?: boolean;
@@ -334,7 +335,25 @@ function CoinCollectorApp() {
   const [isPhotoLibraryOpen, setIsPhotoLibraryOpen] = useState(false);
   const [isSpinModalOpen, setIsSpinModalOpen] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
+  const [isIdentityCardOpen, setIsIdentityCardOpen] = useState(false);
+  const [isTimelineOpen, setIsTimelineOpen] = useState(false);
+  const [isCompareMode, setIsCompareMode] = useState(false);
+  const [compareCoins, setCompareCoins] = useState<[Coin | null, Coin | null]>([null, null]);
+  const [discoveryFact, setDiscoveryFact] = useState<string | null>(null);
   const [conversionData, setConversionData] = useState<any>(null);
+
+  const COIN_FACTS = [
+    "The 50p coin was the world's first seven-sided coin.",
+    "The 2009 Kew Gardens 50p is one of the rarest in circulation.",
+    "The Royal Mint has been making coins for over 1,100 years.",
+    "The 2p coin was originally made of bronze, but now it's copper-plated steel.",
+    "The £2 coin was introduced in 1998.",
+    "The 12-sided £1 coin was introduced in 2017 to prevent counterfeiting.",
+    "The 50p coin was introduced in 1969 to replace the ten-shilling note.",
+    "The 10p coin was the first to be decimalised in 1968.",
+    "The 1p and 2p coins are legal tender for amounts up to 20p.",
+    "The 5p and 10p coins are legal tender for amounts up to £5."
+  ];
   const [conversionError, setConversionError] = useState<string | null>(null);
 
   const convertOldData = (oldData: any) => {
@@ -447,6 +466,18 @@ function CoinCollectorApp() {
   const [pointsNotification, setPointsNotification] = useState<{ amount: number; message: string } | null>(null);
   
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    if (isOffline) {
+      const interval = setInterval(() => {
+        const randomFact = COIN_FACTS[Math.floor(Math.random() * COIN_FACTS.length)];
+        setDiscoveryFact(randomFact);
+      }, 10000);
+      return () => clearInterval(interval);
+    } else {
+      setDiscoveryFact(null);
+    }
+  }, [isOffline, COIN_FACTS]);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
 
@@ -725,6 +756,26 @@ function CoinCollectorApp() {
     }
   });
 
+  const [collectionHistory, setCollectionHistory] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem('collection_history');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      console.error("Failed to load collection_history", e);
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('collection_history', JSON.stringify(collectionHistory));
+  }, [collectionHistory]);
+
+  useEffect(() => {
+    if (collectedIds.length === 20 || collectedIds.length === 50) {
+      setPointsNotification({ amount: 500, message: `Milestone: ${collectedIds.length} Coins! Hidden Settings Unlocked.` });
+    }
+  }, [collectedIds.length]);
+
   // Automatic Backup Logic
   useEffect(() => {
     // 1. Stability Check: If app runs for 5 seconds without crashing, save as "last working"
@@ -896,6 +947,7 @@ function CoinCollectorApp() {
     setCollectedIds(prev => {
       const isCollecting = !prev.includes(id);
       if (isCollecting) {
+        setCollectionHistory(ch => ({ ...ch, [id]: new Date().toISOString() }));
         addPoints(POINT_VALUES.COLLECT_COIN, "Coin Collected!");
         completeMission('m1');
         completeMission('m3');
@@ -935,6 +987,12 @@ function CoinCollectorApp() {
             });
           }
         }
+      } else {
+        setCollectionHistory(ch => {
+          const newHistory = { ...ch };
+          delete newHistory[id];
+          return newHistory;
+        });
       }
       return isCollecting ? [...prev, id] : prev.filter(i => i !== id);
     });
@@ -1519,6 +1577,7 @@ function CoinCollectorApp() {
     } else {
       setCustomCoins(prev => [...prev, newCoin]);
       setCollectedIds(prev => [...prev, newCoin.id]);
+      setCollectionHistory(ch => ({ ...ch, [newCoin.id]: new Date().toISOString() }));
       if (manualCoinPhoto) {
         setUserCoinImages(prev => ({ ...prev, [newCoin.id]: manualCoinPhoto }));
       }
@@ -1712,6 +1771,21 @@ function CoinCollectorApp() {
         )}
       </AnimatePresence>
 
+      {/* Discovery Fact Banner */}
+      <AnimatePresence>
+        {discoveryFact && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 text-center py-2 px-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 z-[105] border-b border-amber-200/50 dark:border-amber-800/50"
+          >
+            <Sparkles size={12} className="animate-pulse" />
+            {discoveryFact}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* iOS Install Prompt */}
       <AnimatePresence>
         {showInstallPrompt && (
@@ -1861,18 +1935,20 @@ function CoinCollectorApp() {
         </div>
         
         {/* Progress Bar */}
-        <div className="max-w-2xl mx-auto mt-4 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-          <motion.div 
-            className="h-full bg-amber-500"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.5 }}
-          />
-        </div>
+        {!userProfile.settings?.isFocusMode && (
+          <div className="max-w-2xl mx-auto mt-4 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+            <motion.div 
+              className="h-full bg-amber-500"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
+        )}
       </header>
 
       {/* Search and Filters */}
-      <div className="px-4 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors">
+      <div className={`px-4 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors ${userProfile.settings?.isFocusMode ? 'sticky top-0 z-[80] shadow-sm' : ''}`}>
         <div className="max-w-2xl mx-auto space-y-4">
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-amber-500 transition-colors" size={20} />
@@ -2503,16 +2579,28 @@ function CoinCollectorApp() {
                       referrerPolicy="no-referrer"
                       className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-100 dark:border-amber-900/30"
                     />
-                    <div>
+                    <div className="flex-1">
                       <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{userProfile.name}</h3>
                       <p className="text-amber-600 dark:text-amber-400 font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center gap-1">
                         <Award size={14} className="sm:w-4 sm:h-4" />
                         {userProfile.rank}
                       </p>
-                      <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm flex items-center gap-1 mt-0.5 sm:mt-1">
-                        <Calendar size={12} className="sm:w-3.5 sm:h-3.5" />
-                        Joined {userProfile.joinDate}
-                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <button 
+                        onClick={() => setIsIdentityCardOpen(true)}
+                        className="p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-100 transition-colors"
+                        title="Identity Card"
+                      >
+                        <User size={20} />
+                      </button>
+                      <button 
+                        onClick={() => setIsTimelineOpen(true)}
+                        className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-100 transition-colors"
+                        title="Timeline"
+                      >
+                        <History size={20} />
+                      </button>
                     </div>
                   </div>
 
@@ -2629,7 +2717,60 @@ function CoinCollectorApp() {
                     </div>
                   </div>
 
-                  {/* Badges Block */}
+                  {/* Settings Block */}
+                  <div className="sm:col-span-3 space-y-4">
+                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">App Settings</h3>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <Layout className="text-gray-400" size={20} />
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-widest">Focus Mode</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Hide non-essential UI</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setUserProfile(prev => ({
+                            ...prev,
+                            settings: { ...prev.settings, isFocusMode: !prev.settings.isFocusMode }
+                          }))}
+                          className={`w-12 h-6 rounded-full transition-colors relative ${userProfile.settings.isFocusMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings.isFocusMode ? 'left-7' : 'left-1'}`} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <RefreshCw className="text-gray-400" size={20} />
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-widest">Compare Mode</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Side-by-side view</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setIsCompareMode(true)}
+                          className="px-4 py-2 bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest"
+                        >
+                          Open
+                        </button>
+                      </div>
+                    </div>
+
+                    {collectedIds.length >= 20 && (
+                      <div className="p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800/50 rounded-2xl space-y-3">
+                        <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                          <Shield size={16} />
+                          <p className="text-[10px] font-black uppercase tracking-widest">Hidden Settings Unlocked!</p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-bold text-gray-600 dark:text-gray-400">Experimental Sorting</p>
+                          <button className="text-[10px] font-black text-purple-600 uppercase tracking-widest">Enable</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   {userProfile.badges.length > 0 && (
                     <div className="sm:col-span-3 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
                       <h4 className="font-bold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
@@ -3213,6 +3354,21 @@ function CoinCollectorApp() {
                   >
                     <Globe size={18} className="group-hover:scale-110 transition-transform" />
                     <span className="text-[10px] font-black uppercase tracking-widest">Search Web</span>
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setCompareCoins(prev => {
+                        if (prev[0] === null) return [selectedCoin, prev[1]];
+                        if (prev[1] === null) return [prev[0], selectedCoin];
+                        return [selectedCoin, prev[1]];
+                      });
+                      setIsCompareMode(true);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg"
+                    title="Compare"
+                  >
+                    <RefreshCw size={18} className="group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Compare</span>
                   </button>
                 </div>
                 {!isZoomed && (
@@ -3801,6 +3957,206 @@ function CoinCollectorApp() {
                 >
                   {isAnalyzing ? <Loader2 className="animate-spin" /> : <CheckCircle2 size={24} />}
                   Add to Collection
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Collector Identity Card Modal */}
+      <AnimatePresence>
+        {isIdentityCardOpen && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsIdentityCardOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-white dark:bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl"
+            >
+              <div className="bg-amber-500 p-8 text-white text-center space-y-4">
+                <div className="w-24 h-24 bg-white rounded-full mx-auto p-1 shadow-xl">
+                  <img src={userProfile.avatar} alt="Avatar" className="w-full h-full rounded-full" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black uppercase tracking-tight">{userProfile.name}</h2>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">{userProfile.rank}</p>
+                </div>
+              </div>
+              
+              <div className="p-8 space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl text-center">
+                    <p className="text-2xl font-black text-gray-900 dark:text-white">{collectedIds.length}</p>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Coins</p>
+                  </div>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl text-center">
+                    <p className="text-2xl font-black text-gray-900 dark:text-white">{userProfile.points}</p>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Points</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
+                    <span>Collection Progress</span>
+                    <span>{progress}%</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-500" style={{ width: `${progress}%` }} />
+                  </div>
+                </div>
+                
+                <button 
+                  onClick={() => {
+                    alert("Identity Card saved to gallery!");
+                    setIsIdentityCardOpen(false);
+                  }}
+                  className="w-full py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2"
+                >
+                  <Share size={18} />
+                  Save & Share
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Collection Timeline Modal */}
+      <AnimatePresence>
+        {isTimelineOpen && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsTimelineOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-[2.5rem] max-h-[80vh] overflow-hidden flex flex-col shadow-2xl"
+            >
+              <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <h2 className="text-xl font-black uppercase tracking-tight">Collection History</h2>
+                <button onClick={() => setIsTimelineOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {Object.entries(collectionHistory)
+                  .sort(([, a], [, b]) => new Date(b).getTime() - new Date(a).getTime())
+                  .map(([id, date]) => {
+                    const coin = allCoins.find(c => c.id === id);
+                    if (!coin) return null;
+                    return (
+                      <div key={id} className="flex gap-4 relative">
+                        <div className="absolute left-[19px] top-8 bottom-[-24px] w-0.5 bg-gray-100 dark:bg-gray-800" />
+                        <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center text-amber-600 shrink-0 z-10">
+                          <Clock size={20} />
+                        </div>
+                        <div className="flex-1 pt-1">
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                            {new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                          <h4 className="font-black text-gray-900 dark:text-white text-lg tracking-tight">{coin.name}</h4>
+                          <p className="text-[10px] text-amber-600 uppercase font-black tracking-widest">{coin.denomination} • {coin.year}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                {Object.keys(collectionHistory).length === 0 && (
+                  <div className="text-center py-12">
+                    <History size={48} className="mx-auto text-gray-200 mb-4" />
+                    <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">No history yet</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Quick Compare Mode UI */}
+      <AnimatePresence>
+        {isCompareMode && (
+          <div className="fixed inset-0 z-[160] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCompareMode(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-xl"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-4xl grid grid-cols-2 gap-4 sm:gap-8"
+            >
+              {[0, 1].map(index => (
+                <div key={index} className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden">
+                  {compareCoins[index] ? (
+                    <>
+                      <button 
+                        onClick={() => setCompareCoins(prev => {
+                          const next = [...prev] as [Coin | null, Coin | null];
+                          next[index] = null;
+                          return next;
+                        })}
+                        className="absolute top-4 right-4 p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                      <div className="aspect-square rounded-2xl overflow-hidden bg-gray-50 dark:bg-gray-800">
+                        <img 
+                          src={userCoinImages[compareCoins[index]!.id] || compareCoins[index]!.imageUrl} 
+                          alt={compareCoins[index]!.name} 
+                          className="w-full h-full object-cover" 
+                        />
+                      </div>
+                      <div className="text-center space-y-2">
+                        <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight leading-none">{compareCoins[index]!.name}</h3>
+                        <p className="text-xs font-black text-amber-500 uppercase tracking-widest">{compareCoins[index]!.denomination} • {compareCoins[index]!.year}</p>
+                      </div>
+                      <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Rarity</span>
+                          <span className="text-xs font-bold">{compareCoins[index]!.rarity || 'Common'}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Value</span>
+                          <span className="text-xs font-bold">£{compareCoins[index]!.value?.toFixed(2) || '0.00'}</span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-center space-y-4 py-20">
+                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-300">
+                        <Plus size={32} />
+                      </div>
+                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Select a coin to compare</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              <div className="col-span-2 flex justify-center">
+                <button 
+                  onClick={() => setIsCompareMode(false)}
+                  className="px-8 py-4 bg-white text-gray-900 font-black uppercase tracking-widest rounded-2xl shadow-xl hover:scale-105 transition-all"
+                >
+                  Close Comparison
                 </button>
               </div>
             </motion.div>
