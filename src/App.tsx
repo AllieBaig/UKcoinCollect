@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Trophy, Search, Folder, ChevronRight, CheckCircle2, Circle, 
   ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
-  User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle, TrendingUp, Trash2, Shield, Copy, Edit
+  User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle, TrendingUp, Trash2, Shield, Copy, Edit,
+  Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UK_COINS, Coin } from './data/coins';
@@ -15,6 +16,17 @@ interface RequestedCoin {
   timestamp: number;
 }
 
+interface Mission {
+  id: string;
+  title: string;
+  description: string;
+  reward: number;
+  isCompleted: boolean;
+  type: 'daily' | 'weekly';
+  progress: number;
+  target: number;
+}
+
 interface UserProfile {
   name: string;
   avatar: string;
@@ -24,16 +36,20 @@ interface UserProfile {
   level: number;
   streak: number;
   lastLoginDate: string;
+  lastSpinDate?: string;
+  missions: Mission[];
   badges: string[];
   collectionStreak?: number;
   lastCollectionDate?: string;
   totalSpend?: number;
   recoveryCode?: string;
-  settings?: {
+  settings: {
     showBottomMenu: boolean;
     isDarkMode: boolean;
     followSystemTheme?: boolean;
     isCompactUI?: boolean;
+    isTextMode?: boolean;
+    isBackgroundRemovalEnabled?: boolean;
     sortBy?: 'recent-added' | 'recent-opened' | 'name';
   };
   safeModeBackup?: string;
@@ -55,6 +71,9 @@ const POINT_VALUES = {
   DAILY_CHECKIN: 50,
   COMPLETE_FOLDER: 1000,
   STREAK_BONUS: 100,
+  MISSION_REWARD: 200,
+  LUCKY_SPIN_MIN: 10,
+  LUCKY_SPIN_MAX: 500,
   RARITY_BONUS: {
     'Common': 0,
     'Uncommon': 150,
@@ -62,6 +81,21 @@ const POINT_VALUES = {
     'Ultra Rare': 900
   }
 };
+
+const MISSIONS: Omit<Mission, 'isCompleted' | 'progress'>[] = [
+  { id: 'm1', title: 'Daily Scout', description: 'Scan or add 1 coin today', reward: 150, type: 'daily', target: 1 },
+  { id: 'm2', title: 'Lucky Spin', description: 'Try your luck today', reward: 100, type: 'daily', target: 1 },
+  { id: 'm3', title: 'Collector Week', description: 'Collect 5 coins this week', reward: 500, type: 'weekly', target: 5 },
+  { id: 'm4', title: 'Rare Find', description: 'Add a Rare or Ultra Rare coin', reward: 300, type: 'weekly', target: 1 }
+];
+
+const BADGES = [
+  { id: 'b1', name: 'First Find', description: 'Collect your first coin', icon: <Award size={16} /> },
+  { id: 'b2', name: 'Small Hoard', description: 'Collect 10 coins', icon: <Trophy size={16} /> },
+  { id: 'b3', name: 'Rare Seeker', description: 'Find a Rare coin', icon: <Sparkles size={16} /> },
+  { id: 'b4', name: 'Streak Master', description: 'Reach a 7-day streak', icon: <Zap size={16} /> },
+  { id: 'b5', name: 'Master Hunter', description: 'Reach Level 10', icon: <Target size={16} /> }
+];
 
 const LEVEL_NAMES = [
   "Beginner Hunter",
@@ -279,6 +313,7 @@ function CoinCollectorApp() {
   const [isManualAddOpen, setIsManualAddOpen] = useState(false);
   const [isPurchasedAddOpen, setIsPurchasedAddOpen] = useState(false);
   const [isPhotoLibraryOpen, setIsPhotoLibraryOpen] = useState(false);
+  const [isSpinModalOpen, setIsSpinModalOpen] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [conversionData, setConversionData] = useState<any>(null);
   const [conversionError, setConversionError] = useState<string | null>(null);
@@ -398,22 +433,39 @@ function CoinCollectorApp() {
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
     try {
       const saved = localStorage.getItem('user_profile');
-      return saved ? JSON.parse(saved) : {
+      const defaultProfile: UserProfile = {
         name: 'Coin Collector',
         avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
         joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
-        rank: 'Novice Hunter',
+        rank: 'Beginner Hunter',
         points: 0,
         level: 1,
         streak: 0,
         lastLoginDate: '',
+        missions: MISSIONS.map(m => ({ ...m, isCompleted: false, progress: 0 })),
         badges: [],
         collectionStreak: 0,
         lastCollectionDate: '',
         settings: {
           showBottomMenu: true,
-          isDarkMode: false
+          isDarkMode: false,
+          isTextMode: false,
+          isBackgroundRemovalEnabled: true
         }
+      };
+
+      if (!saved) return defaultProfile;
+      
+      const parsed = JSON.parse(saved);
+      // Merge with defaults to ensure new fields exist
+      return {
+        ...defaultProfile,
+        ...parsed,
+        settings: {
+          ...defaultProfile.settings,
+          ...parsed.settings
+        },
+        missions: parsed.missions || defaultProfile.missions
       };
     } catch (e) {
       console.error("Failed to load user_profile", e);
@@ -421,21 +473,110 @@ function CoinCollectorApp() {
         name: 'Coin Collector',
         avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
         joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
-        rank: 'Novice Hunter',
+        rank: 'Beginner Hunter',
         points: 0,
         level: 1,
         streak: 0,
         lastLoginDate: '',
+        missions: MISSIONS.map(m => ({ ...m, isCompleted: false })),
         badges: [],
         collectionStreak: 0,
         lastCollectionDate: '',
         settings: {
           showBottomMenu: true,
-          isDarkMode: false
+          isDarkMode: false,
+          isTextMode: false,
+          isBackgroundRemovalEnabled: true
         }
       };
     }
   });
+
+  useEffect(() => {
+    // Handle Daily Streak and Missions Reset
+    const today = new Date().toISOString().split('T')[0];
+    const lastLogin = userProfile.lastLoginDate;
+
+    if (lastLogin !== today) {
+      setUserProfile(prev => {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        let newStreak = prev.streak;
+        if (lastLogin === yesterdayStr) {
+          newStreak += 1;
+        } else if (lastLogin !== '') {
+          newStreak = 1;
+        } else {
+          newStreak = 1;
+        }
+
+        // Reset daily missions
+        const updatedMissions = prev.missions.map(m => 
+          m.type === 'daily' ? { ...m, isCompleted: false } : m
+        );
+
+        // Check for weekly reset (every Monday)
+        const isMonday = new Date().getDay() === 1;
+        const finalMissions = isMonday 
+          ? updatedMissions.map(m => m.type === 'weekly' ? { ...m, isCompleted: false } : m)
+          : updatedMissions;
+
+        return {
+          ...prev,
+          lastLoginDate: today,
+          streak: newStreak,
+          missions: finalMissions
+        };
+      });
+
+      if (lastLogin !== '') {
+        addPoints(POINT_VALUES.DAILY_CHECKIN, `Daily Login! Day ${userProfile.streak + 1}`);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    // Check for Badges
+    const checkBadges = () => {
+      const newBadges = [...userProfile.badges];
+      let changed = false;
+
+      if (collectedIds.length >= 1 && !newBadges.includes('b1')) {
+        newBadges.push('b1');
+        changed = true;
+        addPoints(500, "Badge Unlocked: First Find!");
+      }
+      if (collectedIds.length >= 10 && !newBadges.includes('b2')) {
+        newBadges.push('b2');
+        changed = true;
+        addPoints(1000, "Badge Unlocked: Small Hoard!");
+      }
+      const hasRare = allCoins.some(c => collectedIds.includes(c.id) && (c.rarity === 'Rare' || c.rarity === 'Ultra Rare'));
+      if (hasRare && !newBadges.includes('b3')) {
+        newBadges.push('b3');
+        changed = true;
+        addPoints(1500, "Badge Unlocked: Rare Seeker!");
+      }
+      if (userProfile.streak >= 7 && !newBadges.includes('b4')) {
+        newBadges.push('b4');
+        changed = true;
+        addPoints(2000, "Badge Unlocked: Streak Master!");
+      }
+      if (userProfile.level >= 10 && !newBadges.includes('b5')) {
+        newBadges.push('b5');
+        changed = true;
+        addPoints(5000, "Badge Unlocked: Master Hunter!");
+      }
+
+      if (changed) {
+        setUserProfile(prev => ({ ...prev, badges: newBadges }));
+      }
+    };
+
+    checkBadges();
+  }, [collectedIds.length, userProfile.level, userProfile.streak]);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -602,6 +743,23 @@ function CoinCollectorApp() {
     });
   };
 
+  const completeMission = (missionId: string, amount: number = 1) => {
+    setUserProfile(prev => {
+      const updatedMissions = prev.missions.map(m => {
+        if (m.id === missionId && !m.isCompleted) {
+          const newProgress = (m.progress || 0) + amount;
+          const isNowCompleted = newProgress >= (m.target || 1);
+          if (isNowCompleted) {
+            addPoints(m.reward, `Mission Complete: ${m.title}!`);
+          }
+          return { ...m, progress: newProgress, isCompleted: isNowCompleted };
+        }
+        return m;
+      });
+      return { ...prev, missions: updatedMissions };
+    });
+  };
+
   const addPoints = (amount: number, message?: string) => {
     setUserProfile(prev => {
       const newPoints = prev.points + amount;
@@ -664,6 +822,11 @@ function CoinCollectorApp() {
       const isCollecting = !prev.includes(id);
       if (isCollecting) {
         addPoints(POINT_VALUES.COLLECT_COIN, "Coin Collected!");
+        completeMission('m1');
+        completeMission('m3');
+        if (coin && ['Rare', 'Epic', 'Legendary', 'Ultra Rare'].includes(coin.rarity || '')) {
+          completeMission('m4');
+        }
         
         // Collection Streak Logic
         const today = new Date().toDateString();
@@ -975,6 +1138,11 @@ function CoinCollectorApp() {
           if (isCollecting) {
             const rarityBonus = POINT_VALUES.RARITY_BONUS[foundCoin.rarity as keyof typeof POINT_VALUES.RARITY_BONUS] || 0;
             addPoints(POINT_VALUES.COLLECT_COIN + rarityBonus, `Coin Added! ${foundCoin.rarity !== 'Common' ? `(${foundCoin.rarity} Bonus)` : ''}`);
+            completeMission('m1');
+            completeMission('m3');
+            if (['Rare', 'Epic', 'Legendary', 'Ultra Rare'].includes(foundCoin.rarity || '')) {
+              completeMission('m4');
+            }
           }
           return isCollecting ? [...prev, foundCoin.id] : prev;
         });
@@ -1063,7 +1231,14 @@ function CoinCollectorApp() {
         if (foundCoin) {
           setCollectedIds(prev => {
             const isCollecting = !prev.includes(foundCoin.id);
-            if (isCollecting) addPoints(POINT_VALUES.COLLECT_COIN, "Coin Identified!");
+            if (isCollecting) {
+              addPoints(POINT_VALUES.COLLECT_COIN, "Coin Identified!");
+              completeMission('m1');
+              completeMission('m3');
+              if (['Rare', 'Epic', 'Legendary', 'Ultra Rare'].includes(foundCoin.rarity || '')) {
+                completeMission('m4');
+              }
+            }
             return isCollecting ? [...prev, foundCoin.id] : prev;
           });
           addPoints(POINT_VALUES.UPLOAD_PHOTO, "Photo Saved!");
@@ -1098,6 +1273,7 @@ function CoinCollectorApp() {
         const compressedBase64 = await compressImage(file);
         setUserCoinImages(prev => ({ ...prev, [coinId]: compressedBase64 }));
         addPoints(POINT_VALUES.UPLOAD_PHOTO, "Photo Updated!");
+        completeMission('m3');
         if (selectedCoin && selectedCoin.id === coinId) {
           setSelectedCoin({ ...selectedCoin, imageUrl: compressedBase64 });
         }
@@ -1187,6 +1363,12 @@ function CoinCollectorApp() {
     addPoints(POINT_VALUES.COLLECT_COIN + rarityBonus, `Purchase Logged! ${coin.rarity !== 'Common' ? `(${coin.rarity} Bonus)` : ''}`);
   };
 
+  const handleSelectCoin = (coin: Coin) => {
+    setSelectedCoin(coin);
+    // Update last opened
+    setLastOpenedIds(prev => ({ ...prev, [coin.id]: Date.now() }));
+  };
+
   const addManualCoin = async () => {
     if (!manualCoinName.trim()) return;
     
@@ -1221,6 +1403,11 @@ function CoinCollectorApp() {
         }
       } else {
         addPoints(POINT_VALUES.COLLECT_COIN, "Manual Coin Added!");
+      }
+      completeMission('m1');
+      completeMission('m3');
+      if (['Rare', 'Epic', 'Legendary', 'Ultra Rare'].includes(newCoin.rarity || '')) {
+        completeMission('m4');
       }
     }
     
@@ -1532,20 +1719,28 @@ function CoinCollectorApp() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 20 }}
                       onClick={() => setActiveDenomination(denom)}
-                      className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border-2 border-transparent hover:border-amber-500 transition-all cursor-pointer flex items-center gap-3 sm:gap-4"
+                      className={`bg-white dark:bg-gray-900 rounded-2xl p-4 sm:p-5 shadow-sm border-2 border-transparent hover:border-amber-500 transition-all cursor-pointer flex items-center gap-3 sm:gap-4 ${
+                        userProfile.settings?.isTextMode ? 'border-gray-100 dark:border-gray-800' : ''
+                      }`}
                     >
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center">
-                        <Folder size={28} className="sm:w-8 sm:h-8" fill="currentColor" fillOpacity={0.2} />
-                      </div>
+                      {!userProfile.settings?.isTextMode && (
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-amber-100 dark:bg-amber-900/20 text-amber-600 rounded-2xl flex items-center justify-center">
+                          <Folder size={28} className="sm:w-8 sm:h-8" fill="currentColor" fillOpacity={0.2} />
+                        </div>
+                      )}
                       <div className="flex-1">
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900">Coin {denom}</h3>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Coin {denom}</h3>
                         <div className="flex items-center gap-2 mt-1">
-                          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-amber-500" 
-                              style={{ width: `${denomProgress}%` }}
-                            />
-                          </div>
+                          {!userProfile.settings?.isTextMode ? (
+                            <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-amber-500" 
+                                style={{ width: `${denomProgress}%` }}
+                              />
+                            </div>
+                          ) : (
+                            <span className="text-[10px] sm:text-xs font-bold text-amber-600 uppercase tracking-widest">{denomProgress}% Complete</span>
+                          )}
                           <span className="text-[10px] sm:text-xs font-bold text-gray-500">{collectedInDenom}/{coinsInDenom.length}</span>
                         </div>
                       </div>
@@ -1613,56 +1808,74 @@ function CoinCollectorApp() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    onClick={() => setSelectedCoin(coin)}
+                    onClick={() => handleSelectCoin(coin)}
                     className={`group relative bg-white dark:bg-gray-900 rounded-2xl shadow-sm border-2 transition-all cursor-pointer ${
                       isCollected ? 'border-amber-500 bg-amber-50/30 dark:bg-amber-900/10' : 'border-transparent'
                     } ${
                       userProfile.settings?.isCompactUI ? 'p-2 sm:p-3' : 'p-3 sm:p-4'
+                    } ${
+                      userProfile.settings?.isTextMode ? 'border-gray-100 dark:border-gray-800' : ''
                     }`}
                   >
                     <div className="flex gap-3 sm:gap-4 items-center">
-                      <div className={`relative flex-shrink-0 ${
-                        userProfile.settings?.isCompactUI ? 'w-12 h-12 sm:w-16 sm:h-16' : 'w-16 h-16 sm:w-20 sm:h-20'
-                      }`}>
-                        <img 
-                          src={coin.imageUrl} 
-                          alt={coin.name}
-                          referrerPolicy="no-referrer"
-                          onError={handleImageError}
-                          className={`w-full h-full object-cover rounded-full border-2 border-gray-100 dark:border-gray-800 ${
-                            !isCollected && 'grayscale opacity-50'
-                          }`}
-                        />
-                        {isCollected && (
-                          <div className={`absolute -top-1 -right-1 bg-amber-500 text-white rounded-full p-0.5 sm:p-1 shadow-md ${
-                            userProfile.settings?.isCompactUI ? 'scale-75' : ''
-                          }`}>
-                            <CheckCircle2 size={14} className="sm:w-4 sm:h-4" />
-                          </div>
-                        )}
-                        {coin.rarity && coin.rarity !== 'Common' && (
-                          <div className={`absolute -bottom-1 -left-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-sm z-10 ${
-                            coin.rarity === 'Ultra Rare' ? 'bg-purple-500 text-white' : 
-                            coin.rarity === 'Rare' ? 'bg-amber-500 text-white' : 
-                            'bg-blue-500 text-white'
-                          }`}>
-                            {coin.rarity}
-                          </div>
-                        )}
-                      </div>
+                      {!userProfile.settings?.isTextMode && (
+                        <div className={`relative flex-shrink-0 ${
+                          userProfile.settings?.isCompactUI ? 'w-12 h-12 sm:w-16 sm:h-16' : 'w-16 h-16 sm:w-20 sm:h-20'
+                        }`}>
+                          <img 
+                            src={coin.imageUrl} 
+                            alt={coin.name}
+                            referrerPolicy="no-referrer"
+                            onError={handleImageError}
+                            className={`w-full h-full object-cover rounded-full border-2 border-gray-100 dark:border-gray-800 ${
+                              !isCollected && 'grayscale opacity-50'
+                            }`}
+                          />
+                          {isCollected && (
+                            <div className={`absolute -top-1 -right-1 bg-amber-500 text-white rounded-full p-0.5 sm:p-1 shadow-md ${
+                              userProfile.settings?.isCompactUI ? 'scale-75' : ''
+                            }`}>
+                              <CheckCircle2 size={14} className="sm:w-4 sm:h-4" />
+                            </div>
+                          )}
+                          {coin.rarity && coin.rarity !== 'Common' && (
+                            <div className={`absolute -bottom-1 -left-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-sm z-10 ${
+                              coin.rarity === 'Ultra Rare' ? 'bg-purple-500 text-white' : 
+                              coin.rarity === 'Rare' ? 'bg-amber-500 text-white' : 
+                              'bg-blue-500 text-white'
+                            }`}>
+                              {coin.rarity}
+                            </div>
+                          )}
+                        </div>
+                      )}
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-0.5 sm:mb-1">
-                          <span className="text-[10px] sm:text-xs font-bold text-amber-600 uppercase tracking-widest">
-                            {coin.denomination} • {coin.year}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            {userProfile.settings?.isTextMode && isCollected && <CheckCircle2 size={14} className="text-amber-500" />}
+                            <span className="text-[10px] sm:text-xs font-bold text-amber-600 uppercase tracking-widest">
+                              {coin.denomination} • {coin.year}
+                            </span>
+                            {userProfile.settings?.isTextMode && coin.rarity && coin.rarity !== 'Common' && (
+                              <span className={`text-[8px] font-black uppercase tracking-widest ${
+                                coin.rarity === 'Ultra Rare' ? 'text-purple-500' : 
+                                coin.rarity === 'Rare' ? 'text-amber-500' : 
+                                'text-blue-500'
+                              }`}>
+                                [{coin.rarity}]
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <h3 className={`font-bold text-gray-900 dark:text-white truncate ${
                           userProfile.settings?.isCompactUI ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'
                         }`}>{coin.name}</h3>
-                        <p className={`text-gray-500 dark:text-gray-400 line-clamp-1 ${
-                          userProfile.settings?.isCompactUI ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'
-                        }`}>{coin.description}</p>
+                        {!userProfile.settings?.isTextMode && (
+                          <p className={`text-gray-500 dark:text-gray-400 line-clamp-1 ${
+                            userProfile.settings?.isCompactUI ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'
+                          }`}>{coin.description}</p>
+                        )}
                       </div>
 
                       <button
@@ -2178,7 +2391,41 @@ function CoinCollectorApp() {
 
                 </div>
 
+                {/* Missions Section */}
+                <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 mb-4">
+                  <h4 className="font-bold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
+                    <Target size={16} className="text-blue-500 sm:w-[18px] sm:h-[18px]" />
+                    Daily & Weekly Missions
+                  </h4>
+                  <div className="space-y-2">
+                    {userProfile.missions.map(mission => (
+                      <div key={mission.id} className={`p-3 rounded-2xl border flex items-center justify-between transition-all ${mission.isCompleted ? 'bg-green-50 dark:bg-green-900/10 border-green-100 dark:border-green-900/30' : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700'}`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${mission.isCompleted ? 'bg-green-500 text-white' : 'bg-white dark:bg-gray-700 text-gray-400'}`}>
+                            {mission.isCompleted ? <CheckCircle size={16} /> : <Circle size={16} />}
+                          </div>
+                          <div>
+                            <p className={`font-bold text-xs sm:text-sm leading-tight ${mission.isCompleted ? 'text-green-700 dark:text-green-400 line-through opacity-60' : 'text-gray-900 dark:text-white'}`}>{mission.title}</p>
+                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{mission.description}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className={`font-black text-xs sm:text-sm ${mission.isCompleted ? 'text-green-600' : 'text-blue-500'}`}>+{mission.reward}</p>
+                          <p className="text-[8px] sm:text-[10px] uppercase font-bold text-gray-400 tracking-widest">{mission.type}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
+                  <button 
+                    onClick={() => setIsSpinModalOpen(true)}
+                    className="py-3 sm:py-4 bg-gradient-to-br from-amber-400 to-orange-500 text-white font-bold rounded-2xl hover:from-amber-500 hover:to-orange-600 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
+                  >
+                    <Dices size={18} className="sm:w-5 sm:h-5" />
+                    Lucky Spin
+                  </button>
                   <button 
                     onClick={() => setIsPurchasedAddOpen(true)}
                     className="py-3 sm:py-4 bg-blue-500 text-white font-bold rounded-2xl hover:bg-blue-600 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
@@ -2186,6 +2433,9 @@ function CoinCollectorApp() {
                     <Folder size={18} className="sm:w-5 sm:h-5" />
                     Purchased
                   </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
                   <button 
                     onClick={() => setIsPhotoLibraryOpen(true)}
                     className="py-3 sm:py-4 bg-purple-500 text-white font-bold rounded-2xl hover:bg-purple-600 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
@@ -2193,9 +2443,6 @@ function CoinCollectorApp() {
                     <Camera size={18} className="sm:w-5 sm:h-5" />
                     Library
                   </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
                   <button 
                     onClick={exportCollection}
                     className="py-3 sm:py-4 bg-gray-900 text-white font-bold rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
@@ -2203,12 +2450,15 @@ function CoinCollectorApp() {
                     <Share size={18} className="sm:w-5 sm:h-5" />
                     Export
                   </button>
+                </div>
+
+                <div className="grid grid-cols-1 mb-3 sm:mb-4">
                   <button 
                     onClick={importCollection}
                     className="py-3 sm:py-4 bg-white text-gray-900 border-2 border-gray-100 font-bold rounded-2xl hover:bg-gray-50 transition-all flex items-center justify-center gap-1.5 sm:gap-2 text-sm sm:text-base"
                   >
                     <RefreshCw size={18} className="sm:w-5 sm:h-5" />
-                    Import
+                    Import Data
                   </button>
                 </div>
 
@@ -2279,6 +2529,58 @@ function CoinCollectorApp() {
                         className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.isCompactUI ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                       >
                         <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isCompactUI ? 'right-1' : 'left-1'}`} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
+                          <Layout size={16} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Text Mode UI</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Minimal text-only layout</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setUserProfile(prev => ({
+                            ...prev,
+                            settings: {
+                              ...prev.settings,
+                              isTextMode: !prev.settings?.isTextMode
+                            }
+                          }));
+                        }}
+                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.isTextMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isTextMode ? 'right-1' : 'left-1'}`} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
+                          <ImageOff size={16} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Background Removal</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Enable AI image processing</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setUserProfile(prev => ({
+                            ...prev,
+                            settings: {
+                              ...prev.settings,
+                              isBackgroundRemovalEnabled: !prev.settings?.isBackgroundRemovalEnabled
+                            }
+                          }));
+                        }}
+                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.isBackgroundRemovalEnabled ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isBackgroundRemovalEnabled ? 'right-1' : 'left-1'}`} />
                       </button>
                     </div>
 
@@ -2436,6 +2738,68 @@ function CoinCollectorApp() {
                   Edit Profile Settings
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Lucky Spin Modal */}
+      <AnimatePresence>
+        {isSpinModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSpinModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-sm bg-white dark:bg-gray-900 rounded-[32px] overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-800 p-6 text-center"
+            >
+              <div className="w-20 h-20 bg-amber-100 dark:bg-amber-900/20 rounded-full flex items-center justify-center text-amber-500 mx-auto mb-4">
+                <Dices size={40} />
+              </div>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Daily Lucky Spin</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+                Spin the wheel to win bonus points! You can spin once every 24 hours.
+              </p>
+
+              {userProfile.lastSpinDate === new Date().toISOString().split('T')[0] ? (
+                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 mb-6">
+                  <p className="text-gray-600 dark:text-gray-300 font-bold text-sm flex items-center justify-center gap-2">
+                    <Clock size={16} />
+                    Already spun today!
+                  </p>
+                  <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-black">Come back tomorrow</p>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => {
+                    const winAmount = Math.floor(Math.random() * (POINT_VALUES.LUCKY_SPIN_MAX - POINT_VALUES.LUCKY_SPIN_MIN + 1)) + POINT_VALUES.LUCKY_SPIN_MIN;
+                    addPoints(winAmount, `Lucky Spin Win: +${winAmount} XP!`);
+                    setUserProfile(prev => ({
+                      ...prev,
+                      lastSpinDate: new Date().toISOString().split('T')[0]
+                    }));
+                    setIsSpinModalOpen(false);
+                    completeMission('m2');
+                  }}
+                  className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black rounded-2xl hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg shadow-amber-200 dark:shadow-none mb-4 uppercase tracking-widest"
+                >
+                  Spin Now!
+                </button>
+              )}
+
+              <button 
+                onClick={() => setIsSpinModalOpen(false)}
+                className="w-full py-3 text-gray-400 font-bold text-sm hover:text-gray-600 transition-colors"
+              >
+                Maybe Later
+              </button>
             </motion.div>
           </div>
         )}
