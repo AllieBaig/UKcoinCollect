@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Trophy, Search, Folder, ChevronRight, CheckCircle2, Circle, 
   ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
-  User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle, TrendingUp, Trash2
+  User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle, TrendingUp, Trash2, Shield, Copy, Edit
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UK_COINS, Coin } from './data/coins';
@@ -28,11 +28,13 @@ interface UserProfile {
   collectionStreak?: number;
   lastCollectionDate?: string;
   totalSpend?: number;
+  recoveryCode?: string;
   settings?: {
     showBottomMenu: boolean;
     isDarkMode: boolean;
     followSystemTheme?: boolean;
     isCompactUI?: boolean;
+    sortBy?: 'recent-added' | 'recent-opened' | 'name';
   };
   safeModeBackup?: string;
 }
@@ -371,9 +373,21 @@ function CoinCollectorApp() {
   const [manualCoinName, setManualCoinName] = useState('');
   const [manualCoinDenom, setManualCoinDenom] = useState('50p');
   const [manualCoinYear, setManualCoinYear] = useState(new Date().getFullYear());
+  const [manualCoinSummary, setManualCoinSummary] = useState('');
+  const [manualCoinRarity, setManualCoinRarity] = useState('Common');
   const [manualCoinPhoto, setManualCoinPhoto] = useState<string | null>(null);
   const [manualCoinAmount, setManualCoinAmount] = useState<string>('');
   const [isPurchased, setIsPurchased] = useState(false);
+  const [editingCoinId, setEditingCoinId] = useState<string | null>(null);
+
+  const [lastOpenedIds, setLastOpenedIds] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem('last_opened_ids');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem('last_opened_ids', JSON.stringify(lastOpenedIds));
+  }, [lastOpenedIds]);
   
   const [pointsNotification, setPointsNotification] = useState<{ amount: number; message: string } | null>(null);
   
@@ -691,7 +705,7 @@ function CoinCollectorApp() {
   const denominations = useMemo(() => {
     const unique = Array.from(new Set(allCoins.map(c => c.denomination))) as string[];
     const order = ['£2', '£1', 'Half Crown', '1 Shilling', '50p', '3p', '1p', '1/2p'];
-    return unique.sort((a, b) => {
+    const sorted = unique.sort((a, b) => {
       const indexA = order.indexOf(a);
       const indexB = order.indexOf(b);
       if (indexA === -1 && indexB === -1) return a.localeCompare(b);
@@ -699,6 +713,7 @@ function CoinCollectorApp() {
       if (indexB === -1) return -1;
       return indexA - indexB;
     });
+    return [...sorted, 'Purchased'];
   }, [allCoins]);
 
   const monthlyTotal = useMemo(() => {
@@ -716,17 +731,40 @@ function CoinCollectorApp() {
       const matchesFilter = filter === 'all' || 
                            (filter === 'collected' && collectedIds.includes(coin.id)) ||
                            (filter === 'missing' && !collectedIds.includes(coin.id));
-      const matchesDenom = activeDenomination ? coin.denomination === activeDenomination : true;
+      
+      let matchesDenom = true;
+      if (activeDenomination) {
+        if (activeDenomination === 'Purchased') {
+          const purchasedIds = purchasedCoins.map(p => p.coinId);
+          matchesDenom = purchasedIds.includes(coin.id);
+        } else {
+          matchesDenom = coin.denomination === activeDenomination;
+        }
+      }
       
       return matchesSearch && matchesFilter && matchesDenom;
     }).sort((a, b) => {
-      // Sort by collection status: collected first
-      const aCollected = collectedIds.includes(a.id);
-      const bCollected = collectedIds.includes(b.id);
-      if (aCollected === bCollected) return 0;
-      return aCollected ? -1 : 1;
+      const sortBy = userProfile.settings?.sortBy || 'recent-added';
+      
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name);
+      } else if (sortBy === 'recent-opened') {
+        return (lastOpenedIds[b.id] || 0) - (lastOpenedIds[a.id] || 0);
+      } else {
+        // Default: Recently Added
+        const aIsCustom = a.id.startsWith('custom-');
+        const bIsCustom = b.id.startsWith('custom-');
+        if (aIsCustom && !bIsCustom) return -1;
+        if (!aIsCustom && bIsCustom) return 1;
+        if (aIsCustom && bIsCustom) return b.id.localeCompare(a.id);
+        
+        const aCollected = collectedIds.includes(a.id);
+        const bCollected = collectedIds.includes(b.id);
+        if (aCollected !== bCollected) return aCollected ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      }
     });
-  }, [searchQuery, filter, collectedIds, activeDenomination, allCoins]);
+  }, [searchQuery, filter, collectedIds, activeDenomination, allCoins, purchasedCoins, userProfile.settings?.sortBy, lastOpenedIds]);
 
   const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -779,17 +817,31 @@ function CoinCollectorApp() {
       requestedCoins,
       userProfile,
       userCoinImages,
-      purchasedCoins
+      purchasedCoins,
+      lastOpenedIds,
+      version: '2.0'
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
     const now = new Date();
-    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-    a.download = `coin-collection-${now.toISOString().split('T')[0]}-${timeStr}.json`;
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-').slice(0, 5);
+    a.href = url;
+    a.download = `coin-collector-backup-${dateStr}-${timeStr}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const generateRecoveryCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 12; i++) {
+      if (i > 0 && i % 4 === 0) code += '-';
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setUserProfile(prev => ({ ...prev, recoveryCode: code }));
+    return code;
   };
 
   const importCollection = () => {
@@ -1138,35 +1190,60 @@ function CoinCollectorApp() {
   const addManualCoin = async () => {
     if (!manualCoinName.trim()) return;
     
-    const newId = `custom-${Date.now()}`;
+    const newId = editingCoinId || `custom-${Date.now()}`;
     const newCoin: Coin = {
       id: newId,
       name: manualCoinName,
       denomination: manualCoinDenom,
       year: manualCoinYear,
-      description: `User-added: ${manualCoinName} (${manualCoinDenom})`,
+      description: manualCoinSummary || `User-added: ${manualCoinName} (${manualCoinDenom})`,
       imageUrl: manualCoinPhoto || FALLBACK_COIN_IMAGE,
-      rarity: 'Common'
+      rarity: manualCoinRarity
     };
 
-    setCustomCoins(prev => [...prev, newCoin]);
-    setCollectedIds(prev => [...prev, newCoin.id]);
-    
-    if (isPurchased && manualCoinAmount) {
-      const amount = parseFloat(manualCoinAmount);
-      if (!isNaN(amount)) {
-        logPurchase(newCoin, amount);
+    if (editingCoinId) {
+      setCustomCoins(prev => prev.map(c => c.id === editingCoinId ? newCoin : c));
+      if (manualCoinPhoto) {
+        setUserCoinImages(prev => ({ ...prev, [editingCoinId]: manualCoinPhoto }));
       }
+      addPoints(POINT_VALUES.COLLECT_COIN, "Coin Updated!");
     } else {
-      addPoints(POINT_VALUES.COLLECT_COIN, "Manual Coin Added!");
+      setCustomCoins(prev => [...prev, newCoin]);
+      setCollectedIds(prev => [...prev, newCoin.id]);
+      if (manualCoinPhoto) {
+        setUserCoinImages(prev => ({ ...prev, [newCoin.id]: manualCoinPhoto }));
+      }
+      
+      if (isPurchased && manualCoinAmount) {
+        const amount = parseFloat(manualCoinAmount);
+        if (!isNaN(amount)) {
+          logPurchase(newCoin, amount);
+        }
+      } else {
+        addPoints(POINT_VALUES.COLLECT_COIN, "Manual Coin Added!");
+      }
     }
     
     // Reset form
     setManualCoinName('');
+    setManualCoinSummary('');
+    setManualCoinRarity('Common');
     setManualCoinPhoto(null);
     setManualCoinAmount('');
     setIsPurchased(false);
     setIsManualAddOpen(false);
+    setEditingCoinId(null);
+  };
+
+  const editCoin = (coin: Coin) => {
+    setEditingCoinId(coin.id);
+    setManualCoinName(coin.name);
+    setManualCoinDenom(coin.denomination);
+    setManualCoinYear(coin.year);
+    setManualCoinSummary(coin.description || '');
+    setManualCoinRarity(coin.rarity || 'Common');
+    setManualCoinPhoto(userCoinImages[coin.id] || coin.imageUrl || null);
+    setIsManualAddOpen(true);
   };
 
   const handleManualPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1392,20 +1469,35 @@ function CoinCollectorApp() {
             />
           </div>
           
-          <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-1 no-scrollbar">
-            {(['all', 'collected', 'missing'] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[11px] sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap transition-colors ${
-                  filter === f 
-                    ? 'bg-gray-900 text-white' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {f}
-              </button>
-            ))}
+          <div className="flex items-center justify-between gap-2 mb-4 sm:mb-6">
+            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-1 no-scrollbar flex-1">
+              {(['all', 'collected', 'missing'] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[11px] sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap transition-colors ${
+                    filter === f 
+                      ? 'bg-gray-900 text-white' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+            
+            <select
+              value={userProfile.settings.sortBy || 'recent-added'}
+              onChange={(e) => setUserProfile(prev => ({
+                ...prev,
+                settings: { ...prev.settings, sortBy: e.target.value as any }
+              }))}
+              className="bg-gray-100 text-gray-600 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[11px] sm:text-sm font-bold uppercase tracking-wide border-none focus:ring-2 focus:ring-amber-500 transition-all"
+            >
+              <option value="name">Name</option>
+              <option value="recent-added">Recent Added</option>
+              <option value="recent-opened">Recent Opened</option>
+            </select>
           </div>
         </div>
       </div>
@@ -1419,9 +1511,17 @@ function CoinCollectorApp() {
               <>
                 {denominations
                   .map(denom => {
-                    const coinsInDenom = UK_COINS.filter(c => c.denomination === denom);
-                    const collectedInDenom = coinsInDenom.filter(c => collectedIds.includes(c.id)).length;
-                    const denomProgress = Math.round((collectedInDenom / coinsInDenom.length) * 100);
+                    let coinsInDenom;
+                    let collectedInDenom;
+                    if (denom === 'Purchased') {
+                      const purchasedIds = purchasedCoins.map(p => p.coinId);
+                      coinsInDenom = allCoins.filter(c => purchasedIds.includes(c.id));
+                      collectedInDenom = coinsInDenom.length;
+                    } else {
+                      coinsInDenom = allCoins.filter(c => c.denomination === denom);
+                      collectedInDenom = coinsInDenom.filter(c => collectedIds.includes(c.id)).length;
+                    }
+                    const denomProgress = coinsInDenom.length > 0 ? Math.round((collectedInDenom / coinsInDenom.length) * 100) : 0;
                     return { denom, coinsInDenom, collectedInDenom, denomProgress };
                   })
                   .sort((a, b) => b.denomProgress - a.denomProgress)
@@ -2208,6 +2308,43 @@ function CoinCollectorApp() {
                       </button>
                     </div>
 
+                    {/* Recovery Code Section */}
+                    <div className="p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-amber-100 dark:bg-amber-900/20 rounded-xl flex items-center justify-center text-amber-600">
+                            <Shield size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Recovery Code</p>
+                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Save this to recover your data</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={generateRecoveryCode}
+                          className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-xl text-[10px] font-bold hover:bg-gray-200 transition-colors"
+                        >
+                          {userProfile.recoveryCode ? 'Regenerate' : 'Generate'}
+                        </button>
+                      </div>
+                      {userProfile.recoveryCode && (
+                        <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl flex items-center justify-between border border-gray-100 dark:border-gray-700">
+                          <code className="text-xs font-mono font-bold text-gray-900 dark:text-white tracking-widest">
+                            {userProfile.recoveryCode}
+                          </code>
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(userProfile.recoveryCode!);
+                              alert("Recovery code copied to clipboard!");
+                            }}
+                            className="text-amber-600 hover:text-amber-700"
+                          >
+                            <Copy size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
@@ -2345,6 +2482,14 @@ function CoinCollectorApp() {
                   >
                     <Camera size={16} className="sm:w-[18px] sm:h-[18px] group-hover:scale-110 transition-transform" />
                     <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest">Update Photo</span>
+                  </button>
+                  <button 
+                    onClick={() => editCoin(selectedCoin)}
+                    className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-black/40 hover:bg-black/60 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group"
+                    title="Edit Coin"
+                  >
+                    <Edit size={16} className="sm:w-[18px] sm:h-[18px] group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest">Edit Details</span>
                   </button>
                   <button 
                     onClick={() => {
@@ -2875,6 +3020,36 @@ function CoinCollectorApp() {
                       onChange={(e) => setManualCoinYear(parseInt(e.target.value))}
                       className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm focus:border-amber-500 focus:ring-0 transition-all"
                     />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Summary (2 lines)</label>
+                  <textarea 
+                    value={manualCoinSummary}
+                    onChange={(e) => setManualCoinSummary(e.target.value)}
+                    placeholder="Brief description of the coin..."
+                    rows={2}
+                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm focus:border-amber-500 focus:ring-0 transition-all resize-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Rarity</label>
+                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                    {['Common', 'Uncommon', 'Rare', 'Ultra Rare'].map(r => (
+                      <button
+                        key={r}
+                        onClick={() => setManualCoinRarity(r)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                          manualCoinRarity === r 
+                            ? 'bg-amber-500 text-white shadow-md scale-105' 
+                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
