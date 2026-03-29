@@ -3,7 +3,7 @@ import {
   Trophy, Search, Folder, ChevronRight, CheckCircle2, Circle, 
   ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
   User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle, TrendingUp, Trash2, Shield, Copy, Edit,
-  Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle
+  Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle, ShoppingCart, Tag, Table
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UK_COINS, Coin } from './data/coins';
@@ -50,6 +50,8 @@ interface UserProfile {
     isCompactUI?: boolean;
     isTextMode?: boolean;
     isBackgroundRemovalEnabled?: boolean;
+    isPurchaseMode?: boolean;
+    showCoinPrice?: boolean;
     sortBy?: 'recent-added' | 'recent-opened' | 'name';
   };
   safeModeBackup?: string;
@@ -412,6 +414,7 @@ function CoinCollectorApp() {
   const [manualCoinRarity, setManualCoinRarity] = useState('Common');
   const [manualCoinPhoto, setManualCoinPhoto] = useState<string | null>(null);
   const [manualCoinAmount, setManualCoinAmount] = useState<string>('');
+  const [manualCoinValue, setManualCoinValue] = useState<string>('');
   const [isPurchased, setIsPurchased] = useState(false);
   const [editingCoinId, setEditingCoinId] = useState<string | null>(null);
 
@@ -450,7 +453,9 @@ function CoinCollectorApp() {
           showBottomMenu: true,
           isDarkMode: false,
           isTextMode: false,
-          isBackgroundRemovalEnabled: true
+          isBackgroundRemovalEnabled: true,
+          isPurchaseMode: false,
+          showCoinPrice: true
         }
       };
 
@@ -478,7 +483,7 @@ function CoinCollectorApp() {
         level: 1,
         streak: 0,
         lastLoginDate: '',
-        missions: MISSIONS.map(m => ({ ...m, isCompleted: false })),
+        missions: MISSIONS.map(m => ({ ...m, isCompleted: false, progress: 0 })),
         badges: [],
         collectionStreak: 0,
         lastCollectionDate: '',
@@ -486,7 +491,9 @@ function CoinCollectorApp() {
           showBottomMenu: true,
           isDarkMode: false,
           isTextMode: false,
-          isBackgroundRemovalEnabled: true
+          isBackgroundRemovalEnabled: true,
+          isPurchaseMode: false,
+          showCoinPrice: true
         }
       };
     }
@@ -1380,7 +1387,8 @@ function CoinCollectorApp() {
       year: manualCoinYear,
       description: manualCoinSummary || `User-added: ${manualCoinName} (${manualCoinDenom})`,
       imageUrl: manualCoinPhoto || FALLBACK_COIN_IMAGE,
-      rarity: manualCoinRarity
+      rarity: manualCoinRarity,
+      value: manualCoinValue ? parseFloat(manualCoinValue) : undefined
     };
 
     if (editingCoinId) {
@@ -1417,6 +1425,7 @@ function CoinCollectorApp() {
     setManualCoinRarity('Common');
     setManualCoinPhoto(null);
     setManualCoinAmount('');
+    setManualCoinValue('');
     setIsPurchased(false);
     setIsManualAddOpen(false);
     setEditingCoinId(null);
@@ -1429,6 +1438,7 @@ function CoinCollectorApp() {
     setManualCoinYear(coin.year);
     setManualCoinSummary(coin.description || '');
     setManualCoinRarity(coin.rarity || 'Common');
+    setManualCoinValue(coin.value ? coin.value.toString() : '');
     setManualCoinPhoto(userCoinImages[coin.id] || coin.imageUrl || null);
     setIsManualAddOpen(true);
   };
@@ -1692,6 +1702,26 @@ function CoinCollectorApp() {
       {/* Main Content */}
       <main className="flex-1 p-4 overflow-y-auto">
         <div className="max-w-2xl mx-auto grid gap-4">
+          {userProfile.settings?.isPurchaseMode && (
+            <div className="flex items-center justify-between p-4 bg-black dark:bg-white text-white dark:text-black rounded-3xl shadow-xl mb-2 animate-pulse">
+              <div className="flex items-center gap-3">
+                <ShoppingCart size={24} />
+                <div>
+                  <h4 className="text-lg font-black uppercase tracking-widest">Purchase Mode Active</h4>
+                  <p className="text-[10px] opacity-70 font-bold uppercase tracking-wider">High-contrast table view enabled</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setUserProfile(prev => ({
+                  ...prev,
+                  settings: { ...prev.settings, isPurchaseMode: false }
+                }))}
+                className="px-4 py-2 bg-white/20 dark:bg-black/20 hover:bg-white/30 dark:hover:bg-black/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
+              >
+                Exit
+              </button>
+            </div>
+          )}
           <AnimatePresence mode="popLayout">
             {!activeDenomination ? (
               /* Folder View */
@@ -1799,102 +1829,154 @@ function CoinCollectorApp() {
               </div>
             ) : (
               /* Coin List View */
-              filteredCoins.map((coin) => {
-                const isCollected = collectedIds.includes(coin.id);
-                return (
-                  <motion.div
-                    layout
-                    key={coin.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    onClick={() => handleSelectCoin(coin)}
-                    className={`group relative bg-white dark:bg-gray-900 rounded-2xl shadow-sm border-2 transition-all cursor-pointer ${
-                      isCollected ? 'border-amber-500 bg-amber-50/30 dark:bg-amber-900/10' : 'border-transparent'
-                    } ${
-                      userProfile.settings?.isCompactUI ? 'p-2 sm:p-3' : 'p-3 sm:p-4'
-                    } ${
-                      userProfile.settings?.isTextMode ? 'border-gray-100 dark:border-gray-800' : ''
-                    }`}
-                  >
-                    <div className="flex gap-3 sm:gap-4 items-center">
-                      {!userProfile.settings?.isTextMode && (
-                        <div className={`relative flex-shrink-0 ${
-                          userProfile.settings?.isCompactUI ? 'w-12 h-12 sm:w-16 sm:h-16' : 'w-16 h-16 sm:w-20 sm:h-20'
-                        }`}>
-                          <img 
-                            src={coin.imageUrl} 
-                            alt={coin.name}
-                            referrerPolicy="no-referrer"
-                            onError={handleImageError}
-                            className={`w-full h-full object-cover rounded-full border-2 border-gray-100 dark:border-gray-800 ${
-                              !isCollected && 'grayscale opacity-50'
+              userProfile.settings?.isPurchaseMode ? (
+                <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-black dark:bg-white text-white dark:text-black">
+                        <th className="p-4 sm:p-6 text-xl sm:text-2xl font-black uppercase tracking-widest">Coin</th>
+                        <th className="p-4 sm:p-6 text-xl sm:text-2xl font-black uppercase tracking-widest">Year</th>
+                        <th className="p-4 sm:p-6 text-xl sm:text-2xl font-black uppercase tracking-widest text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredCoins.map((coin) => {
+                        const isCollected = collectedIds.includes(coin.id);
+                        return (
+                          <tr 
+                            key={coin.id}
+                            onClick={() => handleSelectCoin(coin)}
+                            className={`border-b-4 border-gray-100 dark:border-gray-800 cursor-pointer active:bg-gray-100 dark:active:bg-gray-800 ${
+                              isCollected ? 'bg-amber-50 dark:bg-amber-900/10' : ''
                             }`}
-                          />
-                          {isCollected && (
-                            <div className={`absolute -top-1 -right-1 bg-amber-500 text-white rounded-full p-0.5 sm:p-1 shadow-md ${
-                              userProfile.settings?.isCompactUI ? 'scale-75' : ''
-                            }`}>
-                              <CheckCircle2 size={14} className="sm:w-4 sm:h-4" />
-                            </div>
-                          )}
-                          {coin.rarity && coin.rarity !== 'Common' && (
-                            <div className={`absolute -bottom-1 -left-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-sm z-10 ${
-                              coin.rarity === 'Ultra Rare' ? 'bg-purple-500 text-white' : 
-                              coin.rarity === 'Rare' ? 'bg-amber-500 text-white' : 
-                              'bg-blue-500 text-white'
-                            }`}>
-                              {coin.rarity}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-0.5 sm:mb-1">
-                          <div className="flex items-center gap-2">
-                            {userProfile.settings?.isTextMode && isCollected && <CheckCircle2 size={14} className="text-amber-500" />}
-                            <span className="text-[10px] sm:text-xs font-bold text-amber-600 uppercase tracking-widest">
-                              {coin.denomination} • {coin.year}
-                            </span>
-                            {userProfile.settings?.isTextMode && coin.rarity && coin.rarity !== 'Common' && (
-                              <span className={`text-[8px] font-black uppercase tracking-widest ${
-                                coin.rarity === 'Ultra Rare' ? 'text-purple-500' : 
-                                coin.rarity === 'Rare' ? 'text-amber-500' : 
-                                'text-blue-500'
+                          >
+                            <td className="p-4 sm:p-6">
+                              <p className="text-2xl sm:text-4xl font-black text-gray-900 dark:text-white leading-tight">{coin.denomination}</p>
+                              <p className="text-sm sm:text-lg font-bold text-gray-500 dark:text-gray-400 truncate max-w-[150px] sm:max-w-[300px]">{coin.name}</p>
+                            </td>
+                            <td className="p-4 sm:p-6 text-2xl sm:text-4xl font-black text-gray-900 dark:text-white">
+                              {coin.year}
+                            </td>
+                            <td className="p-4 sm:p-6 text-center">
+                              {isCollected ? (
+                                <div className="inline-flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 bg-amber-500 text-white rounded-full shadow-lg">
+                                  <CheckCircle2 size={24} className="sm:w-8 sm:h-8" />
+                                </div>
+                              ) : (
+                                <div className="inline-flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 border-4 border-gray-200 dark:border-gray-700 rounded-full">
+                                  <Circle size={24} className="sm:w-8 sm:h-8 text-gray-200 dark:text-gray-700" />
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                filteredCoins.map((coin) => {
+                  const isCollected = collectedIds.includes(coin.id);
+                  return (
+                    <motion.div
+                      layout
+                      key={coin.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      onClick={() => handleSelectCoin(coin)}
+                      className={`group relative bg-white dark:bg-gray-900 rounded-2xl shadow-sm border-2 transition-all cursor-pointer ${
+                        isCollected ? 'border-amber-500 bg-amber-50/30 dark:bg-amber-900/10' : 'border-transparent'
+                      } ${
+                        userProfile.settings?.isCompactUI ? 'p-2 sm:p-3' : 'p-3 sm:p-4'
+                      } ${
+                        userProfile.settings?.isTextMode ? 'border-gray-100 dark:border-gray-800' : ''
+                      }`}
+                    >
+                      <div className="flex gap-3 sm:gap-4 items-center">
+                        {!userProfile.settings?.isTextMode && (
+                          <div className={`relative flex-shrink-0 ${
+                            userProfile.settings?.isCompactUI ? 'w-12 h-12 sm:w-16 sm:h-16' : 'w-16 h-16 sm:w-20 sm:h-20'
+                          }`}>
+                            <img 
+                              src={coin.imageUrl} 
+                              alt={coin.name}
+                              referrerPolicy="no-referrer"
+                              onError={handleImageError}
+                              className={`w-full h-full object-cover rounded-full border-2 border-gray-100 dark:border-gray-800 ${
+                                !isCollected && 'grayscale opacity-50'
+                              }`}
+                            />
+                            {isCollected && (
+                              <div className={`absolute -top-1 -right-1 bg-amber-500 text-white rounded-full p-0.5 sm:p-1 shadow-md ${
+                                userProfile.settings?.isCompactUI ? 'scale-75' : ''
                               }`}>
-                                [{coin.rarity}]
-                              </span>
+                                <CheckCircle2 size={14} className="sm:w-4 sm:h-4" />
+                              </div>
+                            )}
+                            {coin.rarity && coin.rarity !== 'Common' && (
+                              <div className={`absolute -bottom-1 -left-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-sm z-10 ${
+                                coin.rarity === 'Ultra Rare' ? 'bg-purple-500 text-white' : 
+                                coin.rarity === 'Rare' ? 'bg-amber-500 text-white' : 
+                                'bg-blue-500 text-white'
+                              }`}>
+                                {coin.rarity}
+                              </div>
                             )}
                           </div>
-                        </div>
-                        <h3 className={`font-bold text-gray-900 dark:text-white truncate ${
-                          userProfile.settings?.isCompactUI ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'
-                        }`}>{coin.name}</h3>
-                        {!userProfile.settings?.isTextMode && (
-                          <p className={`text-gray-500 dark:text-gray-400 line-clamp-1 ${
-                            userProfile.settings?.isCompactUI ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'
-                          }`}>{coin.description}</p>
                         )}
-                      </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                            <div className="flex items-center gap-2">
+                              {userProfile.settings?.isTextMode && isCollected && <CheckCircle2 size={14} className="text-amber-500" />}
+                              <span className="text-[10px] sm:text-xs font-bold text-amber-600 uppercase tracking-widest">
+                                {coin.denomination} • {coin.year}
+                              </span>
+                              {userProfile.settings?.isTextMode && coin.rarity && coin.rarity !== 'Common' && (
+                                <span className={`text-[8px] font-black uppercase tracking-widest ${
+                                  coin.rarity === 'Ultra Rare' ? 'text-purple-500' : 
+                                  coin.rarity === 'Rare' ? 'text-amber-500' : 
+                                  'text-blue-500'
+                                }`}>
+                                  [{coin.rarity}]
+                                </span>
+                              )}
+                            </div>
+                            {userProfile.settings?.showCoinPrice && coin.value && (
+                              <div className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg text-[10px] sm:text-xs font-black">
+                                £{coin.value.toFixed(2)}
+                              </div>
+                            )}
+                          </div>
+                          <h3 className={`font-bold text-gray-900 dark:text-white truncate ${
+                            userProfile.settings?.isCompactUI ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'
+                          }`}>{coin.name}</h3>
+                          {!userProfile.settings?.isTextMode && (
+                            <p className={`text-gray-500 dark:text-gray-400 line-clamp-1 ${
+                              userProfile.settings?.isCompactUI ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'
+                            }`}>{coin.description}</p>
+                          )}
+                        </div>
 
-                      <button
-                        onClick={(e) => toggleCollected(coin.id, e)}
-                        className={`rounded-xl transition-all ${
-                          isCollected 
-                            ? 'bg-amber-500 text-white shadow-lg shadow-amber-200 dark:shadow-none' 
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                        } ${
-                          userProfile.settings?.isCompactUI ? 'p-2 sm:p-2.5' : 'p-2.5 sm:p-3'
-                        }`}
-                        aria-label={isCollected ? "Mark as missing" : "Mark as collected"}
-                      >
-                        {isCollected ? <CheckCircle2 size={userProfile.settings?.isCompactUI ? 18 : 20} className="sm:w-6 sm:h-6" /> : <Circle size={userProfile.settings?.isCompactUI ? 18 : 20} className="sm:w-6 sm:h-6" />}
-                      </button>
-                    </div>
-                  </motion.div>
-                );
-              })
+                        <button
+                          onClick={(e) => toggleCollected(coin.id, e)}
+                          className={`rounded-xl transition-all ${
+                            isCollected 
+                              ? 'bg-amber-500 text-white shadow-lg shadow-amber-200 dark:shadow-none' 
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                          } ${
+                            userProfile.settings?.isCompactUI ? 'p-2 sm:p-2.5' : 'p-2.5 sm:p-3'
+                          }`}
+                          aria-label={isCollected ? "Mark as missing" : "Mark as collected"}
+                        >
+                          {isCollected ? <CheckCircle2 size={userProfile.settings?.isCompactUI ? 18 : 20} className="sm:w-6 sm:h-6" /> : <Circle size={userProfile.settings?.isCompactUI ? 18 : 20} className="sm:w-6 sm:h-6" />}
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })
+              )
             )}
           </AnimatePresence>
 
@@ -2684,6 +2766,58 @@ function CoinCollectorApp() {
                     <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
+                          <Table size={16} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Purchase Mode</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Senior-friendly table view</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setUserProfile(prev => ({
+                            ...prev,
+                            settings: {
+                              ...prev.settings,
+                              isPurchaseMode: !prev.settings?.isPurchaseMode
+                            }
+                          }));
+                        }}
+                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.isPurchaseMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isPurchaseMode ? 'right-1' : 'left-1'}`} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
+                          <Tag size={16} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Show Coin Price</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Display price in normal mode</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setUserProfile(prev => ({
+                            ...prev,
+                            settings: {
+                              ...prev.settings,
+                              showCoinPrice: !prev.settings?.showCoinPrice
+                            }
+                          }));
+                        }}
+                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.showCoinPrice ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showCoinPrice ? 'right-1' : 'left-1'}`} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
                           {userProfile.settings?.isDarkMode ? <Sparkles size={16} /> : <Award size={16} />}
                         </div>
                         <div>
@@ -2883,6 +3017,12 @@ function CoinCollectorApp() {
                       {selectedCoin.id.startsWith('custom-') ? 'Personal Discovery' : `${selectedCoin.denomination} • ${selectedCoin.year}`}
                     </span>
                     <h2 className="text-2xl sm:text-3xl font-bold">{selectedCoin.name}</h2>
+                    {userProfile.settings?.showCoinPrice && selectedCoin.value && (
+                      <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-green-500/30 text-green-400 rounded-full text-xs font-black border border-green-500/50 backdrop-blur-md">
+                        <Tag size={12} />
+                        Est. Value: £{selectedCoin.value.toFixed(2)}
+                      </div>
+                    )}
                     <p className="text-[10px] sm:text-xs mt-0.5 sm:mt-1 opacity-70">Tap image to compare / zoom</p>
                   </div>
                 )}
@@ -3398,9 +3538,21 @@ function CoinCollectorApp() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Rarity</label>
-                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Est. Value (£)</label>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      value={manualCoinValue}
+                      onChange={(e) => setManualCoinValue(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm focus:border-amber-500 focus:ring-0 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Rarity</label>
+                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                     {['Common', 'Uncommon', 'Rare', 'Ultra Rare'].map(r => (
                       <button
                         key={r}
@@ -3416,8 +3568,9 @@ function CoinCollectorApp() {
                     ))}
                   </div>
                 </div>
+              </div>
 
-                <div className="space-y-2">
+              <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Coin Photo</label>
                   <div 
                     onClick={() => fileInputRef.current?.click()}

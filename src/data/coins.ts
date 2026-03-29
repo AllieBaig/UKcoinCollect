@@ -7,6 +7,7 @@ export interface Coin {
   imageUrl: string;
   rarity?: string;
   summary?: string;
+  value?: number;
 }
 
 export const UK_COINS: Coin[] = [
@@ -18,7 +19,8 @@ export const UK_COINS: Coin[] = [
     year: 2009,
     description: 'The rarest 50p in circulation, featuring the famous Chinese Pagoda. High value for collectors.',
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Kew_Gardens_50p_coin.jpg/600px-Kew_Gardens_50p_coin.jpg',
-    summary: 'The holy grail of 50p coins. Only 210,000 were minted, making it exceptionally rare.'
+    summary: 'The holy grail of 50p coins. Only 210,000 were minted, making it exceptionally rare.',
+    value: 250.00
   },
   {
     id: '50p-rabbit',
@@ -27,7 +29,8 @@ export const UK_COINS: Coin[] = [
     year: 2016,
     description: 'Celebrating the 150th anniversary of Beatrix Potter. Features a detailed rabbit engraving.',
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Peter_Rabbit_50p_coin.jpg/600px-Peter_Rabbit_50p_coin.jpg',
-    summary: 'A beloved commemorative coin. It features the iconic Beatrix Potter character.'
+    summary: 'A beloved commemorative coin. It features the iconic Beatrix Potter character.',
+    value: 5.00
   },
   {
     id: '50p-brexit',
