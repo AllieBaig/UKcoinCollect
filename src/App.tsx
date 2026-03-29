@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Trophy, Search, Folder, ChevronRight, CheckCircle2, Circle, 
   ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
-  User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe
+  User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UK_COINS, Coin } from './data/coins';
@@ -254,6 +254,95 @@ function CoinCollectorApp() {
   const [isManualAddOpen, setIsManualAddOpen] = useState(false);
   const [isPurchasedAddOpen, setIsPurchasedAddOpen] = useState(false);
   const [isPhotoLibraryOpen, setIsPhotoLibraryOpen] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+  const [conversionData, setConversionData] = useState<any>(null);
+  const [conversionError, setConversionError] = useState<string | null>(null);
+
+  const convertOldData = (oldData: any) => {
+    try {
+      const newData: any = {};
+      
+      // Map snake_case to camelCase
+      if (oldData.collected_coins) newData.collectedIds = oldData.collected_coins;
+      if (oldData.custom_coins) newData.customCoins = oldData.custom_coins;
+      if (oldData.requested_coins) newData.requestedCoins = oldData.requested_coins;
+      if (oldData.user_profile) newData.userProfile = oldData.user_profile;
+      if (oldData.user_coin_images) newData.userCoinImages = oldData.user_coin_images;
+      
+      // Handle very old flat array format
+      if (Array.isArray(oldData)) {
+        newData.collectedIds = oldData;
+      }
+
+      // Ensure all required fields exist and map nested snake_case
+      if (newData.userProfile) {
+        const up = newData.userProfile;
+        if (up.total_spend !== undefined && up.totalSpend === undefined) up.totalSpend = up.total_spend;
+        if (up.join_date !== undefined && up.joinDate === undefined) up.joinDate = up.join_date;
+        if (up.last_login_date !== undefined && up.lastLoginDate === undefined) up.lastLoginDate = up.last_login_date;
+        if (up.collection_streak !== undefined && up.collectionStreak === undefined) up.collectionStreak = up.collection_streak;
+        if (up.last_collection_date !== undefined && up.lastCollectionDate === undefined) up.lastCollectionDate = up.last_collection_date;
+        
+        if (up.settings) {
+          const s = up.settings;
+          if (s.is_dark_mode !== undefined && s.isDarkMode === undefined) s.isDarkMode = s.is_dark_mode;
+          if (s.show_bottom_menu !== undefined && s.showBottomMenu === undefined) s.showBottomMenu = s.show_bottom_menu;
+          if (s.follow_system_theme !== undefined && s.followSystemTheme === undefined) s.followSystemTheme = s.follow_system_theme;
+          if (s.is_compact_ui !== undefined && s.isCompactUI === undefined) s.isCompactUI = s.is_compact_ui;
+        }
+      }
+
+      // Preserve existing new fields if they were already there (hybrid case)
+      if (oldData.collectedIds) newData.collectedIds = oldData.collectedIds;
+      if (oldData.customCoins) newData.customCoins = oldData.customCoins;
+      if (oldData.requestedCoins) newData.requestedCoins = oldData.requestedCoins;
+      if (oldData.userProfile) newData.userProfile = oldData.userProfile;
+      if (oldData.userCoinImages) newData.userCoinImages = oldData.userCoinImages;
+      if (oldData.purchasedCoins) newData.purchasedCoins = oldData.purchasedCoins;
+
+      return newData;
+    } catch (err) {
+      console.error("Conversion failed:", err);
+      throw new Error("Data mapping failed. The file might be corrupted.");
+    }
+  };
+
+  const isOldDataFormat = (data: any) => {
+    if (Array.isArray(data)) return true;
+    return !!(data.collected_coins || data.custom_coins || data.requested_coins || data.user_profile || data.user_coin_images);
+  };
+
+  const handleApplyConversion = (data: any) => {
+    try {
+      // Create backup before applying
+      const backup = {
+        collectedIds,
+        customCoins,
+        requestedCoins,
+        userProfile,
+        userCoinImages,
+        purchasedCoins,
+        backupDate: new Date().toISOString()
+      };
+      localStorage.setItem('coin_collection_backup', JSON.stringify(backup));
+
+      const converted = convertOldData(data);
+      
+      if (converted.collectedIds) setCollectedIds(converted.collectedIds);
+      if (converted.customCoins) setCustomCoins(converted.customCoins);
+      if (converted.requestedCoins) setRequestedCoins(converted.requestedCoins);
+      if (converted.userProfile) setUserProfile(converted.userProfile);
+      if (converted.userCoinImages) setUserCoinImages(converted.userCoinImages);
+      if (converted.purchasedCoins) setPurchasedCoins(converted.purchasedCoins);
+
+      setIsConverting(false);
+      setConversionData(null);
+      alert("Conversion successful! Your data has been updated to the new format.");
+    } catch (err) {
+      setConversionError(err instanceof Error ? err.message : "Unknown error during conversion");
+    }
+  };
+
   const [importProgress, setImportProgress] = useState<number | null>(null);
   
   const [manualCoinName, setManualCoinName] = useState('');
@@ -699,6 +788,13 @@ function CoinCollectorApp() {
         try {
           const data = JSON.parse(event.target?.result as string);
           
+          if (isOldDataFormat(data)) {
+            setConversionData(data);
+            setIsConverting(true);
+            setImportProgress(null);
+            return;
+          }
+
           // Simulate a bit of progress for UX if it's too fast
           let p = 0;
           const interval = setInterval(() => {
@@ -1991,6 +2087,40 @@ function CoinCollectorApp() {
                     <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
+                          <RefreshCw size={16} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Data Conversion</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Convert old data formats</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          // Check if there's old data in localStorage to convert
+                          const oldData = {
+                            collected_coins: JSON.parse(localStorage.getItem('collected_coins') || 'null'),
+                            custom_coins: JSON.parse(localStorage.getItem('custom_coins') || 'null'),
+                            requested_coins: JSON.parse(localStorage.getItem('requested_coins') || 'null'),
+                            user_profile: JSON.parse(localStorage.getItem('user_profile') || 'null'),
+                            user_coin_images: JSON.parse(localStorage.getItem('user_coin_images') || 'null'),
+                          };
+                          
+                          if (oldData.collected_coins || oldData.custom_coins || oldData.requested_coins || oldData.user_profile) {
+                            setConversionData(oldData);
+                            setIsConverting(true);
+                          } else {
+                            alert("No old data format detected in local storage.");
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-amber-100 text-amber-600 font-bold rounded-xl text-[10px] sm:text-xs hover:bg-amber-200 transition-colors"
+                      >
+                        Check
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
                           {userProfile.settings?.isDarkMode ? <Sparkles size={16} /> : <Award size={16} />}
                         </div>
                         <div>
@@ -2336,6 +2466,78 @@ function CoinCollectorApp() {
                   )}
                 </div>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Data Conversion Modal */}
+      <AnimatePresence>
+        {isConverting && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-8 space-y-6"
+            >
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-20 h-20 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-3xl flex items-center justify-center">
+                  <RefreshCw size={40} className="animate-spin-slow" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white">Old Data Detected</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    We've detected data in an older format. Would you like to convert it to the new version?
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 rounded-2xl p-4 space-y-2">
+                <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest">What happens:</p>
+                <ul className="text-xs text-amber-600 dark:text-amber-500 space-y-1 list-disc ml-4">
+                  <li>Automatic backup of current data will be created</li>
+                  <li>Fields will be mapped to the new structure</li>
+                  <li>All your coins, images, and spending will be preserved</li>
+                  <li>Existing data will be merged/overwritten with the converted data</li>
+                </ul>
+              </div>
+
+              {conversionError && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-xl flex items-center gap-3 text-red-600 dark:text-red-400">
+                  <AlertCircle size={18} />
+                  <p className="text-xs font-bold">{conversionError}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <button 
+                  onClick={() => {
+                    setIsConverting(false);
+                    setConversionData(null);
+                    setConversionError(null);
+                  }}
+                  className="py-4 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-bold rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all text-sm"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => handleApplyConversion(conversionData)}
+                  className="py-4 bg-amber-500 text-white font-bold rounded-2xl hover:bg-amber-600 transition-all shadow-lg shadow-amber-100 dark:shadow-none text-sm"
+                >
+                  Convert Now
+                </button>
+              </div>
+              
+              <p className="text-[10px] text-center text-gray-400 uppercase font-bold tracking-widest">
+                Safe & Offline Compatible
+              </p>
             </motion.div>
           </div>
         )}
