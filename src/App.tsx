@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Trophy, Search, Folder, ChevronRight, CheckCircle2, Circle, 
   ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
-  User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle
+  User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle, TrendingUp, Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UK_COINS, Coin } from './data/coins';
@@ -52,7 +52,30 @@ const POINT_VALUES = {
   UPLOAD_PHOTO: 250,
   DAILY_CHECKIN: 50,
   COMPLETE_FOLDER: 1000,
-  STREAK_BONUS: 100
+  STREAK_BONUS: 100,
+  RARITY_BONUS: {
+    'Common': 0,
+    'Uncommon': 150,
+    'Rare': 400,
+    'Ultra Rare': 900
+  }
+};
+
+const LEVEL_NAMES = [
+  "Beginner Hunter",
+  "Coin Collector",
+  "Expert Hunter",
+  "Master Collector",
+  "Grand Master",
+  "Coin Legend"
+];
+
+const getLevelInfo = (points: number) => {
+  const level = Math.floor(points / 2000) + 1;
+  const name = LEVEL_NAMES[Math.min(level - 1, LEVEL_NAMES.length - 1)];
+  const nextLevelPoints = level * 2000;
+  const progress = ((points % 2000) / 2000) * 100;
+  return { level, name, nextLevelPoints, progress };
 };
 
 // Error Boundary Component
@@ -358,6 +381,48 @@ function CoinCollectorApp() {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
 
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
+    try {
+      const saved = localStorage.getItem('user_profile');
+      return saved ? JSON.parse(saved) : {
+        name: 'Coin Collector',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+        joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
+        rank: 'Novice Hunter',
+        points: 0,
+        level: 1,
+        streak: 0,
+        lastLoginDate: '',
+        badges: [],
+        collectionStreak: 0,
+        lastCollectionDate: '',
+        settings: {
+          showBottomMenu: true,
+          isDarkMode: false
+        }
+      };
+    } catch (e) {
+      console.error("Failed to load user_profile", e);
+      return {
+        name: 'Coin Collector',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+        joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
+        rank: 'Novice Hunter',
+        points: 0,
+        level: 1,
+        streak: 0,
+        lastLoginDate: '',
+        badges: [],
+        collectionStreak: 0,
+        lastCollectionDate: '',
+        settings: {
+          showBottomMenu: true,
+          isDarkMode: false
+        }
+      };
+    }
+  });
+
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
@@ -369,21 +434,6 @@ function CoinCollectorApp() {
                  (window.navigator as any).standalone || 
                  document.referrer.includes('android-app://');
     setIsStandalone(isPWA);
-
-    // Apply Dark Mode
-    const applyTheme = () => {
-      const isDark = userProfile.settings?.followSystemTheme 
-        ? window.matchMedia('(prefers-color-scheme: dark)').matches 
-        : userProfile.settings?.isDarkMode;
-      
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    };
-
-    applyTheme();
 
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -427,50 +477,26 @@ function CoinCollectorApp() {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      mediaQuery.removeEventListener('change', handleThemeChange);
     };
   }, []);
 
-  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
-    try {
-      const saved = localStorage.getItem('user_profile');
-      return saved ? JSON.parse(saved) : {
-        name: 'Coin Collector',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-        joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
-        rank: 'Novice Hunter',
-        points: 0,
-        level: 1,
-        streak: 0,
-        lastLoginDate: '',
-        badges: [],
-        collectionStreak: 0,
-        lastCollectionDate: '',
-        settings: {
-          showBottomMenu: true,
-          isDarkMode: false
-        }
-      };
-    } catch (e) {
-      console.error("Failed to load user_profile", e);
-      return {
-        name: 'Coin Collector',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-        joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
-        rank: 'Novice Hunter',
-        points: 0,
-        level: 1,
-        streak: 0,
-        lastLoginDate: '',
-        badges: [],
-        collectionStreak: 0,
-        lastCollectionDate: '',
-        settings: {
-          showBottomMenu: true,
-          isDarkMode: false
-        }
-      };
+  // Apply Dark Mode when settings change
+  const applyTheme = () => {
+    const isDark = userProfile.settings?.followSystemTheme 
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches 
+      : userProfile.settings?.isDarkMode;
+    
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
-  });
+  };
+
+  useEffect(() => {
+    applyTheme();
+  }, [userProfile.settings?.isDarkMode, userProfile.settings?.followSystemTheme]);
 
   // Streak Logic
   useEffect(() => {
@@ -565,8 +591,8 @@ function CoinCollectorApp() {
   const addPoints = (amount: number, message?: string) => {
     setUserProfile(prev => {
       const newPoints = prev.points + amount;
-      const newLevel = Math.floor(newPoints / 1000) + 1;
-      return { ...prev, points: newPoints, level: newLevel };
+      const { level, name } = getLevelInfo(newPoints);
+      return { ...prev, points: newPoints, level, rank: name };
     });
     if (message) {
       setPointsNotification({ amount, message });
@@ -894,7 +920,10 @@ function CoinCollectorApp() {
       if (foundCoin) {
         setCollectedIds(prev => {
           const isCollecting = !prev.includes(foundCoin.id);
-          if (isCollecting) addPoints(POINT_VALUES.COLLECT_COIN, "Coin Identified!");
+          if (isCollecting) {
+            const rarityBonus = POINT_VALUES.RARITY_BONUS[foundCoin.rarity as keyof typeof POINT_VALUES.RARITY_BONUS] || 0;
+            addPoints(POINT_VALUES.COLLECT_COIN + rarityBonus, `Coin Added! ${foundCoin.rarity !== 'Common' ? `(${foundCoin.rarity} Bonus)` : ''}`);
+          }
           return isCollecting ? [...prev, foundCoin.id] : prev;
         });
         addPoints(POINT_VALUES.UPLOAD_PHOTO, "Photo Saved!");
@@ -907,7 +936,8 @@ function CoinCollectorApp() {
           denomination: result.denomination !== 'unknown' ? result.denomination : 'Custom',
           year: result.year || new Date().getFullYear(),
           description: 'Automatically identified via photo.',
-          imageUrl: fullPhoto
+          imageUrl: fullPhoto,
+          rarity: 'Common'
         };
         setCustomCoins(prev => [...prev, newCoin]);
         setCollectedIds(prev => [...prev, newCoin.id]);
@@ -1100,7 +1130,9 @@ function CoinCollectorApp() {
       ...prev,
       totalSpend: (prev.totalSpend || 0) + amount
     }));
-    addPoints(POINT_VALUES.COLLECT_COIN, "Purchase Logged!");
+    
+    const rarityBonus = POINT_VALUES.RARITY_BONUS[coin.rarity as keyof typeof POINT_VALUES.RARITY_BONUS] || 0;
+    addPoints(POINT_VALUES.COLLECT_COIN + rarityBonus, `Purchase Logged! ${coin.rarity !== 'Common' ? `(${coin.rarity} Bonus)` : ''}`);
   };
 
   const addManualCoin = async () => {
@@ -1152,8 +1184,23 @@ function CoinCollectorApp() {
     }
   };
 
+  const refreshApp = () => {
+    window.location.reload();
+  };
+
+  const clearCache = () => {
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        for (let name of names) caches.delete(name);
+      });
+    }
+    alert("Cache cleared successfully!");
+  };
+
+  const { level: currentLevel, name: levelName, nextLevelPoints, progress: levelProgress } = getLevelInfo(userProfile.points);
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 dark:text-white flex flex-col transition-colors duration-300" style={{ paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
+    <div className={`min-h-screen bg-gray-50 dark:bg-gray-950 dark:text-white flex flex-col transition-colors duration-300 ${userProfile.settings?.isCompactUI ? 'text-sm' : 'text-base'}`} style={{ paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
       {/* Offline Indicator */}
       <AnimatePresence>
         {isOffline && (
@@ -1491,6 +1538,15 @@ function CoinCollectorApp() {
                             userProfile.settings?.isCompactUI ? 'scale-75' : ''
                           }`}>
                             <CheckCircle2 size={14} className="sm:w-4 sm:h-4" />
+                          </div>
+                        )}
+                        {coin.rarity && coin.rarity !== 'Common' && (
+                          <div className={`absolute -bottom-1 -left-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-sm z-10 ${
+                            coin.rarity === 'Ultra Rare' ? 'bg-purple-500 text-white' : 
+                            coin.rarity === 'Rare' ? 'bg-amber-500 text-white' : 
+                            'bg-blue-500 text-white'
+                          }`}>
+                            {coin.rarity}
                           </div>
                         )}
                       </div>
@@ -1854,6 +1910,74 @@ function CoinCollectorApp() {
                     </div>
                   </div>
 
+                  {/* Stats Block - Points & Level */}
+                  <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-3xl font-black text-gray-900 dark:text-white">{userProfile.points.toLocaleString()}</p>
+                      <div className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg text-[10px] font-bold uppercase tracking-widest">
+                        Lvl {currentLevel}
+                      </div>
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-3">{levelName}</p>
+                    
+                    {/* Progress Bar */}
+                    <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mb-1">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${levelProgress}%` }}
+                        className="h-full bg-amber-500 rounded-full"
+                      />
+                    </div>
+                    <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                      <span>{userProfile.points % 2000} XP</span>
+                      <span>2,000 XP</span>
+                    </div>
+                  </div>
+
+                  {/* Stats Block - Total Spend */}
+                  <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <p className="text-3xl font-black text-gray-900 dark:text-white">£{(userProfile.totalSpend || 0).toFixed(2)}</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Total Spend</p>
+                    <div className="mt-4 flex items-center gap-1.5 text-xs font-bold text-blue-500 uppercase tracking-widest">
+                      <TrendingUp size={14} />
+                      Investment
+                    </div>
+                  </div>
+
+                  {/* Stats Block - Points & Level */}
+                  <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-3xl font-black text-gray-900 dark:text-white">{userProfile.points.toLocaleString()}</p>
+                      <div className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg text-[10px] font-bold uppercase tracking-widest">
+                        Lvl {currentLevel}
+                      </div>
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-3">{levelName}</p>
+                    
+                    {/* Progress Bar */}
+                    <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mb-1">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${levelProgress}%` }}
+                        className="h-full bg-amber-500 rounded-full"
+                      />
+                    </div>
+                    <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                      <span>{userProfile.points % 2000} XP</span>
+                      <span>2,000 XP</span>
+                    </div>
+                  </div>
+
+                  {/* Stats Block - Total Spend */}
+                  <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <p className="text-3xl font-black text-gray-900 dark:text-white">£{(userProfile.totalSpend || 0).toFixed(2)}</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Total Spend</p>
+                    <div className="mt-4 flex items-center gap-1.5 text-xs font-bold text-blue-500 uppercase tracking-widest">
+                      <TrendingUp size={14} />
+                      Investment
+                    </div>
+                  </div>
+
                   {/* Stats Block - Total Coins */}
                   <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
                     <p className="text-3xl font-black text-gray-900 dark:text-white">{collectedIds.length}</p>
@@ -2141,6 +2265,23 @@ function CoinCollectorApp() {
                         className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.isDarkMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                       >
                         <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isDarkMode ? 'right-1' : 'left-1'}`} />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <button 
+                        onClick={refreshApp}
+                        className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <RefreshCw size={18} className="text-blue-500 mb-1" />
+                        <span className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-widest">Refresh App</span>
+                      </button>
+                      <button 
+                        onClick={clearCache}
+                        className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <Trash2 size={18} className="text-red-500 mb-1" />
+                        <span className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-widest">Clear Cache</span>
                       </button>
                     </div>
                   </div>
