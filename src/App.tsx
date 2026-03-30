@@ -3,6 +3,7 @@ import {
   Trophy, Search, Folder, ChevronRight, CheckCircle2, Circle, 
   ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
   User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle, TrendingUp, Trash2, Shield, Copy, Edit,
+  Monitor, Smartphone, Database, Settings2, ShieldAlert, FlaskConical,
   Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle, ShoppingCart, Tag, Table, History, Moon, HelpCircle, ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -520,11 +521,15 @@ function CoinCollectorApp() {
         settings: {
           showBottomMenu: true,
           isDarkMode: false,
+          followSystemTheme: true,
+          isCompactUI: false,
           isTextMode: false,
+          isFocusMode: false,
           isBackgroundRemovalEnabled: true,
           isPurchaseMode: false,
           showCoinPrice: true,
-          isNightBonusActive: true
+          isNightBonusActive: true,
+          sortBy: 'recent-added'
         },
         dnaScore: 0,
         unlockedClues: []
@@ -2974,7 +2979,18 @@ function CoinCollectorApp() {
                       className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-100 dark:border-amber-900/30"
                     />
                     <div className="flex-1">
-                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{userProfile.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{userProfile.name}</h3>
+                        <button 
+                          onClick={() => {
+                            const newName = prompt("Enter your name:", userProfile.name);
+                            if (newName) setUserProfile(prev => ({ ...prev, name: newName }));
+                          }}
+                          className="p-1 text-gray-400 hover:text-amber-500 transition-colors"
+                        >
+                          <Edit size={16} />
+                        </button>
+                      </div>
                       <p className="text-amber-600 dark:text-amber-400 font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center gap-1">
                         <Award size={14} className="sm:w-4 sm:h-4" />
                         {userProfile.rank}
@@ -3122,61 +3138,6 @@ function CoinCollectorApp() {
                       )}
                     </div>
                   </div>
-
-                  {/* Settings Block */}
-                  <div className="sm:col-span-3 space-y-4">
-                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">App Settings</h3>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                          <Layout className="text-gray-400" size={20} />
-                          <div>
-                            <p className="text-xs font-black uppercase tracking-widest">Focus Mode</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Hide non-essential UI</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setUserProfile(prev => ({
-                            ...prev,
-                            settings: { ...prev.settings, isFocusMode: !prev.settings.isFocusMode }
-                          }))}
-                          className={`w-12 h-6 rounded-full transition-colors relative ${userProfile.settings.isFocusMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings.isFocusMode ? 'left-7' : 'left-1'}`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                          <RefreshCw className="text-gray-400" size={20} />
-                          <div>
-                            <p className="text-xs font-black uppercase tracking-widest">Compare Mode</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Side-by-side view</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setIsCompareMode(true)}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest"
-                        >
-                          Open
-                        </button>
-                      </div>
-                    </div>
-
-                    {collectedIds.length >= 20 && (
-                      <div className="p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800/50 rounded-2xl space-y-3">
-                        <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
-                          <Shield size={16} />
-                          <p className="text-[10px] font-black uppercase tracking-widest">Hidden Settings Unlocked!</p>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-bold text-gray-600 dark:text-gray-400">Experimental Sorting</p>
-                          <button className="text-[10px] font-black text-purple-600 uppercase tracking-widest">Enable</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
                   {userProfile.badges.length > 0 && (
                     <div className="sm:col-span-3 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
                       <h4 className="font-bold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
@@ -3260,377 +3221,423 @@ function CoinCollectorApp() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
+                {/* Quick Actions Grid */}
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-6">
                   <button 
                     onClick={() => setIsSpinModalOpen(true)}
-                    className="py-3 sm:py-4 bg-gradient-to-br from-amber-400 to-orange-500 text-white font-bold rounded-2xl hover:from-amber-500 hover:to-orange-600 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
+                    className="p-4 bg-gradient-to-br from-amber-400 to-orange-500 text-white font-bold rounded-2xl hover:from-amber-500 hover:to-orange-600 transition-all flex flex-col items-center justify-center gap-2 shadow-lg"
                   >
-                    <Dices size={18} className="sm:w-5 sm:h-5" />
-                    Lucky Spin
+                    <Dices size={24} />
+                    <span className="text-[10px] uppercase tracking-widest font-black">Lucky Spin</span>
                   </button>
                   <button 
                     onClick={() => setIsPurchasedAddOpen(true)}
-                    className="py-3 sm:py-4 bg-blue-500 text-white font-bold rounded-2xl hover:bg-blue-600 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
+                    className="p-4 bg-blue-500 text-white font-bold rounded-2xl hover:bg-blue-600 transition-all flex flex-col items-center justify-center gap-2 shadow-lg"
                   >
-                    <Folder size={18} className="sm:w-5 sm:h-5" />
-                    Purchased
+                    <Folder size={24} />
+                    <span className="text-[10px] uppercase tracking-widest font-black">Purchased</span>
                   </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
                   <button 
                     onClick={() => setIsPhotoLibraryOpen(true)}
-                    className="py-3 sm:py-4 bg-purple-500 text-white font-bold rounded-2xl hover:bg-purple-600 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
+                    className="p-4 bg-purple-500 text-white font-bold rounded-2xl hover:bg-purple-600 transition-all flex flex-col items-center justify-center gap-2 shadow-lg"
                   >
-                    <Camera size={18} className="sm:w-5 sm:h-5" />
-                    Library
+                    <Camera size={24} />
+                    <span className="text-[10px] uppercase tracking-widest font-black">Library</span>
                   </button>
                   <button 
-                    onClick={exportCollection}
-                    className="py-3 sm:py-4 bg-gray-900 text-white font-bold rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
+                    onClick={() => {
+                      addPoints(POINT_VALUES.DAILY_CHECKIN, "Daily Reward Claimed!");
+                      alert("You've claimed your daily 50 points! Come back tomorrow for more.");
+                    }}
+                    className="p-4 bg-amber-500 text-white font-bold rounded-2xl hover:bg-amber-600 transition-all flex flex-col items-center justify-center gap-2 shadow-lg"
                   >
-                    <Share size={18} className="sm:w-5 sm:h-5" />
-                    Export
+                    <Award size={24} />
+                    <span className="text-[10px] uppercase tracking-widest font-black">Daily Reward</span>
                   </button>
                 </div>
-
-                <div className="grid grid-cols-1 mb-3 sm:mb-4">
-                  <button 
-                    onClick={importCollection}
-                    className="py-3 sm:py-4 bg-white text-gray-900 border-2 border-gray-100 font-bold rounded-2xl hover:bg-gray-50 transition-all flex items-center justify-center gap-1.5 sm:gap-2 text-sm sm:text-base"
-                  >
-                    <RefreshCw size={18} className="sm:w-5 sm:h-5" />
-                    Import Data
-                  </button>
-                </div>
-
-                <button 
-                  onClick={() => {
-                    addPoints(POINT_VALUES.DAILY_CHECKIN, "Daily Reward Claimed!");
-                    alert("You've claimed your daily 50 points! Come back tomorrow for more.");
-                  }}
-                  className="w-full py-3.5 sm:py-4 bg-amber-500 text-white font-bold rounded-2xl hover:bg-amber-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-100 mb-3 sm:mb-4 text-sm sm:text-base"
-                >
-                  <Award size={18} className="sm:w-5 sm:h-5" />
-                  Claim Daily Reward (+50)
-                </button>
 
                 {/* Settings Section */}
-                <div className="bg-gray-50 dark:bg-gray-800 p-4 sm:p-6 rounded-3xl border border-gray-100 dark:border-gray-700 mb-4">
-                  <h4 className="font-bold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-                    <Settings size={16} className="text-gray-500 sm:w-[18px] sm:h-[18px]" />
-                    App Settings
-                  </h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
-                          <Settings size={16} />
-                        </div>
-                        <div>
-                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Follow System Theme</p>
-                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Sync with device settings</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          setUserProfile(prev => ({
-                            ...prev,
-                            settings: {
-                              ...prev.settings,
-                              followSystemTheme: !prev.settings?.followSystemTheme
-                            }
-                          }));
-                        }}
-                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.followSystemTheme ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                      >
-                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.followSystemTheme ? 'right-1' : 'left-1'}`} />
-                      </button>
+                <div className="space-y-8 mb-12">
+                  
+                  {/* Display Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-2">
+                      <Monitor size={16} className="text-blue-500" />
+                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Display</h4>
                     </div>
-
-                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
-                          <BarChart3 size={16} />
-                        </div>
-                        <div>
-                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Compact UI</p>
-                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Reduce spacing and sizes</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          setUserProfile(prev => ({
-                            ...prev,
-                            settings: {
-                              ...prev.settings,
-                              isCompactUI: !prev.settings?.isCompactUI
-                            }
-                          }));
-                        }}
-                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.isCompactUI ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                      >
-                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isCompactUI ? 'right-1' : 'left-1'}`} />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
-                          <Layout size={16} />
-                        </div>
-                        <div>
-                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Text Mode UI</p>
-                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Minimal text-only layout</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          setUserProfile(prev => ({
-                            ...prev,
-                            settings: {
-                              ...prev.settings,
-                              isTextMode: !prev.settings?.isTextMode
-                            }
-                          }));
-                        }}
-                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.isTextMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                      >
-                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isTextMode ? 'right-1' : 'left-1'}`} />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
-                          <ImageOff size={16} />
-                        </div>
-                        <div>
-                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Background Removal</p>
-                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Enable AI image processing</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          setUserProfile(prev => ({
-                            ...prev,
-                            settings: {
-                              ...prev.settings,
-                              isBackgroundRemovalEnabled: !prev.settings?.isBackgroundRemovalEnabled
-                            }
-                          }));
-                        }}
-                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.isBackgroundRemovalEnabled ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                      >
-                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isBackgroundRemovalEnabled ? 'right-1' : 'left-1'}`} />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
-                          <BarChart3 size={16} />
-                        </div>
-                        <div>
-                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Bottom Navigation</p>
-                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Enable bottom menu bar</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          setUserProfile(prev => ({
-                            ...prev,
-                            settings: {
-                              ...prev.settings,
-                              showBottomMenu: !prev.settings?.showBottomMenu
-                            }
-                          }));
-                        }}
-                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.showBottomMenu ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                      >
-                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showBottomMenu ? 'right-1' : 'left-1'}`} />
-                      </button>
-                    </div>
-
-                    {/* Recovery Code Section */}
-                    <div className="p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center justify-between mb-2">
+                    <div className="grid grid-cols-1 gap-2">
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-amber-100 dark:bg-amber-900/20 rounded-xl flex items-center justify-center text-amber-600">
-                            <Shield size={16} />
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            {userProfile.settings?.isDarkMode ? <Moon size={16} /> : <Sparkles size={16} />}
                           </div>
                           <div>
-                            <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Recovery Code</p>
-                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Save this to recover your data</p>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Dark Mode</p>
+                            <p className="text-[10px] text-gray-500">Enable night theme</p>
                           </div>
                         </div>
                         <button 
-                          onClick={generateRecoveryCode}
-                          className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-xl text-[10px] font-bold hover:bg-gray-200 transition-colors"
+                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isDarkMode: !prev.settings.isDarkMode } }))}
+                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.isDarkMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                         >
-                          {userProfile.recoveryCode ? 'Regenerate' : 'Generate'}
+                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isDarkMode ? 'right-0.5' : 'left-0.5'}`} />
                         </button>
                       </div>
-                      {userProfile.recoveryCode && (
-                        <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl flex items-center justify-between border border-gray-100 dark:border-gray-700">
-                          <code className="text-xs font-mono font-bold text-gray-900 dark:text-white tracking-widest">
-                            {userProfile.recoveryCode}
-                          </code>
+
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <Settings size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Follow System Theme</p>
+                            <p className="text-[10px] text-gray-500">Sync with device settings</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, followSystemTheme: !prev.settings.followSystemTheme } }))}
+                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.followSystemTheme ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.followSystemTheme ? 'right-0.5' : 'left-0.5'}`} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <BarChart3 size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Compact UI</p>
+                            <p className="text-[10px] text-gray-500">Reduce spacing and sizes</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isCompactUI: !prev.settings.isCompactUI } }))}
+                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.isCompactUI ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isCompactUI ? 'right-0.5' : 'left-0.5'}`} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <Layout size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Text Mode UI</p>
+                            <p className="text-[10px] text-gray-500">Minimal text-only layout</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isTextMode: !prev.settings.isTextMode } }))}
+                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.isTextMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isTextMode ? 'right-0.5' : 'left-0.5'}`} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <Table size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Sort Collection By</p>
+                            <p className="text-[10px] text-gray-500">Change default sorting</p>
+                          </div>
+                        </div>
+                        <select
+                          value={userProfile.settings.sortBy || 'recent-added'}
+                          onChange={(e) => setUserProfile(prev => ({
+                            ...prev,
+                            settings: { ...prev.settings, sortBy: e.target.value as any }
+                          }))}
+                          className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-none outline-none"
+                        >
+                          <option value="name">Name</option>
+                          <option value="recent-added">Recent</option>
+                          <option value="recent-opened">Opened</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* App Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-2">
+                      <Smartphone size={16} className="text-amber-500" />
+                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">App</h4>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <Zap size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Focus Mode (Performance)</p>
+                            <p className="text-[10px] text-gray-500">Hide non-essential UI</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isFocusMode: !prev.settings.isFocusMode } }))}
+                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.isFocusMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isFocusMode ? 'right-0.5' : 'left-0.5'}`} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <Layout size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Bottom Navigation</p>
+                            <p className="text-[10px] text-gray-500">Enable bottom menu bar</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, showBottomMenu: !prev.settings.showBottomMenu } }))}
+                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.showBottomMenu ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showBottomMenu ? 'right-0.5' : 'left-0.5'}`} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <ImageOff size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Background Removal</p>
+                            <p className="text-[10px] text-gray-500">Enable AI image processing</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isBackgroundRemovalEnabled: !prev.settings.isBackgroundRemovalEnabled } }))}
+                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.isBackgroundRemovalEnabled ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isBackgroundRemovalEnabled ? 'right-0.5' : 'left-0.5'}`} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <RefreshCw size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Compare Mode</p>
+                            <p className="text-[10px] text-gray-500">Side-by-side view</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setIsCompareMode(true)}
+                          className="px-3 py-1.5 bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest"
+                        >
+                          Open
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <button 
+                          onClick={refreshApp}
+                          className="flex items-center justify-center gap-2 p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 transition-colors"
+                        >
+                          <RefreshCw size={14} className="text-blue-500" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Refresh App</span>
+                        </button>
+                        <button 
+                          onClick={clearCache}
+                          className="flex items-center justify-center gap-2 p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 transition-colors"
+                        >
+                          <Trash2 size={14} className="text-red-500" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Clear Cache</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Data Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-2">
+                      <Database size={16} className="text-green-500" />
+                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Data</h4>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <button 
+                          onClick={exportCollection}
+                          className="flex items-center justify-center gap-2 p-3 bg-gray-900 text-white rounded-2xl hover:bg-black transition-colors"
+                        >
+                          <Share size={14} />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Export Data</span>
+                        </button>
+                        <button 
+                          onClick={importCollection}
+                          className="flex items-center justify-center gap-2 p-3 bg-white text-gray-900 border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors"
+                        >
+                          <RefreshCw size={14} />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Import Data</span>
+                        </button>
+                      </div>
+
+                      <div className="p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-amber-50 dark:bg-amber-900/20 rounded-xl flex items-center justify-center text-amber-600">
+                              <Shield size={16} />
+                            </div>
+                            <div>
+                              <p className="font-bold text-xs text-gray-900 dark:text-white">Recovery Code (Backup)</p>
+                              <p className="text-[10px] text-gray-500">Secure your collection</p>
+                            </div>
+                          </div>
                           <button 
-                            onClick={() => {
-                              navigator.clipboard.writeText(userProfile.recoveryCode!);
-                              alert("Recovery code copied to clipboard!");
-                            }}
-                            className="text-amber-600 hover:text-amber-700"
+                            onClick={generateRecoveryCode}
+                            className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 rounded-xl text-[10px] font-bold"
                           >
-                            <Copy size={14} />
+                            {userProfile.recoveryCode ? 'Regen' : 'Gen'}
                           </button>
                         </div>
+                        {userProfile.recoveryCode && (
+                          <div className="bg-gray-50 dark:bg-gray-800 p-2.5 rounded-xl flex items-center justify-between border border-gray-100 dark:border-gray-700">
+                            <code className="text-[10px] font-mono font-bold text-gray-900 dark:text-white tracking-widest">
+                              {userProfile.recoveryCode}
+                            </code>
+                            <button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(userProfile.recoveryCode!);
+                                alert("Recovery code copied!");
+                              }}
+                              className="text-amber-600"
+                            >
+                              <Copy size={14} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <RefreshCw size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Data Conversion</p>
+                            <p className="text-[10px] text-gray-500">Legacy format check</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            const oldData = {
+                              collected_coins: JSON.parse(localStorage.getItem('collected_coins') || 'null'),
+                              custom_coins: JSON.parse(localStorage.getItem('custom_coins') || 'null'),
+                              requested_coins: JSON.parse(localStorage.getItem('requested_coins') || 'null'),
+                              user_profile: JSON.parse(localStorage.getItem('user_profile') || 'null'),
+                              user_coin_images: JSON.parse(localStorage.getItem('user_coin_images') || 'null'),
+                            };
+                            if (oldData.collected_coins || oldData.custom_coins || oldData.requested_coins || oldData.user_profile) {
+                              setConversionData(oldData);
+                              setIsConverting(true);
+                            } else {
+                              alert("No old data detected.");
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-amber-100 text-amber-600 font-bold rounded-xl text-[10px]"
+                        >
+                          Check
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Advanced Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-2">
+                      <Settings2 size={16} className="text-purple-500" />
+                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Advanced</h4>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <Table size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Purchase Mode</p>
+                            <p className="text-[10px] text-gray-500">Senior-friendly table view</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isPurchaseMode: !prev.settings.isPurchaseMode } }))}
+                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.isPurchaseMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isPurchaseMode ? 'right-0.5' : 'left-0.5'}`} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <Tag size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Show Coin Price</p>
+                            <p className="text-[10px] text-gray-500">Display price in normal mode</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, showCoinPrice: !prev.settings.showCoinPrice } }))}
+                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.showCoinPrice ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showCoinPrice ? 'right-0.5' : 'left-0.5'}`} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <ShieldAlert size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Safe Mode</p>
+                            <p className="text-[10px] text-gray-500">Minimal recovery state</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => alert("Safe Mode is automatically managed by the system. If the app crashes, it will prompt for recovery.")}
+                          className="px-3 py-1.5 bg-gray-100 text-gray-500 font-bold rounded-xl text-[10px] uppercase tracking-widest"
+                        >
+                          Info
+                        </button>
+                      </div>
+
+                      {collectedIds.length >= 20 && (
+                        <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800/50 rounded-2xl flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-purple-100 dark:bg-purple-800/40 rounded-xl flex items-center justify-center text-purple-600">
+                              <FlaskConical size={16} />
+                            </div>
+                            <div>
+                              <p className="font-bold text-xs text-gray-900 dark:text-white">Experimental Sorting</p>
+                              <p className="text-[10px] text-purple-600/60">Unlocked feature</p>
+                            </div>
+                          </div>
+                          <button className="px-3 py-1.5 bg-purple-600 text-white font-bold rounded-xl text-[10px] uppercase tracking-widest">Enable</button>
+                        </div>
                       )}
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
-                          <RefreshCw size={16} />
-                        </div>
-                        <div>
-                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Data Conversion</p>
-                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Convert old data formats</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          // Check if there's old data in localStorage to convert
-                          const oldData = {
-                            collected_coins: JSON.parse(localStorage.getItem('collected_coins') || 'null'),
-                            custom_coins: JSON.parse(localStorage.getItem('custom_coins') || 'null'),
-                            requested_coins: JSON.parse(localStorage.getItem('requested_coins') || 'null'),
-                            user_profile: JSON.parse(localStorage.getItem('user_profile') || 'null'),
-                            user_coin_images: JSON.parse(localStorage.getItem('user_coin_images') || 'null'),
-                          };
-                          
-                          if (oldData.collected_coins || oldData.custom_coins || oldData.requested_coins || oldData.user_profile) {
-                            setConversionData(oldData);
-                            setIsConverting(true);
-                          } else {
-                            alert("No old data format detected in local storage.");
-                          }
-                        }}
-                        className="px-3 py-1.5 bg-amber-100 text-amber-600 font-bold rounded-xl text-[10px] sm:text-xs hover:bg-amber-200 transition-colors"
-                      >
-                        Check
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
-                          <Table size={16} />
-                        </div>
-                        <div>
-                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Purchase Mode</p>
-                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Senior-friendly table view</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          setUserProfile(prev => ({
-                            ...prev,
-                            settings: {
-                              ...prev.settings,
-                              isPurchaseMode: !prev.settings?.isPurchaseMode
-                            }
-                          }));
-                        }}
-                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.isPurchaseMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                      >
-                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isPurchaseMode ? 'right-1' : 'left-1'}`} />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
-                          <Tag size={16} />
-                        </div>
-                        <div>
-                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Show Coin Price</p>
-                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Display price in normal mode</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          setUserProfile(prev => ({
-                            ...prev,
-                            settings: {
-                              ...prev.settings,
-                              showCoinPrice: !prev.settings?.showCoinPrice
-                            }
-                          }));
-                        }}
-                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.showCoinPrice ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                      >
-                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showCoinPrice ? 'right-1' : 'left-1'}`} />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
-                          {userProfile.settings?.isDarkMode ? <Sparkles size={16} /> : <Award size={16} />}
-                        </div>
-                        <div>
-                          <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Dark Mode</p>
-                          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Enable night theme</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          setUserProfile(prev => ({
-                            ...prev,
-                            settings: {
-                              ...prev.settings,
-                              isDarkMode: !prev.settings?.isDarkMode
-                            }
-                          }));
-                        }}
-                        className={`w-12 h-6 rounded-full transition-all relative ${userProfile.settings?.isDarkMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                      >
-                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isDarkMode ? 'right-1' : 'left-1'}`} />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 pt-2">
-                      <button 
-                        onClick={refreshApp}
-                        className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <RefreshCw size={18} className="text-blue-500 mb-1" />
-                        <span className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-widest">Refresh App</span>
-                      </button>
-                      <button 
-                        onClick={clearCache}
-                        className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <Trash2 size={18} className="text-red-500 mb-1" />
-                        <span className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-widest">Clear Cache</span>
-                      </button>
                     </div>
                   </div>
                 </div>
 
-                <button 
-                  onClick={() => {
-                    // Simple name edit for demo
-                    const newName = prompt("Enter your name:", userProfile.name);
-                    if (newName) setUserProfile(prev => ({ ...prev, name: newName }));
-                  }}
-                  className="w-full py-3.5 sm:py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
-                >
-                  <Settings size={18} className="sm:w-5 sm:h-5" />
-                  Edit Profile Settings
-                </button>
+                <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-800 text-center">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em]">Coin Collector v2.0</p>
+                </div>
               </div>
             </motion.div>
           </div>
