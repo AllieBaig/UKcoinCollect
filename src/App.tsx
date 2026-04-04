@@ -4,7 +4,7 @@ import {
   ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
   User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle, TrendingUp, Trash2, Shield, Copy, Edit,
   Monitor, Smartphone, Database, Settings2, ShieldAlert, FlaskConical,
-  Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle, ShoppingCart, Tag, Table, History, Moon, HelpCircle, ArrowRight
+  Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle, ShoppingCart, Tag, Table, History, Moon, HelpCircle, ArrowRight, Star, ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UK_COINS, Coin } from './data/coins';
@@ -142,7 +142,9 @@ const BADGES = [
   { id: 'b2', name: 'Small Hoard', description: 'Collect 10 coins', icon: <Trophy size={16} /> },
   { id: 'b3', name: 'Rare Seeker', description: 'Find a Rare coin', icon: <Sparkles size={16} /> },
   { id: 'b4', name: 'Streak Master', description: 'Reach a 7-day streak', icon: <Zap size={16} /> },
-  { id: 'b5', name: 'Master Hunter', description: 'Reach Level 10', icon: <Target size={16} /> }
+  { id: 'b5', name: 'Master Hunter', description: 'Reach Level 10', icon: <Target size={16} /> },
+  { id: 'b6', name: 'Timeline Explorer', description: 'Complete your first timeline', icon: <History size={16} /> },
+  { id: 'b7', name: 'Timeline Master', description: 'Complete all timelines', icon: <Star size={16} /> }
 ];
 
 const TIMELINES: Timeline[] = [
@@ -457,6 +459,105 @@ function CoinCollectorApp() {
   const [isIdentityCardOpen, setIsIdentityCardOpen] = useState(false);
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [activeTimeline, setActiveTimeline] = useState<Timeline | null>(null);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, Record<number, boolean>>>({});
+
+  const [collectionHistory, setCollectionHistory] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem('collection_history');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      console.error("Failed to load collection_history", e);
+      return {};
+    }
+  });
+
+  const myCoinStory = useMemo(() => {
+    const events: TimelineEvent[] = [];
+    const historyEntries = Object.entries(collectionHistory)
+      .map(([id, date]) => ({ id, date: new Date(date) }))
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    if (historyEntries.length > 0) {
+      // First coin added
+      const first = historyEntries[0];
+      const coin = allCoins.find(c => c.id === first.id);
+      if (coin) {
+        events.push({
+          year: first.date.getFullYear().toString(),
+          event: `First Discovery: ${coin.name}`,
+          note: `Your journey began on ${first.date.toLocaleDateString()} with this ${coin.denomination} coin. It marked the start of your numismatic adventure!`
+        });
+      }
+
+      // Rare coins
+      historyEntries.forEach(entry => {
+        const coin = allCoins.find(c => c.id === entry.id);
+        if (coin && (coin.rarity === 'Rare' || coin.rarity === 'Ultra Rare')) {
+          events.push({
+            year: entry.date.getFullYear().toString(),
+            event: `Rare Find: ${coin.name}`,
+            note: `An incredible discovery! You found a ${coin.rarity} ${coin.denomination} coin. These are highly sought after by collectors.`
+          });
+        }
+      });
+
+      // Monthly milestones
+      const monthsSeen = new Set<string>();
+      historyEntries.forEach(entry => {
+        const monthYear = `${entry.date.getMonth()}-${entry.date.getFullYear()}`;
+        if (!monthsSeen.has(monthYear)) {
+          monthsSeen.add(monthYear);
+          const coin = allCoins.find(c => c.id === entry.id);
+          if (coin) {
+            events.push({
+              year: entry.date.getFullYear().toString(),
+              event: `${entry.date.toLocaleString('default', { month: 'long' })} Milestone`,
+              note: `You were active in ${entry.date.toLocaleString('default', { month: 'long' })}, adding coins like the ${coin.name} to your growing collection.`
+            });
+          }
+        }
+      });
+      
+      // Most collected type
+      const counts: Record<string, number> = {};
+      collectedIds.forEach(id => {
+        const coin = allCoins.find(c => c.id === id);
+        if (coin) counts[coin.denomination] = (counts[coin.denomination] || 0) + 1;
+      });
+      const sortedCounts = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      const mostCollected = sortedCounts[0];
+      if (mostCollected) {
+        events.push({
+          year: 'Current',
+          event: `Specialist: ${mostCollected[0]}`,
+          note: `You have a clear preference for ${mostCollected[0]} coins, with ${mostCollected[1]} in your collection! You're becoming a true expert in this denomination.`
+        });
+      }
+    }
+
+    // Sort events by year (roughly)
+    events.sort((a, b) => {
+      if (a.year === 'Current') return 1;
+      if (b.year === 'Current') return -1;
+      return parseInt(a.year) - parseInt(b.year);
+    });
+
+    return {
+      id: 'my-story',
+      title: 'My Coin Story',
+      description: 'A personalized timeline of your collecting journey and milestones.',
+      events
+    };
+  }, [collectionHistory, allCoins, collectedIds]);
+
+  const allTimelines = useMemo(() => [myCoinStory, ...TIMELINES], [myCoinStory]);
+
+  const timelineLevel = useMemo(() => {
+    const count = collectedIds.length;
+    if (count >= 50) return 'Expert';
+    if (count >= 10) return 'Collector';
+    return 'Beginner';
+  }, [collectedIds.length]);
   const [isCompareMode, setIsCompareMode] = useState(false);
   const [compareCoins, setCompareCoins] = useState<[Coin | null, Coin | null]>([null, null]);
   const [discoveryFact, setDiscoveryFact] = useState<string | null>(null);
@@ -939,16 +1040,6 @@ function CoinCollectorApp() {
     }
   }, []);
 
-  const [collectionHistory, setCollectionHistory] = useState<Record<string, string>>(() => {
-    try {
-      const saved = localStorage.getItem('collection_history');
-      return saved ? JSON.parse(saved) : {};
-    } catch (e) {
-      console.error("Failed to load collection_history", e);
-      return {};
-    }
-  });
-
   useEffect(() => {
     localStorage.setItem('collection_history', JSON.stringify(collectionHistory));
   }, [collectionHistory]);
@@ -1357,7 +1448,10 @@ function CoinCollectorApp() {
       const isCollecting = !isAlreadyCollected || isDuplicate;
       
       if (isCollecting) {
-        setCollectionHistory(ch => ({ ...ch, [id]: new Date().toISOString() }));
+        setCollectionHistory(ch => {
+          if (ch[id]) return ch;
+          return { ...ch, [id]: new Date().toISOString() };
+        });
         
         let pointsToAdd = POINT_VALUES.COLLECT_COIN;
         if (isNightBonus) pointsToAdd = Math.floor(pointsToAdd * 1.5);
@@ -2040,7 +2134,10 @@ function CoinCollectorApp() {
     } else {
       setCustomCoins(prev => [...prev, newCoin]);
       setCollectedIds(prev => [...prev, newCoin.id]);
-      setCollectionHistory(ch => ({ ...ch, [newCoin.id]: new Date().toISOString() }));
+      setCollectionHistory(ch => {
+        if (ch[newCoin.id]) return ch;
+        return { ...ch, [newCoin.id]: new Date().toISOString() };
+      });
       if (manualCoinPhoto) {
         setUserCoinImages(prev => ({ ...prev, [newCoin.id]: manualCoinPhoto }));
       }
@@ -4318,7 +4415,7 @@ function CoinCollectorApp() {
                   <section className="space-y-4">
                     <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Continue Exploring</h4>
                     <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
-                      {TIMELINES.filter(t => t.id === userProfile.lastTimelineId).map(timeline => (
+                      {allTimelines.filter(t => t.id === userProfile.lastTimelineId).map(timeline => (
                         <motion.div 
                           key={timeline.id}
                           whileHover={{ scale: 1.02 }}
@@ -4357,7 +4454,7 @@ function CoinCollectorApp() {
                 <section className="space-y-4">
                   <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Popular Timelines</h4>
                   <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
-                    {TIMELINES.slice(0, 3).map(timeline => (
+                    {allTimelines.slice(0, 3).map(timeline => (
                       <motion.div 
                         key={timeline.id}
                         whileHover={{ scale: 1.02 }}
@@ -4387,11 +4484,28 @@ function CoinCollectorApp() {
                   </div>
                 </section>
 
+                {/* Timeline Achievements */}
+                <section className="space-y-4">
+                  <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Your Achievements</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-3xl border border-blue-100 dark:border-blue-800">
+                      <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Timeline Level</p>
+                      <p className="text-lg font-black text-gray-900 dark:text-white">{timelineLevel}</p>
+                    </div>
+                    <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-3xl border border-purple-100 dark:border-purple-800">
+                      <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1">Milestones</p>
+                      <p className="text-lg font-black text-gray-900 dark:text-white">
+                        {collectedIds.length >= 50 ? '3/3' : collectedIds.length >= 10 ? '2/3' : '1/3'}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
                 {/* All Timelines */}
                 <section className="space-y-4">
                   <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>All Timelines</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {TIMELINES.map(timeline => (
+                    {allTimelines.map(timeline => (
                       <motion.div 
                         key={timeline.id}
                         whileHover={{ x: 5 }}
@@ -4402,7 +4516,7 @@ function CoinCollectorApp() {
                         className={`flex items-center gap-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-4 cursor-pointer border-2 ${userProfile.lastTimelineId === timeline.id ? 'border-blue-500' : 'border-transparent'}`}
                       >
                         <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center shadow-sm text-blue-500">
-                          <History size={24} />
+                          {timeline.id === 'my-story' ? <Sparkles size={24} /> : <History size={24} />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h5 className="font-bold text-gray-900 dark:text-white truncate">{timeline.title}</h5>
@@ -4464,6 +4578,7 @@ function CoinCollectorApp() {
                   <div className="space-y-12 relative">
                     {activeTimeline.events.map((event, idx) => {
                       const isCompleted = (userProfile.timelineProgress[activeTimeline.id] || 0) >= ((idx + 1) / activeTimeline.events.length) * 100;
+                      const isExpanded = expandedEvents[activeTimeline.id]?.[idx];
                       
                       return (
                         <motion.div 
@@ -4471,7 +4586,14 @@ function CoinCollectorApp() {
                           initial={{ x: -20, opacity: 0 }}
                           animate={{ x: 0, opacity: 1 }}
                           transition={{ delay: idx * 0.1 }}
-                          className="flex gap-8 group"
+                          className="flex gap-8 group cursor-pointer"
+                          onClick={() => setExpandedEvents(prev => ({
+                            ...prev,
+                            [activeTimeline.id]: {
+                              ...(prev[activeTimeline.id] || {}),
+                              [idx]: !isExpanded
+                            }
+                          }))}
                         >
                           {/* Dot */}
                           <div className={`relative z-10 w-9 h-9 rounded-full flex items-center justify-center border-4 border-white dark:border-gray-950 shadow-sm transition-colors ${isCompleted ? 'bg-blue-500' : 'bg-gray-200 dark:bg-gray-800'}`}>
@@ -4481,28 +4603,61 @@ function CoinCollectorApp() {
                           <div className="flex-1 space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="text-blue-500 font-black text-sm uppercase tracking-widest">{event.year}</span>
-                              {!isCompleted && (
-                                <button 
-                                  onClick={() => {
-                                    const newProgress = Math.round(((idx + 1) / activeTimeline.events.length) * 100);
-                                    setUserProfile(prev => ({
-                                      ...prev,
-                                      timelineProgress: {
-                                        ...prev.timelineProgress,
-                                        [activeTimeline.id]: Math.max(prev.timelineProgress[activeTimeline.id] || 0, newProgress)
-                                      }
-                                    }));
-                                  }}
-                                  className="text-[10px] font-black text-gray-400 hover:text-blue-500 uppercase tracking-widest transition-colors"
-                                >
-                                  Mark as Read
-                                </button>
-                              )}
+                              <div className="flex items-center gap-3">
+                                {!isCompleted && (
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const newProgress = Math.round(((idx + 1) / activeTimeline.events.length) * 100);
+                                      setUserProfile(prev => {
+                                        const updatedProgress = {
+                                          ...prev.timelineProgress,
+                                          [activeTimeline.id]: Math.max(prev.timelineProgress[activeTimeline.id] || 0, newProgress)
+                                        };
+                                        
+                                        // Award Timeline Badges
+                                        const newBadges = [...prev.badges];
+                                        if (newProgress === 100 && !newBadges.includes('b6')) {
+                                          newBadges.push('b6');
+                                          addPoints(1000, "Badge Unlocked: Timeline Explorer!");
+                                        }
+                                        
+                                        const allCompleted = allTimelines.every(t => (updatedProgress[t.id] || 0) === 100);
+                                        if (allCompleted && !newBadges.includes('b7')) {
+                                          newBadges.push('b7');
+                                          addPoints(5000, "Badge Unlocked: Timeline Master!");
+                                        }
+                                        
+                                        return {
+                                          ...prev,
+                                          timelineProgress: updatedProgress,
+                                          badges: newBadges
+                                        };
+                                      });
+                                    }}
+                                    className="text-[10px] font-black text-gray-400 hover:text-blue-500 uppercase tracking-widest transition-colors"
+                                  >
+                                    Mark as Read
+                                  </button>
+                                )}
+                                <ChevronDown size={16} className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                              </div>
                             </div>
                             <h4 className="text-lg font-black text-gray-900 dark:text-white leading-tight">{event.event}</h4>
-                            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
-                              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-medium">{event.note}</p>
-                            </div>
+                            <AnimatePresence>
+                              {isExpanded && (
+                                <motion.div 
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-800 mt-2">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-medium">{event.note}</p>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                           </div>
                         </motion.div>
                       );
