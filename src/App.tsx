@@ -2302,10 +2302,10 @@ function CoinCollectorApp() {
                 }
                 fileInputRef.current?.click();
               }}
-              className={`bg-amber-500 text-white p-2 rounded-full shadow-lg shadow-amber-200 dark:shadow-none hover:bg-amber-600 transition-all flex items-center gap-2 px-4 ${isOffline ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+              className={`bg-amber-500 text-white rounded-full shadow-lg shadow-amber-200 dark:shadow-none hover:bg-amber-600 transition-all flex items-center gap-2 ${getResponsiveClass('p-2 px-4 sm:p-2 sm:px-4', 'p-1.5 px-3', 'p-2 px-4', 'p-2.5 px-5')} ${isOffline ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
               title="Take a photo of a coin"
             >
-              <Camera size={20} className="sm:w-6 sm:h-6" />
+              <Camera size={20} className={getResponsiveClass('sm:w-6 sm:h-6', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
               <span className="hidden sm:inline font-black uppercase tracking-widest text-xs">Scan</span>
             </button>
             <input 
@@ -2321,10 +2321,10 @@ function CoinCollectorApp() {
                 setIsAddingToCollection(false);
                 setIsRequestModalOpen(true);
               }}
-              className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 p-2 rounded-full shadow-lg hover:bg-black dark:hover:bg-white transition-all"
+              className={`bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-full shadow-lg hover:bg-black dark:hover:bg-white transition-all ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}
               title="Manual Request"
             >
-              <Plus size={22} className="sm:w-6 sm:h-6" />
+              <Plus size={22} className={getResponsiveClass('sm:w-6 sm:h-6', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
             </button>
           </div>
         </div>
@@ -2343,14 +2343,14 @@ function CoinCollectorApp() {
       </header>
 
       {/* Search and Filters */}
-      <div className={`px-4 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors ${userProfile.settings?.isFocusMode ? 'sticky top-0 z-[80] shadow-sm' : ''}`}>
-        <div className="max-w-2xl mx-auto space-y-4">
+      <div className={`bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors ${userProfile.settings?.isFocusMode ? 'sticky top-0 z-[80] shadow-sm' : ''} ${getResponsiveClass('px-4 py-4', 'px-2 py-2', 'px-4 py-4', 'px-6 py-6')}`}>
+        <div className={`max-w-2xl mx-auto ${getResponsiveClass('space-y-4', 'space-y-2', 'space-y-4', 'space-y-6')}`}>
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-amber-500 transition-colors" size={20} />
+            <Search className={`absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-amber-500 transition-colors ${getResponsiveClass('', 'w-4 h-4 left-3', 'w-5 h-5 left-4', 'w-6 h-6 left-5')}`} size={20} />
             <input 
               type="text"
               placeholder="Search all coins..."
-              className="w-full pl-12 pr-4 py-3 sm:py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent rounded-[1.25rem] text-base sm:text-lg font-medium focus:bg-white dark:focus:bg-gray-900 focus:border-amber-500 outline-none transition-all shadow-sm"
+              className={`w-full bg-gray-50 dark:bg-gray-800 border-2 border-transparent rounded-[1.25rem] font-medium focus:bg-white dark:focus:bg-gray-900 focus:border-amber-500 outline-none transition-all shadow-sm ${getResponsiveClass('pl-12 pr-4 py-3 sm:py-4 text-base sm:text-lg', 'pl-10 pr-3 py-2 text-sm', 'pl-12 pr-4 py-3 text-base', 'pl-14 pr-5 py-4 text-lg')}`}
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -2359,17 +2359,17 @@ function CoinCollectorApp() {
             />
           </div>
           
-          <div className="flex items-center justify-between gap-3">
+          <div className={`flex items-center justify-between ${getResponsiveClass('gap-3', 'gap-1.5', 'gap-3', 'gap-4')}`}>
             <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar flex-1">
               {(['all', 'collected', 'missing'] as const).map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+                  className={`rounded-full font-black uppercase tracking-widest whitespace-nowrap transition-all ${
                     filter === f 
                       ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-md' 
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
+                  } ${getResponsiveClass('px-5 py-2 text-xs', 'px-3 py-1.5 text-[10px]', 'px-5 py-2 text-xs', 'px-6 py-2.5 text-sm')}`}
                 >
                   {f}
                 </button>
@@ -2382,7 +2382,7 @@ function CoinCollectorApp() {
                 ...prev,
                 settings: { ...prev.settings, sortBy: e.target.value as any }
               }))}
-              className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border-none focus:ring-2 focus:ring-amber-500 transition-all outline-none"
+              className={`bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full font-black uppercase tracking-widest border-none focus:ring-2 focus:ring-amber-500 transition-all outline-none ${getResponsiveClass('px-4 py-2 text-xs', 'px-2 py-1.5 text-[10px]', 'px-4 py-2 text-xs', 'px-5 py-2.5 text-sm')}`}
             >
               <option value="name">Name</option>
               <option value="recent-added">Recent</option>
@@ -2447,27 +2447,27 @@ function CoinCollectorApp() {
                       }`}
                     >
                       {!userProfile.settings?.isTextMode && (
-                        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-amber-50 dark:bg-amber-900/10 text-amber-600 rounded-2xl flex items-center justify-center flex-shrink-0">
-                          <Folder size={32} className="sm:w-9 sm:h-9" fill="currentColor" fillOpacity={0.1} />
+                        <div className={`bg-amber-50 dark:bg-amber-900/10 text-amber-600 rounded-2xl flex items-center justify-center flex-shrink-0 ${getResponsiveClass('w-14 h-14 sm:w-16 sm:h-16', 'w-10 h-10', 'w-14 h-14', 'w-18 h-18')}`}>
+                          <Folder size={32} className={getResponsiveClass('sm:w-9 sm:h-9', 'w-6 h-6', 'w-8 h-8', 'w-10 h-10')} fill="currentColor" fillOpacity={0.1} />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">{denom} Coins</h3>
-                        <div className="flex items-center gap-3 mt-2">
+                        <h3 className={`font-black text-gray-900 dark:text-white tracking-tight ${getResponsiveClass('text-xl sm:text-2xl', 'text-lg', 'text-xl', 'text-2xl')}`}>{denom} Coins</h3>
+                        <div className={`flex items-center gap-3 ${getResponsiveClass('mt-2', 'mt-1', 'mt-2', 'mt-3')}`}>
                           {!userProfile.settings?.isTextMode ? (
-                            <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                            <div className={`flex-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden ${getResponsiveClass('h-2', 'h-1.5', 'h-2', 'h-2.5')}`}>
                               <div 
                                 className="h-full bg-amber-500 rounded-full" 
                                 style={{ width: `${denomProgress}%` }}
                               />
                             </div>
                           ) : (
-                            <span className="text-[10px] sm:text-xs font-black text-amber-600 uppercase tracking-widest">{denomProgress}% Complete</span>
+                            <span className={`font-black text-amber-600 uppercase tracking-widest ${getResponsiveClass('text-[10px] sm:text-xs', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>{denomProgress}% Complete</span>
                           )}
-                          <span className="text-[10px] sm:text-xs font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">{collectedInDenom} / {coinsInDenom.length}</span>
+                          <span className={`font-black text-gray-400 uppercase tracking-widest whitespace-nowrap ${getResponsiveClass('text-[10px] sm:text-xs', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>{collectedInDenom} / {coinsInDenom.length}</span>
                         </div>
                       </div>
-                      <ChevronRight className="text-gray-300 sm:w-7 sm:h-7 flex-shrink-0" size={24} />
+                      <ChevronRight className={`text-gray-300 flex-shrink-0 ${getResponsiveClass('sm:w-7 sm:h-7', 'w-5 h-5', 'w-6 h-6', 'w-8 h-8')}`} size={24} />
                     </motion.div>
                   ))}
 
@@ -2478,29 +2478,29 @@ function CoinCollectorApp() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     onClick={() => setActiveDenomination('Wishlist')}
-                    className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border-2 border-dashed border-amber-300 hover:border-amber-500 transition-all cursor-pointer flex items-center gap-3 sm:gap-4"
+                    className={`bg-white dark:bg-gray-900 rounded-2xl shadow-sm border-2 border-dashed border-amber-300 dark:border-amber-900/50 hover:border-amber-500 transition-all cursor-pointer flex items-center ${getResponsiveClass('p-4 sm:p-5 gap-3 sm:gap-4', 'p-2 gap-2', 'p-4 gap-3', 'p-5 gap-4')}`}
                   >
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center">
-                      <Folder size={28} className="sm:w-8 sm:h-8" fill="currentColor" fillOpacity={0.1} />
+                    <div className={`bg-amber-50 dark:bg-amber-900/10 text-amber-500 rounded-2xl flex items-center justify-center ${getResponsiveClass('w-12 h-12 sm:w-14 sm:h-14', 'w-10 h-10', 'w-12 h-12', 'w-14 h-14')}`}>
+                      <Folder size={28} className={getResponsiveClass('sm:w-8 sm:h-8', 'w-5 h-5', 'w-6 h-6', 'w-8 h-8')} fill="currentColor" fillOpacity={0.1} />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 italic">My Wishlist</h3>
-                      <p className="text-xs sm:text-sm text-gray-500">{requestedCoins.length} coins requested</p>
+                      <h3 className={`font-bold text-gray-900 dark:text-white italic ${getResponsiveClass('text-lg sm:text-xl', 'text-base', 'text-lg', 'text-xl')}`}>My Wishlist</h3>
+                      <p className={`text-gray-500 dark:text-gray-400 ${getResponsiveClass('text-xs sm:text-sm', 'text-[10px]', 'text-xs', 'text-sm')}`}>{requestedCoins.length} coins requested</p>
                     </div>
-                    <ChevronRight className="text-gray-300 sm:w-6 sm:h-6" size={20} />
+                    <ChevronRight className={`text-gray-300 flex-shrink-0 ${getResponsiveClass('sm:w-6 sm:h-6', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')}`} size={20} />
                   </motion.div>
                 )}
               </>
             ) : activeDenomination === 'Wishlist' ? (
               /* Wishlist View */
-              <div className="space-y-4">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-gray-500">Coins you've requested for future updates:</p>
+              <div className={`space-y-4 ${getResponsiveClass('p-0', 'p-0', 'p-0', 'p-0')}`}>
+                <div className={`flex items-center justify-between ${getResponsiveClass('mb-2', 'mb-1', 'mb-2', 'mb-3')}`}>
+                  <p className={`text-gray-500 dark:text-gray-400 ${getResponsiveClass('text-sm', 'text-xs', 'text-sm', 'text-base')}`}>Coins you've requested for future updates:</p>
                   <button 
                     onClick={copyRequestsToClipboard}
-                    className="flex items-center gap-2 text-amber-600 font-bold text-sm hover:underline"
+                    className={`flex items-center gap-2 text-amber-600 font-bold hover:underline ${getResponsiveClass('text-sm', 'text-xs', 'text-sm', 'text-base')}`}
                   >
-                    <Clipboard size={16} /> Copy List
+                    <Clipboard size={16} className={getResponsiveClass('w-4 h-4', 'w-3 h-3', 'w-4 h-4', 'w-5 h-5')} /> Copy List
                   </button>
                 </div>
                 {requestedCoins.map((req) => (
@@ -2508,13 +2508,13 @@ function CoinCollectorApp() {
                     key={req.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between"
+                    className={`bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center justify-between ${getResponsiveClass('p-4', 'p-2', 'p-4', 'p-6')}`}
                   >
                     <div>
-                      <h4 className="text-lg font-bold text-gray-900">{req.denomination}</h4>
-                      <p className="text-sm text-gray-500">Year: {req.year}</p>
+                      <h4 className={`font-bold text-gray-900 dark:text-white ${getResponsiveClass('text-lg', 'text-base', 'text-lg', 'text-xl')}`}>{req.denomination}</h4>
+                      <p className={`text-gray-500 dark:text-gray-400 ${getResponsiveClass('text-sm', 'text-xs', 'text-sm', 'text-base')}`}>Year: {req.year}</p>
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className={`text-gray-400 dark:text-gray-500 ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>
                       {new Date(req.timestamp).toLocaleDateString()}
                     </div>
                   </motion.div>
@@ -2523,13 +2523,13 @@ function CoinCollectorApp() {
             ) : (
               /* Coin List View */
               userProfile.settings?.isPurchaseMode ? (
-                <div className="bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl">
+                <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl ${getResponsiveClass('p-0', 'p-0', 'p-0', 'p-0')}`}>
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-black dark:bg-white text-white dark:text-black">
-                        <th className="p-4 sm:p-6 text-lg sm:text-2xl font-black uppercase tracking-widest">Coin</th>
-                        <th className="p-4 sm:p-6 text-lg sm:text-2xl font-black uppercase tracking-widest">Year</th>
-                        <th className="p-4 sm:p-6 text-lg sm:text-2xl font-black uppercase tracking-widest text-center">Status</th>
+                        <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Coin</th>
+                        <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Year</th>
+                        <th className={`font-black uppercase tracking-widest text-center ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2537,27 +2537,27 @@ function CoinCollectorApp() {
                         const isCollected = collectedIds.includes(coin.id);
                         return (
                           <tr 
-                            key={coin.id}
+                            key={coin.id} 
                             onClick={() => handleSelectCoin(coin)}
                             className={`border-b-2 sm:border-b-4 border-gray-100 dark:border-gray-800 cursor-pointer active:bg-gray-100 dark:active:bg-gray-800 transition-colors ${
                               isCollected ? 'bg-amber-50 dark:bg-amber-900/10' : ''
                             }`}
                           >
-                            <td className="p-4 sm:p-6">
-                              <p className="text-xl sm:text-4xl font-black text-gray-900 dark:text-white leading-tight">{coin.denomination}</p>
-                              <p className="text-[10px] sm:text-lg font-bold text-gray-500 dark:text-gray-400 truncate max-w-[100px] sm:max-w-[300px] uppercase tracking-wider">{coin.name}</p>
+                            <td className={getResponsiveClass('p-4 sm:p-6', 'p-2', 'p-4', 'p-6')}>
+                              <p className={`font-black text-gray-900 dark:text-white leading-tight ${getResponsiveClass('text-xl sm:text-4xl', 'text-lg', 'text-xl', 'text-4xl')}`}>{coin.denomination}</p>
+                              <p className={`font-bold text-gray-500 dark:text-gray-400 truncate uppercase tracking-wider ${getResponsiveClass('text-[10px] sm:text-lg max-w-[100px] sm:max-w-[300px]', 'text-[8px] max-w-[80px]', 'text-[10px] max-w-[100px]', 'text-lg max-w-[300px]')}`}>{coin.name}</p>
                             </td>
-                            <td className="p-4 sm:p-6 text-xl sm:text-4xl font-black text-gray-900 dark:text-white">
+                            <td className={`font-black text-gray-900 dark:text-white ${getResponsiveClass('p-4 sm:p-6 text-xl sm:text-4xl', 'p-2 text-lg', 'p-4 text-xl', 'p-6 text-4xl')}`}>
                               {coin.year}
                             </td>
-                            <td className="p-4 sm:p-6 text-center">
+                            <td className={`text-center ${getResponsiveClass('p-4 sm:p-6', 'p-2', 'p-4', 'p-6')}`}>
                               {isCollected ? (
-                                <div className="inline-flex items-center justify-center w-8 h-8 sm:w-14 sm:h-14 bg-amber-500 text-white rounded-full shadow-lg">
-                                  <CheckCircle2 size={18} className="sm:w-8 sm:h-8" />
+                                <div className={`inline-flex items-center justify-center bg-amber-500 text-white rounded-full shadow-lg ${getResponsiveClass('w-8 h-8 sm:w-14 sm:h-14', 'w-6 h-6', 'w-10 h-10', 'w-14 h-14')}`}>
+                                  <CheckCircle2 className={getResponsiveClass('sm:w-8 sm:h-8', 'w-4 h-4', 'w-6 h-6', 'w-8 h-8')} size={18} />
                                 </div>
                               ) : (
-                                <div className="inline-flex items-center justify-center w-8 h-8 sm:w-14 sm:h-14 border-2 sm:border-4 border-gray-200 dark:border-gray-700 rounded-full">
-                                  <Circle size={18} className="sm:w-8 sm:h-8 text-gray-200 dark:text-gray-700" />
+                                <div className={`inline-flex items-center justify-center border-gray-200 dark:border-gray-700 rounded-full ${getResponsiveClass('w-8 h-8 sm:w-14 sm:h-14 border-2 sm:border-4', 'w-6 h-6 border', 'w-10 h-10 border-2', 'w-14 h-14 border-4')}`}>
+                                  <Circle className={`text-gray-200 dark:text-gray-700 ${getResponsiveClass('sm:w-8 sm:h-8', 'w-4 h-4', 'w-6 h-6', 'w-8 h-8')}`} size={18} />
                                 </div>
                               )}
                             </td>
@@ -2581,15 +2581,15 @@ function CoinCollectorApp() {
                       className={`group relative bg-white dark:bg-gray-900 rounded-3xl shadow-sm border-2 transition-all cursor-pointer ${
                         isCollected ? 'border-amber-500 bg-amber-50/30 dark:bg-amber-900/10' : 'border-transparent'
                       } ${
-                        userProfile.settings?.isCompactUI ? 'p-3' : 'p-4 sm:p-5'
+                        userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'p-3' : 'p-4 sm:p-5'
                       } ${
                         userProfile.settings?.isTextMode ? 'border-gray-100 dark:border-gray-800' : ''
                       }`}
                     >
-                      <div className="flex gap-4 sm:gap-6 items-center">
+                      <div className={`flex items-center ${getResponsiveClass('gap-4 sm:gap-6', 'gap-3', 'gap-4', 'gap-6')}`}>
                         {!userProfile.settings?.isTextMode && (
                           <div className={`relative flex-shrink-0 ${
-                            userProfile.settings?.isCompactUI ? 'w-14 h-14 sm:w-16 sm:h-16' : 'w-16 h-16 sm:w-20 sm:h-20'
+                            userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'w-14 h-14 sm:w-16 sm:h-16' : 'w-16 h-16 sm:w-20 sm:h-20'
                           }`}>
                             <img 
                               src={coin.imageUrl} 
@@ -2602,17 +2602,17 @@ function CoinCollectorApp() {
                             />
                             {isCollected && (
                               <div className={`absolute -top-1.5 -right-1.5 bg-amber-500 text-white rounded-full p-1 shadow-lg z-10 ${
-                                userProfile.settings?.isCompactUI ? 'scale-75' : ''
+                                userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'scale-75' : ''
                               }`}>
-                                <CheckCircle2 size={14} className="sm:w-4 sm:h-4" />
+                                <CheckCircle2 size={14} className={getResponsiveClass('sm:w-4 sm:h-4', 'w-3 h-3', 'w-4 h-4', 'w-5 h-5')} />
                               </div>
                             )}
                             {coin.rarity && coin.rarity !== 'Common' && (
-                              <div className={`absolute -bottom-1.5 -left-1.5 px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest shadow-md z-10 ${
+                              <div className={`absolute -bottom-1.5 -left-1.5 px-2.5 py-1 rounded-lg font-black uppercase tracking-widest shadow-md z-10 ${
                                 coin.rarity === 'Ultra Rare' ? 'bg-purple-500 text-white' : 
                                 coin.rarity === 'Rare' ? 'bg-amber-500 text-white' : 
                                 'bg-blue-500 text-white'
-                              }`}>
+                              } ${getResponsiveClass('text-[8px]', 'text-[6px]', 'text-[8px]', 'text-[10px]')}`}>
                                 {coin.rarity}
                               </div>
                             )}
@@ -2620,34 +2620,34 @@ function CoinCollectorApp() {
                         )}
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
+                          <div className={`flex items-center justify-between ${getResponsiveClass('mb-1', 'mb-0.5', 'mb-1', 'mb-1.5')}`}>
                             <div className="flex items-center gap-2">
                               {userProfile.settings?.isTextMode && isCollected && <CheckCircle2 size={14} className="text-amber-500" />}
-                              <span className="text-[10px] sm:text-xs font-black text-amber-600 uppercase tracking-widest">
+                              <span className={`font-black text-amber-600 uppercase tracking-widest ${getResponsiveClass('text-[10px] sm:text-xs', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>
                                 {coin.denomination} • {coin.year}
                               </span>
                               {userProfile.settings?.isTextMode && coin.rarity && coin.rarity !== 'Common' && (
-                                <span className={`text-[8px] font-black uppercase tracking-widest ${
+                                <span className={`font-black uppercase tracking-widest ${
                                   coin.rarity === 'Ultra Rare' ? 'text-purple-500' : 
                                   coin.rarity === 'Rare' ? 'text-amber-500' : 
                                   'text-blue-500'
-                                }`}>
+                                } ${getResponsiveClass('text-[8px]', 'text-[6px]', 'text-[8px]', 'text-[10px]')}`}>
                                   [{coin.rarity}]
                                 </span>
                               )}
                             </div>
                             {userProfile.settings?.showCoinPrice && coin.value && (
-                              <div className="px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg text-[10px] sm:text-xs font-black shadow-sm">
+                              <div className={`bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg font-black shadow-sm ${getResponsiveClass('px-2.5 py-1 text-[10px] sm:text-xs', 'px-1.5 py-0.5 text-[8px]', 'px-2.5 py-1 text-[10px]', 'px-3 py-1.5 text-xs')}`}>
                                 £{coin.value.toFixed(2)}
                               </div>
                             )}
                           </div>
                           <h3 className={`font-black text-gray-900 dark:text-white truncate tracking-tight ${
-                            userProfile.settings?.isCompactUI ? 'text-lg' : 'text-xl sm:text-2xl'
+                            userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'text-lg' : 'text-xl sm:text-2xl'
                           }`}>{coin.name}</h3>
                           {!userProfile.settings?.isTextMode && (
                             <p className={`text-gray-500 dark:text-gray-400 line-clamp-1 font-medium ${
-                              userProfile.settings?.isCompactUI ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'
+                              userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'
                             }`}>{coin.description}</p>
                           )}
                         </div>
@@ -2950,33 +2950,33 @@ function CoinCollectorApp() {
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              className="bg-gray-50 dark:bg-gray-950 w-full max-w-2xl rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] flex flex-col"
+              className={`bg-gray-50 dark:bg-gray-950 w-full max-w-2xl rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] flex flex-col ${getResponsiveClass('m-0 sm:m-4', 'm-0', 'm-0 sm:m-4', 'm-0 sm:m-6')}`}
             >
-              <div className="p-4 sm:p-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between sticky top-0 z-10">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Your Profile</h2>
+              <div className={`bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between sticky top-0 z-10 ${getResponsiveClass('p-4 sm:p-6', 'p-3', 'p-4', 'p-8')}`}>
+                <h2 className={`font-bold text-gray-900 dark:text-white ${getResponsiveClass('text-lg sm:text-xl', 'text-base', 'text-lg', 'text-2xl')}`}>Your Profile</h2>
                 <button 
                   onClick={() => setIsProfileOpen(false)}
-                  className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                  className={`hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors flex items-center justify-center ${getResponsiveClass('p-1.5 sm:p-2', 'p-1', 'p-2', 'p-3')}`}
                 >
-                  <X size={20} className="sm:w-6 sm:h-6 text-gray-500" />
+                  <X size={20} className={`text-gray-500 ${getResponsiveClass('sm:w-6 sm:h-6', 'w-5 h-5', 'w-6 h-6', 'w-7 h-7')}`} />
                 </button>
               </div>
 
-              <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6">
+              <div className={`overflow-y-auto ${getResponsiveClass('p-4 sm:p-6 space-y-4 sm:space-y-6', 'p-3 space-y-3', 'p-4 space-y-4', 'p-8 space-y-8')}`}>
                 {/* Bento Grid Layout */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className={`grid grid-cols-1 sm:grid-cols-3 ${getResponsiveClass('gap-3 sm:gap-4', 'gap-2', 'gap-3', 'gap-4')}`}>
                   
                   {/* User Info Block */}
-                  <div className="sm:col-span-2 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-3 sm:gap-4">
+                  <div className={`sm:col-span-2 bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center ${getResponsiveClass('p-4 sm:p-6 gap-3 sm:gap-4', 'p-3 gap-2', 'p-4 gap-3', 'p-8 gap-6')}`}>
                     <img 
                       src={userProfile.avatar} 
                       alt="Avatar" 
                       referrerPolicy="no-referrer"
-                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-100 dark:border-amber-900/30"
+                      className={`rounded-2xl bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-100 dark:border-amber-900/30 ${getResponsiveClass('w-16 h-16 sm:w-20 sm:h-20', 'w-12 h-12', 'w-16 h-16', 'w-24 h-24')}`}
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{userProfile.name}</h3>
+                        <h3 className={`font-bold text-gray-900 dark:text-white ${getResponsiveClass('text-xl sm:text-2xl', 'text-lg', 'text-xl', 'text-3xl')}`}>{userProfile.name}</h3>
                         <button 
                           onClick={() => {
                             const newName = prompt("Enter your name:", userProfile.name);
@@ -2984,11 +2984,11 @@ function CoinCollectorApp() {
                           }}
                           className="p-1 text-gray-400 hover:text-amber-500 transition-colors"
                         >
-                          <Edit size={16} />
+                          <Edit size={16} className={getResponsiveClass('w-4 h-4', 'w-3 h-3', 'w-4 h-4', 'w-5 h-5')} />
                         </button>
                       </div>
-                      <p className="text-amber-600 dark:text-amber-400 font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center gap-1">
-                        <Award size={14} className="sm:w-4 sm:h-4" />
+                      <p className={`text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1 ${getResponsiveClass('text-xs sm:text-sm', 'text-[10px]', 'text-xs', 'text-base')}`}>
+                        <Award size={14} className={getResponsiveClass('sm:w-4 sm:h-4', 'w-3 h-3', 'w-4 h-4', 'w-5 h-5')} />
                         {userProfile.rank}
                       </p>
                     </div>
@@ -3841,7 +3841,7 @@ function CoinCollectorApp() {
                 isZoomed ? 'h-[90vh] sm:h-auto' : ''
               }`}
             >
-              <div className={`relative transition-all duration-500 ${isZoomed ? 'h-full' : 'h-64 sm:h-96'}`}>
+              <div className={`relative transition-all duration-500 ${isZoomed ? 'h-full' : getResponsiveClass('h-64 sm:h-96', 'h-48', 'h-64', 'h-96')}`}>
                 <img 
                   src={selectedCoin.imageUrl} 
                   alt={selectedCoin.name}
@@ -3852,22 +3852,22 @@ function CoinCollectorApp() {
                     isZoomed ? 'object-contain bg-black cursor-zoom-out' : ''
                   }`}
                 />
-                <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                <div className={`absolute top-4 left-4 flex flex-wrap ${getResponsiveClass('gap-2', 'gap-1', 'gap-2', 'gap-3')}`}>
                   <button 
                     onClick={() => changeCoinImage(selectedCoin.id)}
-                    className="flex items-center gap-2 px-4 py-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg"
+                    className={`flex items-center bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg ${getResponsiveClass('gap-2 px-4 py-2', 'gap-1 px-2 py-1', 'gap-2 px-4 py-2', 'gap-3 px-5 py-2.5')}`}
                     title="Change Image"
                   >
-                    <Camera size={18} className="group-hover:scale-110 transition-transform" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Update Photo</span>
+                    <Camera size={18} className={`group-hover:scale-110 transition-transform ${getResponsiveClass('', 'w-3.5 h-3.5', 'w-4 h-4', 'w-5 h-5')}`} />
+                    <span className={`font-black uppercase tracking-widest ${getResponsiveClass('text-[10px]', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>Update Photo</span>
                   </button>
                   <button 
                     onClick={() => editCoin(selectedCoin)}
-                    className="flex items-center gap-2 px-4 py-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg"
+                    className={`flex items-center bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg ${getResponsiveClass('gap-2 px-4 py-2', 'gap-1 px-2 py-1', 'gap-2 px-4 py-2', 'gap-3 px-5 py-2.5')}`}
                     title="Edit Coin"
                   >
-                    <Edit size={18} className="group-hover:scale-110 transition-transform" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Edit Details</span>
+                    <Edit size={18} className={`group-hover:scale-110 transition-transform ${getResponsiveClass('', 'w-3.5 h-3.5', 'w-4 h-4', 'w-5 h-5')}`} />
+                    <span className={`font-black uppercase tracking-widest ${getResponsiveClass('text-[10px]', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>Edit Details</span>
                   </button>
                   <button 
                     onClick={() => {
@@ -3875,11 +3875,11 @@ function CoinCollectorApp() {
                       setIsWebSearchOpen(true);
                       searchWebImages(selectedCoin.name);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg"
+                    className={`flex items-center bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg ${getResponsiveClass('gap-2 px-4 py-2', 'gap-1 px-2 py-1', 'gap-2 px-4 py-2', 'gap-3 px-5 py-2.5')}`}
                     title="Search Web"
                   >
-                    <Globe size={18} className="group-hover:scale-110 transition-transform" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Search Web</span>
+                    <Globe size={18} className={`group-hover:scale-110 transition-transform ${getResponsiveClass('', 'w-3.5 h-3.5', 'w-4 h-4', 'w-5 h-5')}`} />
+                    <span className={`font-black uppercase tracking-widest ${getResponsiveClass('text-[10px]', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>Search Web</span>
                   </button>
                   <button 
                     onClick={() => {
@@ -3890,40 +3890,40 @@ function CoinCollectorApp() {
                       });
                       setIsCompareMode(true);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg"
+                    className={`flex items-center bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg ${getResponsiveClass('gap-2 px-4 py-2', 'gap-1 px-2 py-1', 'gap-2 px-4 py-2', 'gap-3 px-5 py-2.5')}`}
                     title="Compare"
                   >
-                    <RefreshCw size={18} className="group-hover:scale-110 transition-transform" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Compare</span>
+                    <RefreshCw size={18} className={`group-hover:scale-110 transition-transform ${getResponsiveClass('', 'w-3.5 h-3.5', 'w-4 h-4', 'w-5 h-5')}`} />
+                    <span className={`font-black uppercase tracking-widest ${getResponsiveClass('text-[10px]', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>Compare</span>
                   </button>
                 </div>
                 {!isZoomed && (
                   <button 
                     onClick={() => setSelectedCoin(null)}
-                    className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all border border-white/20 shadow-lg"
+                    className={`absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all border border-white/20 shadow-lg ${getResponsiveClass('w-10 h-10', 'w-8 h-8', 'w-10 h-10', 'w-12 h-12')}`}
                   >
-                    <X size={20} />
+                    <X size={20} className={getResponsiveClass('', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
                   </button>
                 )}
               </div>
 
               {!isZoomed && (
-                <div className="p-6 sm:p-8 bg-white dark:bg-gray-900 max-h-[60vh] overflow-y-auto">
-                  <div className="flex justify-between items-start mb-6">
+                <div className={`bg-white dark:bg-gray-900 max-h-[60vh] overflow-y-auto ${getResponsiveClass('p-6 sm:p-8', 'p-4', 'p-6', 'p-10')}`}>
+                  <div className={`flex justify-between items-start ${getResponsiveClass('mb-6', 'mb-4', 'mb-6', 'mb-8')}`}>
                     <div>
-                      <h2 className="text-3xl font-black text-gray-900 dark:text-white leading-tight mb-1">{selectedCoin.name}</h2>
+                      <h2 className={`font-black text-gray-900 dark:text-white leading-tight mb-1 ${getResponsiveClass('text-3xl', 'text-2xl', 'text-3xl', 'text-4xl')}`}>{selectedCoin.name}</h2>
                       <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-200 dark:border-amber-800">
+                        <span className={`bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full font-black uppercase tracking-widest border border-amber-200 dark:border-amber-800 ${getResponsiveClass('px-3 py-1 text-[10px]', 'px-2 py-0.5 text-[8px]', 'px-3 py-1 text-[10px]', 'px-4 py-1.5 text-xs')}`}>
                           {selectedCoin.denomination}
                         </span>
-                        <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-200 dark:border-blue-800">
+                        <span className={`bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full font-black uppercase tracking-widest border border-blue-200 dark:border-blue-800 ${getResponsiveClass('px-3 py-1 text-[10px]', 'px-2 py-0.5 text-[8px]', 'px-3 py-1 text-[10px]', 'px-4 py-1.5 text-xs')}`}>
                           {selectedCoin.year}
                         </span>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-black text-gray-900 dark:text-white">£{(selectedCoin.value || 0).toFixed(2)}</p>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Est. Value</p>
+                      <p className={`font-black text-gray-900 dark:text-white ${getResponsiveClass('text-2xl', 'text-xl', 'text-2xl', 'text-3xl')}`}>£{(selectedCoin.value || 0).toFixed(2)}</p>
+                      <p className={`font-bold text-gray-400 uppercase tracking-widest ${getResponsiveClass('text-[10px]', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>Est. Value</p>
                     </div>
                   </div>
 
@@ -4058,16 +4058,16 @@ function CoinCollectorApp() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
+              className={`relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] ${getResponsiveClass('m-4', 'm-2', 'm-4', 'm-6')}`}
             >
-              <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
+              <div className={`border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50 ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400">
-                    <Folder size={20} />
+                  <div className={`bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 ${getResponsiveClass('w-10 h-10', 'w-8 h-8', 'w-10 h-10', 'w-12 h-12')}`}>
+                    <Folder size={20} className={getResponsiveClass('w-5 h-5', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-gray-900 dark:text-white">Purchased Coins</h2>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Collection History</p>
+                    <h2 className={`font-black text-gray-900 dark:text-white ${getResponsiveClass('text-xl', 'text-lg', 'text-xl', 'text-2xl')}`}>Purchased Coins</h2>
+                    <p className={`text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Collection History</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -4076,21 +4076,21 @@ function CoinCollectorApp() {
                       setIsPurchased(true);
                       setIsManualAddOpen(true);
                     }}
-                    className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors shadow-lg"
+                    className={`bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors shadow-lg flex items-center justify-center ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-3')}`}
                     title="Add New Purchase"
                   >
-                    <Plus size={20} />
+                    <Plus size={20} className={getResponsiveClass('w-5 h-5', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
                   </button>
                   <button 
                     onClick={() => setIsPurchasedAddOpen(false)}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                    className={`hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors flex items-center justify-center ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-3')}`}
                   >
-                    <X size={24} className="text-gray-400" />
+                    <X size={24} className={`text-gray-400 ${getResponsiveClass('w-6 h-6', 'w-5 h-5', 'w-6 h-6', 'w-7 h-7')}`} />
                   </button>
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              <div className={`flex-1 overflow-y-auto space-y-4 ${getResponsiveClass('p-4 sm:p-6', 'p-3', 'p-4', 'p-8')}`}>
                 {purchasedCoins.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
@@ -4139,28 +4139,28 @@ function CoinCollectorApp() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-2xl bg-white dark:bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-[85vh]"
+              className={`relative w-full max-w-2xl bg-white dark:bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-[85vh] ${getResponsiveClass('m-4', 'm-2', 'm-4', 'm-6')}`}
             >
-              <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
+              <div className={`border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50 ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center text-purple-600 dark:text-purple-400">
-                    <Camera size={20} />
+                  <div className={`bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center text-purple-600 dark:text-purple-400 ${getResponsiveClass('w-10 h-10', 'w-8 h-8', 'w-10 h-10', 'w-12 h-12')}`}>
+                    <Camera size={20} className={getResponsiveClass('w-5 h-5', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-gray-900 dark:text-white">Coin Photo Library</h2>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Your Collection Gallery</p>
+                    <h2 className={`font-black text-gray-900 dark:text-white ${getResponsiveClass('text-xl', 'text-lg', 'text-xl', 'text-2xl')}`}>Coin Photo Library</h2>
+                    <p className={`text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Your Collection Gallery</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setIsPhotoLibraryOpen(false)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                  className={`hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors flex items-center justify-center ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-3')}`}
                 >
-                  <X size={24} className="text-gray-400" />
+                  <X size={24} className={`text-gray-400 ${getResponsiveClass('w-6 h-6', 'w-5 h-5', 'w-6 h-6', 'w-7 h-7')}`} />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className={`flex-1 overflow-y-auto ${getResponsiveClass('p-4 sm:p-6', 'p-3', 'p-4', 'p-8')}`}>
+                <div className={`grid grid-cols-2 sm:grid-cols-3 ${getResponsiveClass('gap-3 sm:gap-4', 'gap-2', 'gap-3', 'gap-4')}`}>
                   {/* Show all coins that have custom images */}
                   {allCoins.filter(c => userCoinImages[c.id] || customCoins.some(cc => cc.id === c.id)).map((c) => (
                     <div 
@@ -4177,19 +4177,19 @@ function CoinCollectorApp() {
                         referrerPolicy="no-referrer"
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                        <p className="text-white font-bold text-xs truncate">{c.name}</p>
-                        <p className="text-white/70 text-[10px]">{c.denomination}</p>
+                      <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end ${getResponsiveClass('p-3', 'p-2', 'p-3', 'p-4')}`}>
+                        <p className={`text-white font-bold truncate ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>{c.name}</p>
+                        <p className={`text-white/70 ${getResponsiveClass('text-[10px]', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>{c.denomination}</p>
                       </div>
                     </div>
                   ))}
                   {allCoins.filter(c => userCoinImages[c.id] || customCoins.some(cc => cc.id === c.id)).length === 0 && (
                     <div className="col-span-full text-center py-20">
-                      <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
-                        <Camera size={40} />
+                      <div className={`bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300 ${getResponsiveClass('w-20 h-20', 'w-16 h-16', 'w-20 h-20', 'w-24 h-24')}`}>
+                        <Camera size={40} className={getResponsiveClass('w-10 h-10', 'w-8 h-8', 'w-10 h-10', 'w-12 h-12')} />
                       </div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">No custom photos yet</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Add coins manually or change images to see them here.</p>
+                      <h3 className={`font-bold text-gray-900 dark:text-white ${getResponsiveClass('text-lg', 'text-base', 'text-lg', 'text-xl')}`}>No custom photos yet</h3>
+                      <p className={`text-gray-500 dark:text-gray-400 ${getResponsiveClass('text-sm', 'text-xs', 'text-sm', 'text-base')}`}>Add coins manually or change images to see them here.</p>
                     </div>
                   )}
                 </div>
@@ -4214,40 +4214,40 @@ function CoinCollectorApp() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
+              className={`relative w-full max-w-md bg-white dark:bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] ${getResponsiveClass('m-4', 'm-2', 'm-4', 'm-6')}`}
             >
-              <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-green-50 dark:bg-green-900/10">
+              <div className={`border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-green-50 dark:bg-green-900/10 ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-2xl flex items-center justify-center shadow-inner">
-                    <Plus size={24} />
+                  <div className={`bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-2xl flex items-center justify-center shadow-inner ${getResponsiveClass('w-12 h-12', 'w-10 h-10', 'w-12 h-12', 'w-14 h-14')}`}>
+                    <Plus size={24} className={getResponsiveClass('w-6 h-6', 'w-5 h-5', 'w-6 h-6', 'w-7 h-7')} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Quick Add</h3>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest">Rapid collection entry</p>
+                    <h3 className={`font-black text-gray-900 dark:text-white uppercase tracking-tight ${getResponsiveClass('text-xl', 'text-lg', 'text-xl', 'text-2xl')}`}>Quick Add</h3>
+                    <p className={`text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest ${getResponsiveClass('text-[10px]', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>Rapid collection entry</p>
                   </div>
                 </div>
-                <button onClick={() => setIsQuickAddOpen(false)} className="p-3 bg-white dark:bg-gray-800 rounded-full shadow-sm">
-                  <X size={24} />
+                <button onClick={() => setIsQuickAddOpen(false)} className={`bg-white dark:bg-gray-800 rounded-full shadow-sm flex items-center justify-center ${getResponsiveClass('p-3', 'p-2', 'p-3', 'p-4')}`}>
+                  <X size={24} className={getResponsiveClass('w-6 h-6', 'w-5 h-5', 'w-6 h-6', 'w-7 h-7')} />
                 </button>
               </div>
               
-              <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
+              <div className={`flex-1 overflow-y-auto space-y-4 no-scrollbar ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
                 {allCoins.slice(0, 30).map(coin => (
-                  <div key={coin.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-transparent hover:border-green-200 transition-all">
+                  <div key={coin.id} className={`flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-2xl border border-transparent hover:border-green-200 transition-all ${getResponsiveClass('p-4', 'p-2', 'p-4', 'p-6')}`}>
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm">
-                        <img src={coin.imageUrl} alt="" className="w-8 h-8 object-contain" referrerPolicy="no-referrer" />
+                      <div className={`bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm ${getResponsiveClass('w-12 h-12', 'w-10 h-10', 'w-12 h-12', 'w-14 h-14')}`}>
+                        <img src={coin.imageUrl} alt="" className={getResponsiveClass('w-8 h-8', 'w-6 h-6', 'w-8 h-8', 'w-10 h-10')} referrerPolicy="no-referrer" />
                       </div>
                       <div>
-                        <p className="font-bold text-sm text-gray-900 dark:text-white">{coin.name}</p>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{coin.denomination}</p>
+                        <p className={`font-bold text-gray-900 dark:text-white ${getResponsiveClass('text-sm', 'text-xs', 'text-sm', 'text-base')}`}>{coin.name}</p>
+                        <p className={`font-bold uppercase tracking-widest text-gray-400 ${getResponsiveClass('text-[10px]', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>{coin.denomination}</p>
                       </div>
                     </div>
                     <button 
                       onClick={(e) => toggleCollected(coin.id, e, true)}
-                      className="p-3 bg-green-500 text-white rounded-xl shadow-lg shadow-green-100 dark:shadow-none active:scale-90 transition-transform"
+                      className={`bg-green-500 text-white rounded-xl shadow-lg shadow-green-100 dark:shadow-none active:scale-90 transition-transform flex items-center justify-center ${getResponsiveClass('p-3', 'p-2', 'p-3', 'p-4')}`}
                     >
-                      <Plus size={20} />
+                      <Plus size={20} className={getResponsiveClass('w-5 h-5', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
                     </button>
                   </div>
                 ))}
@@ -4970,19 +4970,19 @@ function CoinCollectorApp() {
             initial={{ y: 100 }}
             animate={{ y: 0 }}
             exit={{ y: 100 }}
-            className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl border-t border-gray-100 dark:border-gray-800 px-8 py-4 flex items-center justify-around z-[90] pb-[calc(16px+var(--safe-bottom))]"
+            className={`fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl border-t border-gray-100 dark:border-gray-800 flex items-center justify-around z-[90] pb-[calc(16px+var(--safe-bottom))] ${getResponsiveClass('px-8 py-4', 'px-4 py-2', 'px-8 py-4', 'px-12 py-6')}`}
           >
             <button 
               onClick={() => {
                 setActiveDenomination(null);
                 setSearchQuery('');
               }}
-              className={`flex flex-col items-center gap-1.5 transition-all active:scale-90 ${!activeDenomination ? 'text-amber-500' : 'text-gray-400'}`}
+              className={`flex flex-col items-center transition-all active:scale-90 ${!activeDenomination ? 'text-amber-500' : 'text-gray-400'} ${getResponsiveClass('gap-1.5', 'gap-0.5', 'gap-1.5', 'gap-2')}`}
             >
-              <div className={`p-2 rounded-xl transition-colors ${!activeDenomination ? 'bg-amber-50 dark:bg-amber-900/20' : ''}`}>
-                <Folder size={22} />
+              <div className={`rounded-xl transition-colors ${!activeDenomination ? 'bg-amber-50 dark:bg-amber-900/20' : ''} ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}>
+                <Folder size={22} className={getResponsiveClass('', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
               </div>
-              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Home</span>
+              <span className={`font-black uppercase tracking-[0.2em] ${getResponsiveClass('text-[9px]', 'text-[7px]', 'text-[9px]', 'text-[10px]')}`}>Home</span>
             </button>
             <button 
               onClick={() => {
@@ -4992,27 +4992,27 @@ function CoinCollectorApp() {
                 }
                 setIsScanning(true);
               }}
-              className={`w-14 h-14 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-amber-200 dark:shadow-none -mt-10 border-4 border-white dark:border-gray-900 transition-all active:scale-90 hover:bg-amber-600 ${isOffline ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+              className={`bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-amber-200 dark:shadow-none border-4 border-white dark:border-gray-900 transition-all active:scale-90 hover:bg-amber-600 ${isOffline ? 'opacity-50 grayscale cursor-not-allowed' : ''} ${getResponsiveClass('w-14 h-14 -mt-10', 'w-11 h-11 -mt-8', 'w-14 h-14 -mt-10', 'w-16 h-16 -mt-12')}`}
             >
-              <Camera size={28} />
+              <Camera size={28} className={getResponsiveClass('', 'w-5 h-5', 'w-6 h-6', 'w-8 h-8')} />
             </button>
             <button 
               onClick={() => setIsManualAddOpen(true)}
-              className="flex flex-col items-center gap-1.5 text-gray-400 hover:text-amber-500 transition-all active:scale-90"
+              className={`flex flex-col items-center text-gray-400 hover:text-amber-500 transition-all active:scale-90 ${getResponsiveClass('gap-1.5', 'gap-0.5', 'gap-1.5', 'gap-2')}`}
             >
-              <div className="p-2 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
-                <Plus size={22} />
+              <div className={`rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}>
+                <Plus size={22} className={getResponsiveClass('', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
               </div>
-              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Add</span>
+              <span className={`font-black uppercase tracking-[0.2em] ${getResponsiveClass('text-[9px]', 'text-[7px]', 'text-[9px]', 'text-[10px]')}`}>Add</span>
             </button>
             <button 
               onClick={() => setIsProfileOpen(true)}
-              className={`flex flex-col items-center gap-1.5 transition-all active:scale-90 ${isProfileOpen ? 'text-amber-500' : 'text-gray-400'}`}
+              className={`flex flex-col items-center transition-all active:scale-90 ${isProfileOpen ? 'text-amber-500' : 'text-gray-400'} ${getResponsiveClass('gap-1.5', 'gap-0.5', 'gap-1.5', 'gap-2')}`}
             >
-              <div className={`p-2 rounded-xl transition-colors ${isProfileOpen ? 'bg-amber-50 dark:bg-amber-900/20' : ''}`}>
-                <User size={22} />
+              <div className={`rounded-xl transition-colors ${isProfileOpen ? 'bg-amber-50 dark:bg-amber-900/20' : ''} ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}>
+                <User size={22} className={getResponsiveClass('', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
               </div>
-              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Profile</span>
+              <span className={`font-black uppercase tracking-[0.2em] ${getResponsiveClass('text-[9px]', 'text-[7px]', 'text-[9px]', 'text-[10px]')}`}>Profile</span>
             </button>
           </motion.div>
         )}
