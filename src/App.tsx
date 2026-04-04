@@ -46,6 +46,9 @@ interface UserProfile {
   recoveryCode?: string;
   dnaScore: number;
   unlockedClues: string[];
+  tags: CoinTag[];
+  coinTags: Record<string, string[]>;
+  goals: CollectionGoal[];
   settings: {
     showBottomMenu: boolean;
     isDarkMode: boolean;
@@ -64,9 +67,25 @@ interface UserProfile {
 
 interface TradeOffer {
   id: string;
-  give: string[];
-  get: string;
+  give: { coinId: string; count: number };
+  get: { coinId: string };
   expiresAt: number;
+}
+
+interface CoinTag {
+  id: string;
+  name: string;
+  color: string;
+}
+
+interface CollectionGoal {
+  id: string;
+  title: string;
+  description: string;
+  target: number;
+  current: number;
+  reward: number;
+  isCompleted: boolean;
 }
 
 interface PurchasedCoin {
@@ -280,6 +299,16 @@ export default function App() {
 }
 
 function CoinCollectorApp() {
+  const [userCoinImages, setUserCoinImages] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem('user_coin_images');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      console.error("Failed to load user_coin_images", e);
+      return {};
+    }
+  });
+
   const [collectedIds, setCollectedIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('collected_coins');
@@ -298,6 +327,14 @@ function CoinCollectorApp() {
       return [];
     }
   });
+  const allCoins = useMemo(() => {
+    const baseCoins = [...UK_COINS, ...customCoins];
+    return baseCoins.map(coin => ({
+      ...coin,
+      imageUrl: userCoinImages[coin.id] || coin.imageUrl
+    }));
+  }, [customCoins, userCoinImages]);
+
   const [requestedCoins, setRequestedCoins] = useState<RequestedCoin[]>(() => {
     try {
       const saved = localStorage.getItem('requested_coins');
@@ -359,6 +396,26 @@ function CoinCollectorApp() {
   const [fusionSelection, setFusionSelection] = useState<string[]>([]);
   const [tradeOffer, setTradeOffer] = useState<TradeOffer | null>(null);
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const uiDensity = useMemo(() => {
+    if (windowWidth < 400) return 'compact';
+    if (windowWidth < 768) return 'normal';
+    return 'spacious';
+  }, [windowWidth]);
+
+  const getResponsiveClass = (base: string, compact: string, normal: string, spacious: string) => {
+    if (uiDensity === 'compact') return `${base} ${compact}`;
+    if (uiDensity === 'normal') return `${base} ${normal}`;
+    return `${base} ${spacious}`;
+  };
   const [isNightBonus, setIsNightBonus] = useState(false);
   const [dnaScore, setDnaScore] = useState(0);
   const [unlockedClues, setUnlockedClues] = useState<string[]>([]);
@@ -532,7 +589,14 @@ function CoinCollectorApp() {
           sortBy: 'recent-added'
         },
         dnaScore: 0,
-        unlockedClues: []
+        unlockedClues: [],
+        tags: [
+          { id: 't1', name: 'Favorite', color: '#ef4444' },
+          { id: 't2', name: 'Wishlist', color: '#3b82f6' },
+          { id: 't3', name: 'Duplicate', color: '#10b981' }
+        ],
+        coinTags: {},
+        goals: []
       };
 
       if (!saved) return defaultProfile;
@@ -548,7 +612,14 @@ function CoinCollectorApp() {
         },
         missions: parsed.missions || defaultProfile.missions,
         dnaScore: parsed.dnaScore || 0,
-        unlockedClues: parsed.unlockedClues || []
+        unlockedClues: parsed.unlockedClues || [],
+        tags: parsed.tags || [
+          { id: 't1', name: 'Favorite', color: '#ef4444' },
+          { id: 't2', name: 'Wishlist', color: '#3b82f6' },
+          { id: 't3', name: 'Duplicate', color: '#10b981' }
+        ],
+        coinTags: parsed.coinTags || {},
+        goals: parsed.goals || []
       };
     } catch (e) {
       console.error("Failed to load user_profile", e);
@@ -565,13 +636,27 @@ function CoinCollectorApp() {
         badges: [],
         collectionStreak: 0,
         lastCollectionDate: '',
+        dnaScore: 0,
+        unlockedClues: [],
+        tags: [
+          { id: 't1', name: 'Favorite', color: '#ef4444' },
+          { id: 't2', name: 'Wishlist', color: '#3b82f6' },
+          { id: 't3', name: 'Duplicate', color: '#10b981' }
+        ],
+        coinTags: {},
+        goals: [],
         settings: {
           showBottomMenu: true,
           isDarkMode: false,
+          followSystemTheme: true,
+          isCompactUI: false,
           isTextMode: false,
+          isFocusMode: false,
           isBackgroundRemovalEnabled: true,
           isPurchaseMode: false,
-          showCoinPrice: true
+          showCoinPrice: true,
+          isNightBonusActive: true,
+          sortBy: 'recent-added'
         }
       };
     }
@@ -776,16 +861,6 @@ function CoinCollectorApp() {
     }
   }, []);
 
-  const [userCoinImages, setUserCoinImages] = useState<Record<string, string>>(() => {
-    try {
-      const saved = localStorage.getItem('user_coin_images');
-      return saved ? JSON.parse(saved) : {};
-    } catch (e) {
-      console.error("Failed to load user_coin_images", e);
-      return {};
-    }
-  });
-
   const [collectionHistory, setCollectionHistory] = useState<Record<string, string>>(() => {
     try {
       const saved = localStorage.getItem('collection_history');
@@ -841,8 +916,8 @@ function CoinCollectorApp() {
 
       const newOffer: TradeOffer = {
         id: Math.random().toString(36).substr(2, 9),
-        give: [randomGiveId, randomGiveId],
-        get: randomGet.id,
+        give: { coinId: randomGiveId, count: 2 },
+        get: { coinId: randomGet.id },
         expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
       };
 
@@ -863,24 +938,20 @@ function CoinCollectorApp() {
   const acceptTrade = () => {
     if (!tradeOffer) return;
     
-    // Check if user still has the coins
-    const giveId = tradeOffer.give[0];
-    const count = tradeOffer.give.length;
-    const userHasCount = collectedIds.filter(id => id === giveId).length;
-    
-    if (userHasCount < count) {
-      alert(`You need ${count} of ${allCoins.find(c => c.id === giveId)?.name} to trade!`);
+    const count = collectedIds.filter(id => id === tradeOffer.give.coinId).length;
+    if (count < tradeOffer.give.count) {
+      alert("You no longer have the required coins for this trade.");
       setTradeOffer(null);
       return;
     }
 
     setCollectedIds(prev => {
       const next = [...prev];
-      for (let i = 0; i < count; i++) {
-        const index = next.indexOf(giveId);
+      for (let i = 0; i < tradeOffer.give.count; i++) {
+        const index = next.indexOf(tradeOffer.give.coinId);
         if (index > -1) next.splice(index, 1);
       }
-      next.push(tradeOffer.get);
+      next.push(tradeOffer.get.coinId);
       return next;
     });
 
@@ -889,47 +960,44 @@ function CoinCollectorApp() {
     setIsTradeModalOpen(false);
   };
 
-  const fuseCoins = () => {
-    if (fusionSelection.length !== 3) return;
-    
-    const coinId = fusionSelection[0];
-    const sourceCoin = allCoins.find(c => c.id === coinId);
-    if (!sourceCoin) return;
+  const fuseCoins = (coinId?: string) => {
+    const targetId = coinId || (fusionSelection.length > 0 ? fusionSelection[0] : null);
+    if (!targetId) return;
 
-    // Check if user has enough
-    const userHasCount = collectedIds.filter(id => id === coinId).length;
-    if (userHasCount < 3) {
-      alert("You don't have enough duplicates for fusion!");
+    const count = collectedIds.filter(id => id === targetId).length;
+    if (count < 3) {
+      alert("You need at least 3 duplicates to fuse!");
       return;
     }
 
-    // Find a rarer version or a related rare coin
+    const coin = allCoins.find(c => c.id === targetId);
+    if (!coin) return;
+
     const rarities = ['Common', 'Uncommon', 'Rare', 'Ultra Rare'];
-    const currentRarityIndex = rarities.indexOf(sourceCoin.rarity || 'Common');
+    const currentRarityIndex = rarities.indexOf(coin.rarity || 'Common');
     const nextRarity = rarities[Math.min(currentRarityIndex + 1, rarities.length - 1)];
 
-    const possibleRewards = allCoins.filter(c => (c.rarity || 'Common') === nextRarity && c.id !== coinId);
-    const resultCoin = possibleRewards[Math.floor(Math.random() * possibleRewards.length)] || sourceCoin;
+    const possibleRewards = allCoins.filter(c => (c.rarity || 'Common') === nextRarity && c.id !== targetId);
+    const reward = possibleRewards[Math.floor(Math.random() * possibleRewards.length)] || coin;
 
     setCollectedIds(prev => {
-      const next = [...prev];
-      // Remove 3 instances
-      for (let i = 0; i < 3; i++) {
-        const index = next.indexOf(coinId);
-        if (index > -1) next.splice(index, 1);
-      }
-      // Add 1 new
-      next.push(resultCoin.id);
-      return next;
+      let removedCount = 0;
+      const next = prev.filter(id => {
+        if (id === targetId && removedCount < 3) {
+          removedCount++;
+          return false;
+        }
+        return true;
+      });
+      return [...next, reward.id];
     });
 
-    addPoints(500, `✨ Fusion Success! Created ${resultCoin.name}`);
+    addPoints(500, `✨ Fusion Success! Created ${reward.name}`);
     setFusionSelection([]);
     setIsFusionModalOpen(false);
     setIsFusionMode(false);
   };
 
-  // DNA Score Calculation
   const dnaScoreValue = useMemo(() => {
     if (collectedIds.length === 0) return 0;
     const uniqueCount = new Set(collectedIds).size;
@@ -1060,38 +1128,70 @@ function CoinCollectorApp() {
     });
   };
 
-  // Night Bonus Logic
+  // Smart Collection Goals Logic
   useEffect(() => {
-    const checkNightBonus = () => {
-      const hour = new Date().getHours();
-      const isNight = hour >= 20 || hour < 6;
-      if (isNight !== isNightBonus) {
-        setIsNightBonus(isNight);
-        if (isNight && userProfile.settings.isNightBonusActive) {
-          setPointsNotification({ amount: 0, message: "🌙 Night Bonus Active! 1.5x XP" });
-          setTimeout(() => setPointsNotification(null), 3000);
-        }
+    const generateGoals = () => {
+      if (userProfile.goals.length >= 3) return;
+
+      const denoms = Array.from(new Set(allCoins.map(c => c.denomination)));
+      const randomDenom = denoms[Math.floor(Math.random() * denoms.length)];
+      const coinsInDenom = allCoins.filter(c => c.denomination === randomDenom);
+      const collectedInDenom = coinsInDenom.filter(c => collectedIds.includes(c.id)).length;
+
+      if (collectedInDenom < coinsInDenom.length) {
+        const newGoal: CollectionGoal = {
+          id: `goal-${Date.now()}`,
+          title: `${randomDenom} Collector`,
+          description: `Collect ${coinsInDenom.length} different ${randomDenom} coins`,
+          target: coinsInDenom.length,
+          current: collectedInDenom,
+          reward: 500,
+          isCompleted: false
+        };
+        setUserProfile(prev => ({ ...prev, goals: [...prev.goals, newGoal] }));
       }
     };
 
-    checkNightBonus();
-    const interval = setInterval(checkNightBonus, 60000);
+    const interval = setInterval(generateGoals, 600000); // Every 10 mins
+    if (userProfile.goals.length === 0) generateGoals();
     return () => clearInterval(interval);
-  }, [isNightBonus, userProfile.settings.isNightBonusActive]);
+  }, [collectedIds, allCoins, userProfile.goals]);
 
-  // DNA Score Calculation
-  const dnaScoreValue = useMemo(() => {
-    const totalCoins = collectedIds.length;
-    const uniqueDenominations = new Set(allCoins.filter(c => collectedIds.includes(c.id)).map(c => c.denomination)).size;
-    const rareCoins = allCoins.filter(c => collectedIds.includes(c.id) && (c.rarity === 'Rare' || c.rarity === 'Ultra Rare')).length;
-    
-    // Simple algorithm for unique DNA score
-    return Math.floor((totalCoins * 10) + (uniqueDenominations * 50) + (rareCoins * 100));
-  }, [collectedIds, allCoins]);
-
+  // Update Goal Progress
   useEffect(() => {
-    setUserProfile(prev => ({ ...prev, dnaScore: dnaScoreValue }));
-  }, [dnaScoreValue]);
+    let pointsToReward = 0;
+    let rewardMessages: string[] = [];
+    let hasChanges = false;
+
+    const updatedGoals = userProfile.goals.map(goal => {
+      if (goal.isCompleted) return goal;
+      
+      const denomMatch = goal.title.match(/(.*) Collector/);
+      if (denomMatch) {
+        const denom = denomMatch[1];
+        const coinsInDenom = allCoins.filter(c => c.denomination === denom);
+        const collectedCount = coinsInDenom.filter(c => collectedIds.includes(c.id)).length;
+        
+        if (collectedCount !== goal.current) {
+          hasChanges = true;
+          const isNowCompleted = collectedCount >= goal.target;
+          if (isNowCompleted) {
+            pointsToReward += goal.reward;
+            rewardMessages.push(`Goal Complete: ${goal.title}!`);
+          }
+          return { ...goal, current: collectedCount, isCompleted: isNowCompleted };
+        }
+      }
+      return goal;
+    });
+
+    if (hasChanges) {
+      setUserProfile(prev => ({ ...prev, goals: updatedGoals }));
+      if (pointsToReward > 0) {
+        rewardMessages.forEach(msg => addPoints(pointsToReward / rewardMessages.length, msg));
+      }
+    }
+  }, [collectedIds, allCoins, userProfile.goals]);
 
   // Mystery Trade Logic
   useEffect(() => {
@@ -1121,63 +1221,6 @@ function CoinCollectorApp() {
 
     return () => clearInterval(interval);
   }, [collectedIds, tradeOffer, allCoins]);
-
-  const acceptTrade = () => {
-    if (!tradeOffer) return;
-    
-    // Check if user still has the coins
-    const count = collectedIds.filter(id => id === tradeOffer.give.coinId).length;
-    if (count < tradeOffer.give.count) {
-      alert("You no longer have the required coins for this trade.");
-      setTradeOffer(null);
-      return;
-    }
-
-    setCollectedIds(prev => {
-      const next = [...prev];
-      // Remove 2 instances
-      for (let i = 0; i < tradeOffer.give.count; i++) {
-        const index = next.indexOf(tradeOffer.give.coinId);
-        if (index > -1) next.splice(index, 1);
-      }
-      // Add 1 new
-      next.push(tradeOffer.get.coinId);
-      return next;
-    });
-
-    addPoints(250, "🤝 Trade Successful!");
-    setTradeOffer(null);
-    setIsTradeModalOpen(false);
-  };
-
-  const fuseCoins = () => {
-    if (fusionSelection.length !== 3) return;
-    
-    const coinId = fusionSelection[0];
-    const sourceCoin = allCoins.find(c => c.id === coinId);
-    if (!sourceCoin) return;
-
-    // Find a rarer version or a related rare coin
-    const rarerCoins = allCoins.filter(c => c.rarity === 'Rare' || c.rarity === 'Ultra Rare');
-    const resultCoin = rarerCoins[Math.floor(Math.random() * rarerCoins.length)];
-
-    setCollectedIds(prev => {
-      const next = [...prev];
-      // Remove 3 instances
-      for (let i = 0; i < 3; i++) {
-        const index = next.indexOf(coinId);
-        if (index > -1) next.splice(index, 1);
-      }
-      // Add 1 new
-      next.push(resultCoin.id);
-      return next;
-    });
-
-    addPoints(500, `✨ Fusion Success! Created ${resultCoin.name}`);
-    setFusionSelection([]);
-    setIsFusionModalOpen(false);
-    setIsFusionMode(false);
-  };
 
   const addPoints = (amount: number, message?: string) => {
     const multiplier = (isNightBonus && userProfile.settings.isNightBonusActive) ? 1.5 : 1;
@@ -1213,14 +1256,6 @@ function CoinCollectorApp() {
     localStorage.setItem('user_coin_images', JSON.stringify(userCoinImages));
   }, [userCoinImages]);
 
-  const allCoins = useMemo(() => {
-    const baseCoins = [...UK_COINS, ...customCoins];
-    return baseCoins.map(coin => ({
-      ...coin,
-      imageUrl: userCoinImages[coin.id] || coin.imageUrl
-    }));
-  }, [customCoins, userCoinImages]);
-
   const progress = Math.round((collectedIds.length / allCoins.length) * 100);
 
   useEffect(() => {
@@ -1235,12 +1270,14 @@ function CoinCollectorApp() {
     }
   }, [progress, userProfile.rank]);
 
-  const toggleCollected = (id: string, e: React.MouseEvent) => {
+  const toggleCollected = (id: string, e: React.MouseEvent, isDuplicate: boolean = false) => {
     e.stopPropagation();
     const coin = allCoins.find(c => c.id === id);
     
     setCollectedIds(prev => {
-      const isCollecting = !prev.includes(id);
+      const isAlreadyCollected = prev.includes(id);
+      const isCollecting = !isAlreadyCollected || isDuplicate;
+      
       if (isCollecting) {
         setCollectionHistory(ch => ({ ...ch, [id]: new Date().toISOString() }));
         
@@ -1311,81 +1348,40 @@ function CoinCollectorApp() {
     });
   };
 
-  const fuseCoins = (coinId: string) => {
-    const count = collectedIds.filter(id => id === coinId).length;
-    if (count < 3) {
-      alert("You need at least 3 duplicates to fuse!");
-      return;
-    }
-
-    const coin = allCoins.find(c => c.id === coinId);
-    if (!coin) return;
-
-    const rarities = ['Common', 'Uncommon', 'Rare', 'Ultra Rare'];
-    const currentRarityIndex = rarities.indexOf(coin.rarity || 'Common');
-    const nextRarity = rarities[Math.min(currentRarityIndex + 1, rarities.length - 1)];
-
-    const possibleRewards = allCoins.filter(c => (c.rarity || 'Common') === nextRarity && c.id !== coinId);
-    const reward = possibleRewards[Math.floor(Math.random() * possibleRewards.length)] || coin;
-
-    setCollectedIds(prev => {
-      let removedCount = 0;
-      const next = prev.filter(id => {
-        if (id === coinId && removedCount < 3) {
-          removedCount++;
-          return false;
-        }
-        return true;
-      });
-      return [...next, reward.id];
+  const toggleTag = (coinId: string, tagId: string) => {
+    setUserProfile(prev => {
+      const currentTags = prev.coinTags[coinId] || [];
+      const newTags = currentTags.includes(tagId)
+        ? currentTags.filter(id => id !== tagId)
+        : [...currentTags, tagId];
+      return {
+        ...prev,
+        coinTags: { ...prev.coinTags, [coinId]: newTags }
+      };
     });
-
-    addPoints(500, `Fusion Successful! Created: ${reward.name}`);
-    setIsFusionModalOpen(false);
   };
 
-  const acceptTrade = () => {
-    if (!tradeOffer) return;
-
-    const count = collectedIds.filter(id => id === tradeOffer.give.coinId).length;
-    if (count < tradeOffer.give.count) {
-      alert(`You need ${tradeOffer.give.count} of ${allCoins.find(c => c.id === tradeOffer.give.coinId)?.name} to trade!`);
-      return;
-    }
-
-    setCollectedIds(prev => {
-      let removedCount = 0;
-      const next = prev.filter(id => {
-        if (id === tradeOffer.give.coinId && removedCount < tradeOffer.give.count) {
-          removedCount++;
-          return false;
-        }
-        return true;
-      });
-      return [...next, tradeOffer.get.coinId];
-    });
-
-    addPoints(300, "Trade Successful!");
-    setTradeOffer(null);
-    setIsTradeModalOpen(false);
-  };
-
-  const dnaScoreValue = useMemo(() => {
-    if (collectedIds.length === 0) return 0;
-    const uniqueCount = new Set(collectedIds).size;
-    const rarityScore = collectedIds.reduce((acc, id) => {
+  const patternInsights = useMemo(() => {
+    if (collectedIds.length === 0) return null;
+    
+    const counts: Record<string, number> = {};
+    collectedIds.forEach(id => {
       const coin = allCoins.find(c => c.id === id);
-      const rarity = coin?.rarity || 'Common';
-      const scores = { 'Common': 1, 'Uncommon': 3, 'Rare': 10, 'Ultra Rare': 25 };
-      return acc + (scores[rarity as keyof typeof scores] || 1);
-    }, 0);
-    const diversity = uniqueCount / allCoins.length;
-    return Math.floor((rarityScore * diversity) + (collectedIds.length * 2));
-  }, [collectedIds, allCoins]);
+      if (coin) {
+        counts[coin.denomination] = (counts[coin.denomination] || 0) + 1;
+      }
+    });
 
-  useEffect(() => {
-    setDnaScore(dnaScoreValue);
-  }, [dnaScoreValue]);
+    const mostCollected = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    const uniqueCount = new Set(collectedIds).size;
+    const completionRate = (uniqueCount / allCoins.length) * 100;
+
+    return {
+      mostCollectedType: mostCollected ? mostCollected[0] : 'None',
+      uniqueCount,
+      completionRate: completionRate.toFixed(1)
+    };
+  }, [collectedIds, allCoins]);
 
   const denominations = useMemo(() => {
     const unique = Array.from(new Set(allCoins.map(c => c.denomination))) as string[];
@@ -2144,7 +2140,7 @@ function CoinCollectorApp() {
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-950 dark:text-white flex flex-col transition-colors duration-300 ${userProfile.settings?.isCompactUI ? 'text-sm' : 'text-base'}`} style={{ paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
+    <div className={`min-h-screen bg-gray-50 dark:bg-gray-950 dark:text-white flex flex-col transition-colors duration-300 ${getResponsiveClass('', 'text-xs', 'text-sm', 'text-base')}`} style={{ paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
       {/* Offline Indicator */}
       <AnimatePresence>
         {isOffline && (
@@ -2254,8 +2250,8 @@ function CoinCollectorApp() {
       </AnimatePresence>
 
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 px-4 py-3 sm:px-6 sm:py-4 transition-colors">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
+      <header className={`bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors ${getResponsiveClass('px-4 py-3 sm:px-6 sm:py-4', 'px-2 py-2', 'px-4 py-3', 'px-6 py-4')}`}>
+        <div className={`max-w-2xl mx-auto flex items-center justify-between ${getResponsiveClass('gap-3 sm:gap-4', 'gap-1', 'gap-3', 'gap-4')}`}>
           <div className="flex items-center gap-3 sm:gap-4">
             {(activeDenomination || activeDenomination === 'Wishlist') && (
               <button 
@@ -2397,8 +2393,8 @@ function CoinCollectorApp() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 overflow-y-auto">
-        <div className="max-w-2xl mx-auto grid gap-4">
+      <main className={`flex-1 overflow-y-auto ${getResponsiveClass('p-4', 'p-2', 'p-4', 'p-6')}`}>
+        <div className={`max-w-2xl mx-auto grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
           {userProfile.settings?.isPurchaseMode && (
             <div className="flex items-center justify-between p-4 bg-black dark:bg-white text-white dark:text-black rounded-3xl shadow-xl mb-2 animate-pulse">
               <div className="flex items-center gap-3">
@@ -2446,7 +2442,7 @@ function CoinCollectorApp() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       onClick={() => setActiveDenomination(denom)}
-                      className={`bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-800 hover:border-amber-500 dark:hover:border-amber-500 transition-all cursor-pointer flex items-center gap-4 sm:gap-6 ${
+                      className={`bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 hover:border-amber-500 dark:hover:border-amber-500 transition-all cursor-pointer flex items-center ${getResponsiveClass('p-5 sm:p-6 gap-4 sm:gap-6', 'p-3 gap-3', 'p-5 gap-4', 'p-6 gap-6')} ${
                         userProfile.settings?.isTextMode ? 'border-gray-100 dark:border-gray-800' : ''
                       }`}
                     >
@@ -3026,6 +3022,116 @@ function CoinCollectorApp() {
                     </div>
                   </div>
 
+                  {/* Pattern Insights Block */}
+                  {patternInsights && (
+                    <div className="sm:col-span-3 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 space-y-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 dark:text-indigo-400 rounded-xl">
+                          <TrendingUp size={20} />
+                        </div>
+                        <h3 className="font-black uppercase tracking-tight text-sm text-gray-900 dark:text-white">Pattern Insights</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl space-y-1">
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Top Type</p>
+                          <p className="font-black text-indigo-600 dark:text-indigo-400">{patternInsights.mostCollectedType}</p>
+                        </div>
+                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl space-y-1">
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Completion</p>
+                          <p className="font-black text-indigo-600 dark:text-indigo-400">{patternInsights.completionRate}%</p>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-2xl">
+                        <p className="text-xs text-indigo-700 dark:text-indigo-300 leading-relaxed">
+                          You've collected <span className="font-bold">{patternInsights.uniqueCount}</span> unique coins. 
+                          Your collection is growing <span className="font-bold">{(parseFloat(patternInsights.completionRate) > 50 ? 'rapidly' : 'steadily')}</span>!
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Collection Goals Block */}
+                  <div className="sm:col-span-3 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 space-y-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-500 dark:text-amber-400 rounded-xl">
+                        <Target size={20} />
+                      </div>
+                      <h3 className="font-black uppercase tracking-tight text-sm text-gray-900 dark:text-white">Smart Goals</h3>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {userProfile.goals.map(goal => (
+                        <div key={goal.id} className={`p-4 rounded-2xl border-2 transition-all ${goal.isCompleted ? 'bg-green-50 dark:bg-green-900/10 border-green-100 dark:border-green-900/30' : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700'}`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <p className="font-bold text-sm text-gray-900 dark:text-white">{goal.title}</p>
+                              <p className="text-[10px] text-gray-400">{goal.description}</p>
+                            </div>
+                            {goal.isCompleted && <CheckCircle2 size={16} className="text-green-500" />}
+                          </div>
+                          
+                          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${(goal.current / goal.target) * 100}%` }}
+                              className={`h-full ${goal.isCompleted ? 'bg-green-500' : 'bg-amber-500'}`}
+                            />
+                          </div>
+                          <div className="flex justify-between mt-1">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase">{goal.current} / {goal.target}</p>
+                            <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase">+{goal.reward} XP</p>
+                          </div>
+                        </div>
+                      ))}
+                      {userProfile.goals.length === 0 && (
+                        <p className="text-center py-4 text-gray-400 text-xs italic">No active goals. Keep collecting to unlock new ones!</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Custom Tags Block */}
+                  <div className="sm:col-span-3 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-rose-50 dark:bg-rose-900/20 text-rose-500 dark:text-rose-400 rounded-xl">
+                          <Tag size={20} />
+                        </div>
+                        <h3 className="font-black uppercase tracking-tight text-sm text-gray-900 dark:text-white">Custom Tags</h3>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          const name = prompt("Enter tag name:");
+                          if (name) {
+                            const newTag: CoinTag = { id: `t-${Date.now()}`, name, color: '#6366f1' };
+                            setUserProfile(prev => ({ ...prev, tags: [...prev.tags, newTag] }));
+                          }
+                        }}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
+                      >
+                        <Plus size={18} className="text-gray-400" />
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {userProfile.tags.map(tag => (
+                        <div 
+                          key={tag.id} 
+                          className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
+                        >
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }} />
+                          {tag.name}
+                          <button 
+                            onClick={() => setUserProfile(prev => ({ ...prev, tags: prev.tags.filter(t => t.id !== tag.id) }))}
+                            className="ml-1 text-gray-300 hover:text-red-500"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Streak Block */}
                   <div className="bg-orange-500 p-4 sm:p-6 rounded-3xl shadow-lg text-white flex flex-col justify-between">
                     <div className="flex justify-between items-start">
@@ -3223,13 +3329,20 @@ function CoinCollectorApp() {
 
                 {/* Quick Actions Grid */}
                 <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-6">
-                  <button 
-                    onClick={() => setIsSpinModalOpen(true)}
-                    className="p-4 bg-gradient-to-br from-amber-400 to-orange-500 text-white font-bold rounded-2xl hover:from-amber-500 hover:to-orange-600 transition-all flex flex-col items-center justify-center gap-2 shadow-lg"
-                  >
-                    <Dices size={24} />
-                    <span className="text-[10px] uppercase tracking-widest font-black">Lucky Spin</span>
-                  </button>
+                    <button 
+                      onClick={() => setIsQuickAddOpen(true)}
+                      className="p-4 bg-gradient-to-br from-green-400 to-emerald-600 text-white font-bold rounded-2xl hover:from-green-500 hover:to-emerald-700 transition-all flex flex-col items-center justify-center gap-2 shadow-lg"
+                    >
+                      <Plus size={24} />
+                      <span className="text-[10px] uppercase tracking-widest font-black">Quick Add</span>
+                    </button>
+                    <button 
+                      onClick={() => setIsSpinModalOpen(true)}
+                      className="p-4 bg-gradient-to-br from-amber-400 to-orange-500 text-white font-bold rounded-2xl hover:from-amber-500 hover:to-orange-600 transition-all flex flex-col items-center justify-center gap-2 shadow-lg"
+                    >
+                      <Dices size={24} />
+                      <span className="text-[10px] uppercase tracking-widest font-black">Lucky Spin</span>
+                    </button>
                   <button 
                     onClick={() => setIsPurchasedAddOpen(true)}
                     className="p-4 bg-blue-500 text-white font-bold rounded-2xl hover:bg-blue-600 transition-all flex flex-col items-center justify-center gap-2 shadow-lg"
@@ -3841,6 +3954,33 @@ function CoinCollectorApp() {
                     </p>
                   </div>
 
+                  {/* Coin Tags */}
+                  <div className="mb-8">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Coin Tags</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {userProfile.tags.map(tag => {
+                        const isTagged = (userProfile.coinTags[selectedCoin.id] || []).includes(tag.id);
+                        return (
+                          <button
+                            key={tag.id}
+                            onClick={() => toggleTag(selectedCoin.id, tag.id)}
+                            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all flex items-center gap-2 border ${
+                              isTagged 
+                                ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-100 dark:shadow-none' 
+                                : 'bg-gray-50 dark:bg-gray-800 text-gray-500 border-gray-100 dark:border-gray-700 hover:border-amber-200'
+                            }`}
+                          >
+                            <div className={`w-1.5 h-1.5 rounded-full ${isTagged ? 'bg-white' : ''}`} style={{ backgroundColor: isTagged ? 'white' : tag.color }} />
+                            {tag.name}
+                          </button>
+                        );
+                      })}
+                      {userProfile.tags.length === 0 && (
+                        <p className="text-[10px] text-gray-400 italic font-bold uppercase tracking-widest">No tags created yet. Create some in your profile!</p>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="flex gap-3">
                     <button 
                       onClick={(e) => {
@@ -4053,6 +4193,68 @@ function CoinCollectorApp() {
                     </div>
                   )}
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Quick Add Mode Modal */}
+      <AnimatePresence>
+        {isQuickAddOpen && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsQuickAddOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
+            >
+              <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-green-50 dark:bg-green-900/10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-2xl flex items-center justify-center shadow-inner">
+                    <Plus size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Quick Add</h3>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest">Rapid collection entry</p>
+                  </div>
+                </div>
+                <button onClick={() => setIsQuickAddOpen(false)} className="p-3 bg-white dark:bg-gray-800 rounded-full shadow-sm">
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
+                {allCoins.slice(0, 30).map(coin => (
+                  <div key={coin.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-transparent hover:border-green-200 transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm">
+                        <img src={coin.imageUrl} alt="" className="w-8 h-8 object-contain" referrerPolicy="no-referrer" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm text-gray-900 dark:text-white">{coin.name}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{coin.denomination}</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={(e) => toggleCollected(coin.id, e, true)}
+                      className="p-3 bg-green-500 text-white rounded-xl shadow-lg shadow-green-100 dark:shadow-none active:scale-90 transition-transform"
+                    >
+                      <Plus size={20} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="p-6 bg-gray-50 dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 text-center">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Rapid Entry Mode Active</p>
               </div>
             </motion.div>
           </div>
@@ -4654,7 +4856,7 @@ function CoinCollectorApp() {
 
               <button 
                 disabled={fusionSelection.length < 3}
-                onClick={fuseCoins}
+                onClick={() => fuseCoins()}
                 className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest transition-all ${
                   fusionSelection.length === 3 
                     ? 'bg-amber-500 text-white shadow-lg shadow-amber-200 dark:shadow-none hover:scale-105' 
@@ -4697,11 +4899,14 @@ function CoinCollectorApp() {
                 <div className="flex-1 space-y-2">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">You Give</p>
                   <div className="flex justify-center -space-x-4">
-                    {tradeOffer.give.map(id => (
-                      <div key={id} className="w-12 h-12 rounded-full border-2 border-white dark:border-gray-900 overflow-hidden bg-gray-100 shadow-sm">
-                        <img src={userCoinImages[id] || allCoins.find(c => c.id === id)?.imageUrl} className="w-full h-full object-cover" alt="Give" />
+                    <div className="w-12 h-12 rounded-full border-2 border-white dark:border-gray-900 overflow-hidden bg-gray-100 shadow-sm">
+                      <img src={userCoinImages[tradeOffer.give.coinId] || allCoins.find(c => c.id === tradeOffer.give.coinId)?.imageUrl} className="w-full h-full object-cover" alt="Give" />
+                    </div>
+                    {tradeOffer.give.count > 1 && (
+                      <div className="w-12 h-12 rounded-full border-2 border-white dark:border-gray-900 bg-gray-900 text-white flex items-center justify-center text-xs font-black">
+                        x{tradeOffer.give.count}
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
                 <ArrowRight className="text-gray-300" />
@@ -4710,7 +4915,7 @@ function CoinCollectorApp() {
                   <div className="flex justify-center">
                     <div className="w-16 h-16 rounded-2xl overflow-hidden bg-amber-50 shadow-inner p-1">
                       <div className="w-full h-full rounded-xl overflow-hidden relative">
-                        <img src={allCoins.find(c => c.id === tradeOffer.get)?.imageUrl} className="w-full h-full object-cover blur-sm" alt="Get" />
+                        <img src={allCoins.find(c => c.id === tradeOffer.get.coinId)?.imageUrl} className="w-full h-full object-cover blur-sm" alt="Get" />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                           <HelpCircle className="text-white" size={24} />
                         </div>
