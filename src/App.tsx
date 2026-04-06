@@ -83,6 +83,7 @@ interface UserProfile {
     showCoinPrice?: boolean;
     isNightBonusActive: boolean;
     sortBy?: 'recent-added' | 'recent-opened' | 'name';
+    theme?: 'default' | 'paper' | 'glass' | 'wood' | 'metal' | 'fabric';
   };
   safeModeBackup?: string;
 }
@@ -440,6 +441,168 @@ function CoinCollectorApp() {
       return [];
     }
   });
+
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
+    try {
+      const saved = localStorage.getItem('user_profile');
+      const defaultProfile: UserProfile = {
+        name: 'Coin Collector',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+        joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
+        rank: 'Beginner Hunter',
+        points: 0,
+        level: 1,
+        streak: 0,
+        lastLoginDate: '',
+        missions: MISSIONS.map(m => ({ ...m, isCompleted: false, progress: 0 })),
+        badges: [],
+        collectionStreak: 0,
+        lastCollectionDate: '',
+        timelineStreak: 0,
+        lastTimelineDate: '',
+        settings: {
+          showBottomMenu: true,
+          isDarkMode: false,
+          followSystemTheme: true,
+          isCompactUI: false,
+          isTextMode: false,
+          isFocusMode: false,
+          isBackgroundRemovalEnabled: true,
+          isPurchaseMode: false,
+          showCoinPrice: true,
+          isNightBonusActive: true,
+          sortBy: 'recent-added',
+          theme: 'default'
+        },
+        dnaScore: 0,
+        unlockedClues: [],
+        tags: [
+          { id: 't1', name: 'Favorite', color: '#ef4444' },
+          { id: 't2', name: 'Wishlist', color: '#3b82f6' },
+          { id: 't3', name: 'Duplicate', color: '#10b981' }
+        ],
+        coinTags: {},
+        goals: [],
+        timelineProgress: {},
+        lastTimelineId: undefined,
+      };
+
+      if (!saved) return defaultProfile;
+      
+      const parsed = JSON.parse(saved);
+      // Merge with defaults to ensure new fields exist
+      return {
+        ...defaultProfile,
+        ...parsed,
+        settings: {
+          ...defaultProfile.settings,
+          ...parsed.settings
+        },
+        missions: parsed.missions || defaultProfile.missions,
+        timelineStreak: parsed.timelineStreak || 0,
+        lastTimelineDate: parsed.lastTimelineDate || '',
+        dnaScore: parsed.dnaScore || 0,
+        unlockedClues: parsed.unlockedClues || [],
+        tags: parsed.tags || [
+          { id: 't1', name: 'Favorite', color: '#ef4444' },
+          { id: 't2', name: 'Wishlist', color: '#3b82f6' },
+          { id: 't3', name: 'Duplicate', color: '#10b981' }
+        ],
+        coinTags: parsed.coinTags || {},
+        goals: parsed.goals || [],
+        timelineProgress: parsed.timelineProgress || {},
+        lastTimelineId: parsed.lastTimelineId,
+      };
+    } catch (e) {
+      console.error("Failed to load user_profile", e);
+      return {
+        name: 'Coin Collector',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+        joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
+        rank: 'Beginner Hunter',
+        points: 0,
+        level: 1,
+        streak: 0,
+        lastLoginDate: '',
+        missions: MISSIONS.map(m => ({ ...m, isCompleted: false, progress: 0 })),
+        badges: [],
+        collectionStreak: 0,
+        lastCollectionDate: '',
+        timelineStreak: 0,
+        lastTimelineDate: '',
+        dnaScore: 0,
+        unlockedClues: [],
+        tags: [
+          { id: 't1', name: 'Favorite', color: '#ef4444' },
+          { id: 't2', name: 'Wishlist', color: '#3b82f6' },
+          { id: 't3', name: 'Duplicate', color: '#10b981' }
+        ],
+        coinTags: {},
+        goals: [],
+        timelineProgress: {},
+        lastTimelineId: undefined,
+        settings: {
+          showBottomMenu: true,
+          isDarkMode: false,
+          followSystemTheme: true,
+          isCompactUI: false,
+          isTextMode: false,
+          isFocusMode: false,
+          isBackgroundRemovalEnabled: true,
+          isPurchaseMode: false,
+          showCoinPrice: true,
+          isNightBonusActive: true,
+          sortBy: 'recent-added'
+        }
+      };
+    }
+  });
+
+  const themeStyles = useMemo(() => {
+    const theme = userProfile.settings?.theme || 'default';
+    const isDark = userProfile.settings?.isDarkMode;
+
+    if (theme === 'default') return {};
+
+    const themes: Record<string, any> = {
+      paper: {
+        '--app-bg': isDark ? '#2c2a26' : '#f9f7f1',
+        '--card-bg': isDark ? '#32302c' : '#fdfcf8',
+        '--card-border': isDark ? '#3d3b37' : '#e5e1d5',
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+        backgroundBlendMode: 'overlay',
+      },
+      glass: {
+        '--app-bg': isDark ? '#0f172a' : '#f8fafc',
+        '--card-bg': isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(255, 255, 255, 0.4)',
+        '--backdrop': 'blur(16px)',
+        '--card-border': isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      },
+      wood: {
+        '--app-bg': isDark ? '#3d2b1f' : '#d2b48c',
+        '--card-bg': isDark ? '#4a3728' : '#e6ccac',
+        '--card-border': isDark ? '#5c4636' : '#c4a47c',
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='wood'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01 0.4' numOctaves='2' stitchTiles='stitch'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='10'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23wood)' opacity='0.2'/%3E%3C/svg%3E")`,
+      },
+      metal: {
+        '--app-bg': isDark ? '#1a1a1a' : '#b0b0b0',
+        '--card-bg': isDark ? '#262626' : '#c0c0c0',
+        '--card-border': isDark ? '#333333' : '#a0a0a0',
+        backgroundImage: `linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0) 100%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='metal'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23metal)' opacity='0.05'/%3E%3C/svg%3E")`,
+      },
+      fabric: {
+        '--app-bg': isDark ? '#2d241e' : '#e0d0c0',
+        '--card-bg': isDark ? '#3a2f28' : '#ebdccf',
+        '--card-border': isDark ? '#4a3d35' : '#d1c1b1',
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20zm20-20h20v20H20V0z' fill='%23000' fill-opacity='0.02' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+      }
+    };
+
+    const current = themes[theme] || {};
+    const styles: any = { ...current };
+    if (current['--app-bg']) styles.backgroundColor = current['--app-bg'];
+    return styles;
+  }, [userProfile.settings?.theme, userProfile.settings?.isDarkMode]);
   const [isSafeMode, setIsSafeMode] = useState(() => {
     return localStorage.getItem('force_safe_mode') === 'true';
   });
@@ -573,6 +736,7 @@ function CoinCollectorApp() {
     if (count >= 10) return 'Collector';
     return 'Beginner';
   }, [collectedIds.length]);
+
   const [isCompareMode, setIsCompareMode] = useState(false);
   const [compareCoins, setCompareCoins] = useState<[Coin | null, Coin | null]>([null, null]);
   const [discoveryFact, setDiscoveryFact] = useState<string | null>(null);
@@ -747,120 +911,6 @@ function CoinCollectorApp() {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
 
-  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
-    try {
-      const saved = localStorage.getItem('user_profile');
-      const defaultProfile: UserProfile = {
-        name: 'Coin Collector',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-        joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
-        rank: 'Beginner Hunter',
-        points: 0,
-        level: 1,
-        streak: 0,
-        lastLoginDate: '',
-        missions: MISSIONS.map(m => ({ ...m, isCompleted: false, progress: 0 })),
-        badges: [],
-        collectionStreak: 0,
-        lastCollectionDate: '',
-        timelineStreak: 0,
-        lastTimelineDate: '',
-        settings: {
-          showBottomMenu: true,
-          isDarkMode: false,
-          followSystemTheme: true,
-          isCompactUI: false,
-          isTextMode: false,
-          isFocusMode: false,
-          isBackgroundRemovalEnabled: true,
-          isPurchaseMode: false,
-          showCoinPrice: true,
-          isNightBonusActive: true,
-          sortBy: 'recent-added'
-        },
-        dnaScore: 0,
-        unlockedClues: [],
-        tags: [
-          { id: 't1', name: 'Favorite', color: '#ef4444' },
-          { id: 't2', name: 'Wishlist', color: '#3b82f6' },
-          { id: 't3', name: 'Duplicate', color: '#10b981' }
-        ],
-        coinTags: {},
-        goals: [],
-        timelineProgress: {},
-        lastTimelineId: undefined,
-      };
-
-      if (!saved) return defaultProfile;
-      
-      const parsed = JSON.parse(saved);
-      // Merge with defaults to ensure new fields exist
-      return {
-        ...defaultProfile,
-        ...parsed,
-        settings: {
-          ...defaultProfile.settings,
-          ...parsed.settings
-        },
-        missions: parsed.missions || defaultProfile.missions,
-        timelineStreak: parsed.timelineStreak || 0,
-        lastTimelineDate: parsed.lastTimelineDate || '',
-        dnaScore: parsed.dnaScore || 0,
-        unlockedClues: parsed.unlockedClues || [],
-        tags: parsed.tags || [
-          { id: 't1', name: 'Favorite', color: '#ef4444' },
-          { id: 't2', name: 'Wishlist', color: '#3b82f6' },
-          { id: 't3', name: 'Duplicate', color: '#10b981' }
-        ],
-        coinTags: parsed.coinTags || {},
-        goals: parsed.goals || [],
-        timelineProgress: parsed.timelineProgress || {},
-        lastTimelineId: parsed.lastTimelineId,
-      };
-    } catch (e) {
-      console.error("Failed to load user_profile", e);
-      return {
-        name: 'Coin Collector',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-        joinDate: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
-        rank: 'Beginner Hunter',
-        points: 0,
-        level: 1,
-        streak: 0,
-        lastLoginDate: '',
-        missions: MISSIONS.map(m => ({ ...m, isCompleted: false, progress: 0 })),
-        badges: [],
-        collectionStreak: 0,
-        lastCollectionDate: '',
-        timelineStreak: 0,
-        lastTimelineDate: '',
-        dnaScore: 0,
-        unlockedClues: [],
-        tags: [
-          { id: 't1', name: 'Favorite', color: '#ef4444' },
-          { id: 't2', name: 'Wishlist', color: '#3b82f6' },
-          { id: 't3', name: 'Duplicate', color: '#10b981' }
-        ],
-        coinTags: {},
-        goals: [],
-        timelineProgress: {},
-        lastTimelineId: undefined,
-        settings: {
-          showBottomMenu: true,
-          isDarkMode: false,
-          followSystemTheme: true,
-          isCompactUI: false,
-          isTextMode: false,
-          isFocusMode: false,
-          isBackgroundRemovalEnabled: true,
-          isPurchaseMode: false,
-          showCoinPrice: true,
-          isNightBonusActive: true,
-          sortBy: 'recent-added'
-        }
-      };
-    }
-  });
 
   useEffect(() => {
     // Handle Daily Streak and Missions Reset
@@ -2354,7 +2404,34 @@ function CoinCollectorApp() {
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-950 dark:text-white flex flex-col transition-colors duration-300 ${getResponsiveClass('', 'text-xs', 'text-sm', 'text-base')}`} style={{ paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
+    <div 
+      className={`min-h-screen bg-gray-50 dark:bg-gray-950 dark:text-white flex flex-col transition-colors duration-300 ${getResponsiveClass('', 'text-xs', 'text-sm', 'text-base')}`} 
+      style={{ 
+        paddingTop: 'var(--safe-top)', 
+        paddingBottom: 'var(--safe-bottom)',
+        ...themeStyles
+      }}
+    >
+      <style>
+        {`
+          :root {
+            --card-bg-override: ${themeStyles['--card-bg'] || ''};
+            --card-border-override: ${themeStyles['--card-border'] || ''};
+            --backdrop-override: ${themeStyles['--backdrop'] || 'none'};
+          }
+          ${userProfile.settings?.theme !== 'default' ? `
+            .bg-white, .dark .bg-gray-900 { 
+              background-color: var(--card-bg-override) !important; 
+              backdrop-filter: var(--backdrop-override) !important;
+              -webkit-backdrop-filter: var(--backdrop-override) !important;
+              border-color: var(--card-border-override) !important;
+            }
+            .border-gray-100, .dark .border-gray-800, .border-gray-200, .dark .border-gray-700 {
+              border-color: var(--card-border-override) !important;
+            }
+          ` : ''}
+        `}
+      </style>
       {/* Offline Indicator */}
       <AnimatePresence>
         {isOffline && (
@@ -3686,6 +3763,33 @@ function CoinCollectorApp() {
                           <option value="name">Name</option>
                           <option value="recent-added">Recent</option>
                           <option value="recent-opened">Opened</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <Layout size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">App Theme</p>
+                            <p className="text-[10px] text-gray-500">Texture-based themes</p>
+                          </div>
+                        </div>
+                        <select
+                          value={userProfile.settings.theme || 'default'}
+                          onChange={(e) => setUserProfile(prev => ({
+                            ...prev,
+                            settings: { ...prev.settings, theme: e.target.value as any }
+                          }))}
+                          className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-none outline-none"
+                        >
+                          <option value="default">Default</option>
+                          <option value="paper">Paper</option>
+                          <option value="glass">Glass</option>
+                          <option value="wood">Wood</option>
+                          <option value="metal">Metal</option>
+                          <option value="fabric">Fabric</option>
                         </select>
                       </div>
                     </div>
