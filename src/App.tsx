@@ -39,6 +39,11 @@ interface Timeline {
   title: string;
   description: string;
   events: TimelineEvent[];
+  unlockCondition?: {
+    type: 'coins' | 'timeline' | 'level';
+    value: number | string;
+    description: string;
+  };
 }
 
 interface UserProfile {
@@ -55,6 +60,8 @@ interface UserProfile {
   badges: string[];
   collectionStreak?: number;
   lastCollectionDate?: string;
+  timelineStreak: number;
+  lastTimelineDate?: string;
   totalSpend?: number;
   recoveryCode?: string;
   dnaScore: number;
@@ -122,6 +129,7 @@ const POINT_VALUES = {
   MISSION_REWARD: 200,
   LUCKY_SPIN_MIN: 10,
   LUCKY_SPIN_MAX: 500,
+  TIMELINE_EXPLORE: 50,
   RARITY_BONUS: {
     'Common': 0,
     'Uncommon': 150,
@@ -144,7 +152,9 @@ const BADGES = [
   { id: 'b4', name: 'Streak Master', description: 'Reach a 7-day streak', icon: <Zap size={16} /> },
   { id: 'b5', name: 'Master Hunter', description: 'Reach Level 10', icon: <Target size={16} /> },
   { id: 'b6', name: 'Timeline Explorer', description: 'Complete your first timeline', icon: <History size={16} /> },
-  { id: 'b7', name: 'Timeline Master', description: 'Complete all timelines', icon: <Star size={16} /> }
+  { id: 'b7', name: 'Timeline Master', description: 'Complete all timelines', icon: <Star size={16} /> },
+  { id: 'b8', name: 'Mint Master', description: 'Collect 100 coins', icon: <Trophy size={16} /> },
+  { id: 'b9', name: 'History Explorer', description: 'Reach a 7-day timeline streak', icon: <Calendar size={16} /> }
 ];
 
 const TIMELINES: Timeline[] = [
@@ -168,7 +178,8 @@ const TIMELINES: Timeline[] = [
       { year: 'Medieval', event: 'Hammered Coins', note: 'Coins produced by striking a blank between two dies with a hammer.' },
       { year: '17th Century', event: 'Milled Coins', note: 'Introduction of screw presses for more uniform coins.' },
       { year: 'Modern', event: 'Bimetallic Coins', note: 'Coins made of two different metals, like the modern £2 coin.' }
-    ]
+    ],
+    unlockCondition: { type: 'coins', value: 5, description: 'Collect 5 coins to unlock' }
   },
   {
     id: 't3',
@@ -178,7 +189,8 @@ const TIMELINES: Timeline[] = [
       { year: '1776', event: 'The Great Seal', note: 'The Eye of Providence on the US dollar and its alleged links to secret societies.' },
       { year: '1943', event: 'The Steel Penny', note: 'Why the US switched to steel during WWII and the rare copper errors.' },
       { year: '2000s', event: 'The Euro Launch', note: 'Conspiracies about hidden maps and symbols on the new European currency.' }
-    ]
+    ],
+    unlockCondition: { type: 'level', value: 3, description: 'Reach Level 3 to unlock' }
   },
   {
     id: 't4',
@@ -189,7 +201,8 @@ const TIMELINES: Timeline[] = [
       { year: 'Victorian', event: 'Gothic Revival', note: 'Intricate, ornate designs reflecting the era\'s architecture.' },
       { year: 'Art Deco', event: 'Geometric Precision', note: 'Bold, stylized designs from the early 20th century.' },
       { year: 'Digital', event: 'Minimalist Design', note: 'Clean, simple lines used in modern commemorative coins.' }
-    ]
+    ],
+    unlockCondition: { type: 'timeline', value: 't1', description: 'Complete Numismatic Journey to unlock' }
   },
   {
     id: 't5',
@@ -199,7 +212,8 @@ const TIMELINES: Timeline[] = [
       { year: 'Early', event: 'Hand-Struck Marks', note: 'Small, often irregular marks indicating the mint location.' },
       { year: 'Industrial', event: 'Standardized Letters', note: 'Clear letters like "P", "D", or "S" used to denote specific mints.' },
       { year: 'Modern', event: 'Micro-Printing', note: 'Advanced security features that also serve as modern mint identifiers.' }
-    ]
+    ],
+    unlockCondition: { type: 'coins', value: 15, description: 'Collect 15 coins to unlock' }
   }
 ];
 
@@ -546,8 +560,9 @@ function CoinCollectorApp() {
       id: 'my-story',
       title: 'My Coin Story',
       description: 'A personalized timeline of your collecting journey and milestones.',
-      events
-    };
+      events,
+      unlockCondition: undefined
+    } as Timeline;
   }, [collectionHistory, allCoins, collectedIds]);
 
   const allTimelines = useMemo(() => [myCoinStory, ...TIMELINES], [myCoinStory]);
@@ -748,6 +763,8 @@ function CoinCollectorApp() {
         badges: [],
         collectionStreak: 0,
         lastCollectionDate: '',
+        timelineStreak: 0,
+        lastTimelineDate: '',
         settings: {
           showBottomMenu: true,
           isDarkMode: false,
@@ -786,6 +803,8 @@ function CoinCollectorApp() {
           ...parsed.settings
         },
         missions: parsed.missions || defaultProfile.missions,
+        timelineStreak: parsed.timelineStreak || 0,
+        lastTimelineDate: parsed.lastTimelineDate || '',
         dnaScore: parsed.dnaScore || 0,
         unlockedClues: parsed.unlockedClues || [],
         tags: parsed.tags || [
@@ -813,6 +832,8 @@ function CoinCollectorApp() {
         badges: [],
         collectionStreak: 0,
         lastCollectionDate: '',
+        timelineStreak: 0,
+        lastTimelineDate: '',
         dnaScore: 0,
         unlockedClues: [],
         tags: [
@@ -872,10 +893,18 @@ function CoinCollectorApp() {
           ? updatedMissions.map(m => m.type === 'weekly' ? { ...m, isCompleted: false } : m)
           : updatedMissions;
 
+        // Timeline Streak Logic
+        const lastTimelineDate = prev.lastTimelineDate;
+        let newTimelineStreak = prev.timelineStreak;
+        if (lastTimelineDate !== yesterdayStr && lastTimelineDate !== today) {
+          newTimelineStreak = 0; // Reset if missed a day
+        }
+
         return {
           ...prev,
           lastLoginDate: today,
           streak: newStreak,
+          timelineStreak: newTimelineStreak,
           missions: finalMissions
         };
       });
@@ -917,6 +946,16 @@ function CoinCollectorApp() {
         newBadges.push('b5');
         changed = true;
         addPoints(5000, "Badge Unlocked: Master Hunter!");
+      }
+      if (collectedIds.length >= 100 && !newBadges.includes('b8')) {
+        newBadges.push('b8');
+        changed = true;
+        addPoints(10000, "Badge Unlocked: Mint Master!");
+      }
+      if (userProfile.timelineStreak >= 7 && !newBadges.includes('b9')) {
+        newBadges.push('b9');
+        changed = true;
+        addPoints(3000, "Badge Unlocked: History Explorer!");
       }
 
       if (changed) {
@@ -4415,37 +4454,52 @@ function CoinCollectorApp() {
                   <section className="space-y-4">
                     <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Continue Exploring</h4>
                     <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
-                      {allTimelines.filter(t => t.id === userProfile.lastTimelineId).map(timeline => (
-                        <motion.div 
-                          key={timeline.id}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => {
-                            setActiveTimeline(timeline);
-                            setUserProfile(prev => ({ ...prev, lastTimelineId: timeline.id }));
-                          }}
-                          className={`flex-shrink-0 w-72 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-6 text-white shadow-xl cursor-pointer relative overflow-hidden group`}
-                        >
-                          <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
-                            <History size={80} />
-                          </div>
-                          <div className="relative z-10 space-y-3">
-                            <h5 className="text-xl font-black leading-tight">{timeline.title}</h5>
-                            <p className="text-white/80 text-xs font-medium line-clamp-2">{timeline.description}</p>
-                            <div className="pt-4 flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                                  <ArrowRight size={16} />
+                      {allTimelines.filter(t => t.id === userProfile.lastTimelineId).map(timeline => {
+                        const progress = userProfile.timelineProgress[timeline.id] || 0;
+                        return (
+                          <motion.div 
+                            key={timeline.id}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => {
+                              setActiveTimeline(timeline);
+                              setUserProfile(prev => ({ ...prev, lastTimelineId: timeline.id }));
+                            }}
+                            className={`flex-shrink-0 w-72 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-6 text-white shadow-xl cursor-pointer relative overflow-hidden group`}
+                          >
+                            <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+                              <History size={80} />
+                            </div>
+                            <div className="relative z-10 space-y-3">
+                              <h5 className="text-xl font-black leading-tight">{timeline.title}</h5>
+                              <p className="text-white/80 text-xs font-medium line-clamp-2">{timeline.description}</p>
+                              
+                              <div className="pt-2 space-y-1.5">
+                                <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-white/70">
+                                  <span>Progress</span>
+                                  <span>{progress}%</span>
                                 </div>
-                                <span className="text-[10px] font-black uppercase tracking-widest">Resume</span>
+                                <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
+                                  <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${progress}%` }}
+                                    className="h-full bg-white"
+                                  />
+                                </div>
                               </div>
-                              <div className="text-[10px] font-black bg-white/20 px-2 py-1 rounded-lg uppercase tracking-widest">
-                                {userProfile.timelineProgress[timeline.id] || 0}% Done
+
+                              <div className="pt-2 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                                    <ArrowRight size={16} />
+                                  </div>
+                                  <span className="text-[10px] font-black uppercase tracking-widest">Resume</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </motion.div>
-                      ))}
+                          </motion.div>
+                        );
+                      })}
                     </div>
                   </section>
                 )}
@@ -4454,48 +4508,67 @@ function CoinCollectorApp() {
                 <section className="space-y-4">
                   <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Popular Timelines</h4>
                   <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
-                    {allTimelines.slice(0, 3).map(timeline => (
-                      <motion.div 
-                        key={timeline.id}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          setActiveTimeline(timeline);
-                          setUserProfile(prev => ({ ...prev, lastTimelineId: timeline.id }));
-                        }}
-                        className={`flex-shrink-0 w-64 bg-gray-100 dark:bg-gray-800 rounded-3xl p-6 text-gray-900 dark:text-white shadow-sm hover:shadow-md transition-all cursor-pointer border-2 ${userProfile.lastTimelineId === timeline.id ? 'border-blue-500' : 'border-transparent'}`}
-                      >
-                        <div className="space-y-3">
-                          <h5 className="text-lg font-black leading-tight">{timeline.title}</h5>
-                          <p className="text-gray-500 dark:text-gray-400 text-xs font-medium line-clamp-2">{timeline.description}</p>
-                          <div className="pt-4 flex items-center justify-between">
-                            <div className="text-blue-500 dark:text-blue-400">
-                              <ArrowRight size={20} />
-                            </div>
-                            {userProfile.timelineProgress[timeline.id] !== undefined && (
-                              <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                {userProfile.timelineProgress[timeline.id]}%
+                    {allTimelines.slice(0, 3).map(timeline => {
+                      const progress = userProfile.timelineProgress[timeline.id] || 0;
+                      return (
+                        <motion.div 
+                          key={timeline.id}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => {
+                            setActiveTimeline(timeline);
+                            setUserProfile(prev => ({ ...prev, lastTimelineId: timeline.id }));
+                          }}
+                          className={`flex-shrink-0 w-64 bg-gray-100 dark:bg-gray-800 rounded-3xl p-6 text-gray-900 dark:text-white shadow-sm hover:shadow-md transition-all cursor-pointer border-2 ${userProfile.lastTimelineId === timeline.id ? 'border-blue-500' : 'border-transparent'}`}
+                        >
+                          <div className="space-y-3">
+                            <h5 className="text-lg font-black leading-tight">{timeline.title}</h5>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs font-medium line-clamp-2">{timeline.description}</p>
+                            
+                            <div className="pt-2 space-y-1.5">
+                              <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-gray-400">
+                                <span>Progress</span>
+                                <span>{progress}%</span>
                               </div>
-                            )}
+                              <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                                <motion.div 
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${progress}%` }}
+                                  className="h-full bg-blue-500"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="pt-2 flex items-center justify-between">
+                              <div className="text-blue-500 dark:text-blue-400">
+                                <ArrowRight size={20} />
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    ))}
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 </section>
 
                 {/* Timeline Achievements */}
                 <section className="space-y-4">
                   <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Your Achievements</h4>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-3xl border border-blue-100 dark:border-blue-800">
-                      <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Timeline Level</p>
+                      <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Level</p>
                       <p className="text-lg font-black text-gray-900 dark:text-white">{timelineLevel}</p>
                     </div>
                     <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-3xl border border-purple-100 dark:border-purple-800">
                       <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1">Milestones</p>
                       <p className="text-lg font-black text-gray-900 dark:text-white">
                         {collectedIds.length >= 50 ? '3/3' : collectedIds.length >= 10 ? '2/3' : '1/3'}
+                      </p>
+                    </div>
+                    <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-3xl border border-amber-100 dark:border-amber-800">
+                      <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Streak</p>
+                      <p className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-1">
+                        {userProfile.timelineStreak} <Zap size={16} className="text-amber-500 fill-amber-500" />
                       </p>
                     </div>
                   </div>
@@ -4505,26 +4578,56 @@ function CoinCollectorApp() {
                 <section className="space-y-4">
                   <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>All Timelines</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {allTimelines.map(timeline => (
-                      <motion.div 
-                        key={timeline.id}
-                        whileHover={{ x: 5 }}
-                        onClick={() => {
-                          setActiveTimeline(timeline);
-                          setUserProfile(prev => ({ ...prev, lastTimelineId: timeline.id }));
-                        }}
-                        className={`flex items-center gap-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-4 cursor-pointer border-2 ${userProfile.lastTimelineId === timeline.id ? 'border-blue-500' : 'border-transparent'}`}
-                      >
-                        <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center shadow-sm text-blue-500">
-                          {timeline.id === 'my-story' ? <Sparkles size={24} /> : <History size={24} />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h5 className="font-bold text-gray-900 dark:text-white truncate">{timeline.title}</h5>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{timeline.description}</p>
-                        </div>
-                        <ChevronRight size={20} className="text-gray-300" />
-                      </motion.div>
-                    ))}
+                    {allTimelines.map(timeline => {
+                      const isLocked = timeline.unlockCondition && (
+                        (timeline.unlockCondition.type === 'coins' && collectedIds.length < (timeline.unlockCondition.value as number)) ||
+                        (timeline.unlockCondition.type === 'level' && userProfile.level < (timeline.unlockCondition.value as number)) ||
+                        (timeline.unlockCondition.type === 'timeline' && (userProfile.timelineProgress[timeline.unlockCondition.value as string] || 0) < 100)
+                      );
+                      const progress = userProfile.timelineProgress[timeline.id] || 0;
+
+                      return (
+                        <motion.div 
+                          key={timeline.id}
+                          whileHover={isLocked ? {} : { x: 5 }}
+                          onClick={() => {
+                            if (isLocked) return;
+                            setActiveTimeline(timeline);
+                            setUserProfile(prev => ({ ...prev, lastTimelineId: timeline.id }));
+                          }}
+                          className={`flex flex-col gap-3 bg-gray-50 dark:bg-gray-900/50 rounded-3xl p-5 cursor-pointer border-2 transition-all ${isLocked ? 'opacity-60 grayscale' : 'hover:bg-gray-100 dark:hover:bg-gray-800'} ${userProfile.lastTimelineId === timeline.id ? 'border-blue-500' : 'border-transparent'}`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${isLocked ? 'bg-gray-200 dark:bg-gray-800 text-gray-400' : 'bg-white dark:bg-gray-800 text-blue-500'}`}>
+                              {isLocked ? <Shield size={24} /> : (timeline.id === 'my-story' ? <Sparkles size={24} /> : <History size={24} />)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h5 className="font-black text-gray-900 dark:text-white truncate uppercase tracking-tight">{timeline.title}</h5>
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate font-bold uppercase tracking-widest">
+                                {isLocked ? timeline.unlockCondition?.description : timeline.description}
+                              </p>
+                            </div>
+                            {!isLocked && <ChevronRight size={20} className="text-gray-300" />}
+                          </div>
+                          
+                          {!isLocked && (
+                            <div className="space-y-1">
+                              <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-gray-400">
+                                <span>Progress</span>
+                                <span>{progress}%</span>
+                              </div>
+                              <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                                <motion.div 
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${progress}%` }}
+                                  className="h-full bg-blue-500"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 </section>
               </div>
@@ -4609,6 +4712,8 @@ function CoinCollectorApp() {
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       const newProgress = Math.round(((idx + 1) / activeTimeline.events.length) * 100);
+                                      const today = new Date().toISOString().split('T')[0];
+                                      
                                       setUserProfile(prev => {
                                         const updatedProgress = {
                                           ...prev.timelineProgress,
@@ -4627,17 +4732,35 @@ function CoinCollectorApp() {
                                           newBadges.push('b7');
                                           addPoints(5000, "Badge Unlocked: Timeline Master!");
                                         }
+
+                                        // Streak Logic
+                                        let newTimelineStreak = prev.timelineStreak;
+                                        if (prev.lastTimelineDate !== today) {
+                                          const yesterday = new Date();
+                                          yesterday.setDate(yesterday.getDate() - 1);
+                                          const yesterdayStr = yesterday.toISOString().split('T')[0];
+                                          
+                                          if (prev.lastTimelineDate === yesterdayStr) {
+                                            newTimelineStreak += 1;
+                                          } else {
+                                            newTimelineStreak = 1;
+                                          }
+                                        }
+                                        
+                                        addPoints(POINT_VALUES.TIMELINE_EXPLORE, `Explored: ${event.event}`);
                                         
                                         return {
                                           ...prev,
                                           timelineProgress: updatedProgress,
-                                          badges: newBadges
+                                          badges: newBadges,
+                                          timelineStreak: newTimelineStreak,
+                                          lastTimelineDate: today
                                         };
                                       });
                                     }}
-                                    className="text-[10px] font-black text-gray-400 hover:text-blue-500 uppercase tracking-widest transition-colors"
+                                    className="text-[10px] font-black text-blue-500 hover:text-blue-600 uppercase tracking-widest transition-colors bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full"
                                   >
-                                    Mark as Read
+                                    Discover
                                   </button>
                                 )}
                                 <ChevronDown size={16} className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
