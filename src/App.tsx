@@ -566,35 +566,42 @@ function CoinCollectorApp() {
 
     const themes: Record<string, any> = {
       paper: {
-        '--app-bg': isDark ? '#2c2a26' : '#f9f7f1',
-        '--card-bg': isDark ? '#32302c' : '#fdfcf8',
-        '--card-border': isDark ? '#3d3b37' : '#e5e1d5',
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-        backgroundBlendMode: 'overlay',
+        '--app-bg': isDark ? '#2c2a26' : '#fcfaf5',
+        '--card-bg': isDark ? '#35322e' : '#ffffff',
+        '--card-border': isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+        '--card-shadow': '0 8px 30px rgba(0,0,0,0.04)',
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E")`,
       },
       glass: {
-        '--app-bg': isDark ? '#0f172a' : '#f8fafc',
-        '--card-bg': isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(255, 255, 255, 0.4)',
-        '--backdrop': 'blur(16px)',
-        '--card-border': isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+        '--app-bg': isDark ? '#020617' : '#f8fafc',
+        '--card-bg': isDark ? 'rgba(30, 41, 59, 0.4)' : 'rgba(255, 255, 255, 0.3)',
+        '--backdrop': 'blur(24px)',
+        '--card-border': isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.5)',
+        '--card-shadow': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+        backgroundImage: isDark 
+          ? 'radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.15), transparent 40%), radial-gradient(circle at 0% 100%, rgba(139, 92, 246, 0.15), transparent 40%)'
+          : 'radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.1), transparent 40%), radial-gradient(circle at 0% 100%, rgba(139, 92, 246, 0.1), transparent 40%)',
       },
       wood: {
-        '--app-bg': isDark ? '#3d2b1f' : '#d2b48c',
-        '--card-bg': isDark ? '#4a3728' : '#e6ccac',
-        '--card-border': isDark ? '#5c4636' : '#c4a47c',
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='wood'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01 0.4' numOctaves='2' stitchTiles='stitch'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='10'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23wood)' opacity='0.2'/%3E%3C/svg%3E")`,
+        '--app-bg': isDark ? '#2a1d15' : '#f5e6d3',
+        '--card-bg': isDark ? '#35261c' : '#ffffff',
+        '--card-border': isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+        '--card-shadow': '0 10px 40px rgba(0,0,0,0.06)',
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='wood'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01 0.4' numOctaves='2' stitchTiles='stitch'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='10'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23wood)' opacity='0.08'/%3E%3C/svg%3E")`,
       },
       metal: {
-        '--app-bg': isDark ? '#1a1a1a' : '#b0b0b0',
-        '--card-bg': isDark ? '#262626' : '#c0c0c0',
-        '--card-border': isDark ? '#333333' : '#a0a0a0',
-        backgroundImage: `linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0) 100%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='metal'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23metal)' opacity='0.05'/%3E%3C/svg%3E")`,
+        '--app-bg': isDark ? '#0f172a' : '#e2e8f0',
+        '--card-bg': isDark ? '#1e293b' : '#f8fafc',
+        '--card-border': isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)',
+        '--card-shadow': '0 10px 40px rgba(0,0,0,0.08)',
+        backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 100%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='metal'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23metal)' opacity='0.03'/%3E%3C/svg%3E")`,
       },
       fabric: {
-        '--app-bg': isDark ? '#2d241e' : '#e0d0c0',
-        '--card-bg': isDark ? '#3a2f28' : '#ebdccf',
-        '--card-border': isDark ? '#4a3d35' : '#d1c1b1',
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20zm20-20h20v20H20V0z' fill='%23000' fill-opacity='0.02' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+        '--app-bg': isDark ? '#1a1c1e' : '#f3f4f6',
+        '--card-bg': isDark ? '#242729' : '#ffffff',
+        '--card-border': isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+        '--card-shadow': '0 8px 30px rgba(0,0,0,0.05)',
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20zm20-20h20v20H20V0z' fill='%23000' fill-opacity='0.015' fill-rule='evenodd'/%3E%3C/svg%3E")`,
       }
     };
 
@@ -2418,18 +2425,26 @@ function CoinCollectorApp() {
             --card-bg-override: ${themeStyles['--card-bg'] || ''};
             --card-border-override: ${themeStyles['--card-border'] || ''};
             --backdrop-override: ${themeStyles['--backdrop'] || 'none'};
+            --card-shadow-override: ${themeStyles['--card-shadow'] || '0 4px 20px rgba(0,0,0,0.05)'};
           }
           ${userProfile.settings?.theme !== 'default' ? `
-            .bg-white, .dark .bg-gray-900 { 
+            .bg-white, .dark .bg-gray-900, .bg-gray-50, .dark .bg-gray-800 { 
               background-color: var(--card-bg-override) !important; 
               backdrop-filter: var(--backdrop-override) !important;
               -webkit-backdrop-filter: var(--backdrop-override) !important;
               border-color: var(--card-border-override) !important;
+              box-shadow: var(--card-shadow-override) !important;
+              border-radius: var(--radius-card) !important;
             }
             .border-gray-100, .dark .border-gray-800, .border-gray-200, .dark .border-gray-700 {
               border-color: var(--card-border-override) !important;
             }
           ` : ''}
+          
+          /* Premium Typography & Spacing */
+          .font-display { font-family: var(--font-display); }
+          .rounded-premium { border-radius: var(--radius-card); }
+          .rounded-button { border-radius: var(--radius-button); }
         `}
       </style>
       {/* Offline Indicator */}
@@ -2541,7 +2556,7 @@ function CoinCollectorApp() {
       </AnimatePresence>
 
       {/* Header */}
-      <header className={`bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors ${getResponsiveClass('px-4 py-3 sm:px-6 sm:py-4', 'px-2 py-2', 'px-4 py-3', 'px-6 py-4')}`}>
+      <header className={`sticky top-0 z-[100] bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 transition-all duration-300 ${getResponsiveClass('p-4 sm:p-6', 'p-2', 'p-4', 'p-6')}`}>
         <div className={`max-w-2xl mx-auto flex items-center justify-between ${getResponsiveClass('gap-3 sm:gap-4', 'gap-1', 'gap-3', 'gap-4')}`}>
           <div className="flex items-center gap-3 sm:gap-4">
             {(activeDenomination || activeDenomination === 'Wishlist') && (
@@ -2550,13 +2565,13 @@ function CoinCollectorApp() {
                   setActiveDenomination(null);
                   setIsZoomed(false);
                 }}
-                className="p-2 -ml-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                className="p-2 -ml-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors active:scale-90"
                 aria-label="Back to folders"
               >
                 <ArrowLeft size={22} className="sm:w-6 sm:h-6" />
               </button>
             )}
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-display font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
               <Trophy className="text-amber-500 w-6 h-6 sm:w-7 sm:h-7" />
               <span className="truncate max-w-[140px] sm:max-w-none">
                 {activeDenomination ? activeDenomination : 'Coin Collector'}
@@ -2580,7 +2595,7 @@ function CoinCollectorApp() {
             </div>
             <button 
               onClick={() => setIsProfileOpen(true)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors active:scale-90"
               title="View Profile"
             >
               <User size={22} className="text-gray-700 dark:text-gray-300 sm:w-6 sm:h-6" />
@@ -2593,7 +2608,7 @@ function CoinCollectorApp() {
                 }
                 fileInputRef.current?.click();
               }}
-              className={`bg-amber-500 text-white rounded-full shadow-lg shadow-amber-200 dark:shadow-none hover:bg-amber-600 transition-all flex items-center gap-2 ${getResponsiveClass('p-2 px-4 sm:p-2 sm:px-4', 'p-1.5 px-3', 'p-2 px-4', 'p-2.5 px-5')} ${isOffline ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+              className={`bg-amber-500 text-white rounded-full shadow-lg shadow-amber-200 dark:shadow-none hover:bg-amber-600 transition-all flex items-center gap-2 active:scale-95 ${getResponsiveClass('p-2 px-4 sm:p-2 sm:px-4', 'p-1.5 px-3', 'p-2 px-4', 'p-2.5 px-5')} ${isOffline ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
               title="Take a photo of a coin"
             >
               <Camera size={20} className={getResponsiveClass('sm:w-6 sm:h-6', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
@@ -2612,7 +2627,7 @@ function CoinCollectorApp() {
                 setIsAddingToCollection(false);
                 setIsRequestModalOpen(true);
               }}
-              className={`bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-full shadow-lg hover:bg-black dark:hover:bg-white transition-all ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}
+              className={`bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-full shadow-lg hover:bg-black dark:hover:bg-white transition-all active:scale-90 ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}
               title="Manual Request"
             >
               <Plus size={22} className={getResponsiveClass('sm:w-6 sm:h-6', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
@@ -2868,8 +2883,10 @@ function CoinCollectorApp() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
+                      whileHover={{ y: -4 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => handleSelectCoin(coin)}
-                      className={`group relative bg-white dark:bg-gray-900 rounded-3xl shadow-sm border-2 transition-all cursor-pointer ${
+                      className={`group relative bg-white dark:bg-gray-900 rounded-premium premium-shadow hover:premium-shadow-hover border-2 transition-all cursor-pointer ${
                         isCollected ? 'border-amber-500 bg-amber-50/30 dark:bg-amber-900/10' : 'border-transparent'
                       } ${
                         userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'p-3' : 'p-4 sm:p-5'
@@ -2887,7 +2904,7 @@ function CoinCollectorApp() {
                               alt={coin.name}
                               referrerPolicy="no-referrer"
                               onError={handleImageError}
-                              className={`w-full h-full object-cover rounded-2xl border-2 border-gray-100 dark:border-gray-800 shadow-sm ${
+                              className={`w-full h-full object-cover rounded-2xl border-2 border-gray-100 dark:border-gray-800 shadow-sm transition-transform duration-500 group-hover:scale-110 ${
                                 !isCollected && 'grayscale opacity-50'
                               }`}
                             />
@@ -2933,7 +2950,7 @@ function CoinCollectorApp() {
                               </div>
                             )}
                           </div>
-                          <h3 className={`font-black text-gray-900 dark:text-white truncate tracking-tight ${
+                          <h3 className={`font-display font-bold text-gray-900 dark:text-white truncate tracking-tight ${
                             userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'text-lg' : 'text-xl sm:text-2xl'
                           }`}>{coin.name}</h3>
                           {!userProfile.settings?.isTextMode && (
@@ -2945,7 +2962,7 @@ function CoinCollectorApp() {
 
                         <button
                           onClick={(e) => toggleCollected(coin.id, e)}
-                          className={`rounded-2xl transition-all active:scale-95 ${
+                          className={`rounded-2xl transition-all active:scale-90 ${
                             isCollected 
                               ? 'bg-amber-500 text-white shadow-lg shadow-amber-200 dark:shadow-none' 
                               : 'bg-gray-100 dark:bg-gray-800 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -3688,7 +3705,7 @@ function CoinCollectorApp() {
                         </button>
                       </div>
 
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
                             <Settings size={16} />
@@ -3700,13 +3717,13 @@ function CoinCollectorApp() {
                         </div>
                         <button 
                           onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, followSystemTheme: !prev.settings.followSystemTheme } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.followSystemTheme ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                          className={`w-10 h-5 rounded-full transition-all relative active:scale-90 ${userProfile.settings?.followSystemTheme ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                         >
                           <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.followSystemTheme ? 'right-0.5' : 'left-0.5'}`} />
                         </button>
                       </div>
 
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
                             <BarChart3 size={16} />
@@ -3718,13 +3735,13 @@ function CoinCollectorApp() {
                         </div>
                         <button 
                           onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isCompactUI: !prev.settings.isCompactUI } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.isCompactUI ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                          className={`w-10 h-5 rounded-full transition-all relative active:scale-90 ${userProfile.settings?.isCompactUI ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                         >
                           <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isCompactUI ? 'right-0.5' : 'left-0.5'}`} />
                         </button>
                       </div>
 
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
                             <Layout size={16} />
@@ -3736,13 +3753,13 @@ function CoinCollectorApp() {
                         </div>
                         <button 
                           onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isTextMode: !prev.settings.isTextMode } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.isTextMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                          className={`w-10 h-5 rounded-full transition-all relative active:scale-90 ${userProfile.settings?.isTextMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                         >
                           <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isTextMode ? 'right-0.5' : 'left-0.5'}`} />
                         </button>
                       </div>
 
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
                             <Table size={16} />
@@ -3758,7 +3775,7 @@ function CoinCollectorApp() {
                             ...prev,
                             settings: { ...prev.settings, sortBy: e.target.value as any }
                           }))}
-                          className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-none outline-none"
+                          className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-none outline-none active:scale-95 transition-transform"
                         >
                           <option value="name">Name</option>
                           <option value="recent-added">Recent</option>
@@ -3766,7 +3783,7 @@ function CoinCollectorApp() {
                         </select>
                       </div>
 
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
                             <Layout size={16} />
@@ -3782,7 +3799,7 @@ function CoinCollectorApp() {
                             ...prev,
                             settings: { ...prev.settings, theme: e.target.value as any }
                           }))}
-                          className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-none outline-none"
+                          className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-none outline-none active:scale-95 transition-transform"
                         >
                           <option value="default">Default</option>
                           <option value="paper">Paper</option>
@@ -4087,26 +4104,26 @@ function CoinCollectorApp() {
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-sm bg-white dark:bg-gray-900 rounded-[32px] overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-800 p-6 text-center"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-white dark:bg-gray-900 rounded-premium overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-800 p-8 text-center premium-shadow"
             >
-              <div className="w-20 h-20 bg-amber-100 dark:bg-amber-900/20 rounded-full flex items-center justify-center text-amber-500 mx-auto mb-4">
-                <Dices size={40} />
+              <div className="w-20 h-20 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center text-amber-500 mx-auto mb-6 border border-amber-200 dark:border-amber-800 shadow-inner">
+                <Trophy size={40} className="text-amber-500" />
               </div>
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Daily Lucky Spin</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+              <h3 className="text-3xl font-display font-bold text-gray-900 dark:text-white mb-2 tracking-tight">Daily Lucky Spin</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 font-medium">
                 Spin the wheel to win bonus points! You can spin once every 24 hours.
               </p>
 
               {userProfile.lastSpinDate === new Date().toISOString().split('T')[0] ? (
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 mb-6">
+                <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-premium border border-gray-100 dark:border-gray-700 mb-8 shadow-inner">
                   <p className="text-gray-600 dark:text-gray-300 font-bold text-sm flex items-center justify-center gap-2">
                     <Clock size={16} />
                     Already spun today!
                   </p>
-                  <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-black">Come back tomorrow</p>
+                  <p className="text-[10px] text-gray-400 mt-2 uppercase tracking-widest font-black">Come back tomorrow</p>
                 </div>
               ) : (
                 <button 
@@ -4120,7 +4137,7 @@ function CoinCollectorApp() {
                     setIsSpinModalOpen(false);
                     completeMission('m2');
                   }}
-                  className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black rounded-2xl hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg shadow-amber-200 dark:shadow-none mb-4 uppercase tracking-widest"
+                  className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-display font-bold rounded-premium hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg shadow-amber-500/20 mb-4 uppercase tracking-widest active:scale-95"
                 >
                   Spin Now!
                 </button>
@@ -4128,7 +4145,7 @@ function CoinCollectorApp() {
 
               <button 
                 onClick={() => setIsSpinModalOpen(false)}
-                className="w-full py-3 text-gray-400 font-bold text-sm hover:text-gray-600 transition-colors"
+                className="w-full py-3 text-gray-400 font-bold uppercase tracking-widest text-[10px] hover:text-gray-600 dark:hover:text-gray-200 transition-colors active:scale-95"
               >
                 Maybe Later
               </button>
@@ -4173,16 +4190,16 @@ function CoinCollectorApp() {
                 <div className={`absolute top-4 left-4 flex flex-wrap ${getResponsiveClass('gap-2', 'gap-1', 'gap-2', 'gap-3')}`}>
                   <button 
                     onClick={() => changeCoinImage(selectedCoin.id)}
-                    className={`flex items-center bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg ${getResponsiveClass('gap-2 px-4 py-2', 'gap-1 px-2 py-1', 'gap-2 px-4 py-2', 'gap-3 px-5 py-2.5')}`}
-                    title="Change Image"
+                    className={`flex items-center bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg active:scale-90 ${getResponsiveClass('gap-2 px-4 py-2', 'gap-1 px-2 py-1', 'gap-2 px-4 py-2', 'gap-3 px-5 py-2.5')}`}
+                    title="Update Photo"
                   >
                     <Camera size={18} className={`group-hover:scale-110 transition-transform ${getResponsiveClass('', 'w-3.5 h-3.5', 'w-4 h-4', 'w-5 h-5')}`} />
                     <span className={`font-black uppercase tracking-widest ${getResponsiveClass('text-[10px]', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>Update Photo</span>
                   </button>
                   <button 
                     onClick={() => editCoin(selectedCoin)}
-                    className={`flex items-center bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg ${getResponsiveClass('gap-2 px-4 py-2', 'gap-1 px-2 py-1', 'gap-2 px-4 py-2', 'gap-3 px-5 py-2.5')}`}
-                    title="Edit Coin"
+                    className={`flex items-center bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg active:scale-90 ${getResponsiveClass('gap-2 px-4 py-2', 'gap-1 px-2 py-1', 'gap-2 px-4 py-2', 'gap-3 px-5 py-2.5')}`}
+                    title="Edit Details"
                   >
                     <Edit size={18} className={`group-hover:scale-110 transition-transform ${getResponsiveClass('', 'w-3.5 h-3.5', 'w-4 h-4', 'w-5 h-5')}`} />
                     <span className={`font-black uppercase tracking-widest ${getResponsiveClass('text-[10px]', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>Edit Details</span>
@@ -4193,7 +4210,7 @@ function CoinCollectorApp() {
                       setIsWebSearchOpen(true);
                       searchWebImages(selectedCoin.name);
                     }}
-                    className={`flex items-center bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg ${getResponsiveClass('gap-2 px-4 py-2', 'gap-1 px-2 py-1', 'gap-2 px-4 py-2', 'gap-3 px-5 py-2.5')}`}
+                    className={`flex items-center bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg active:scale-90 ${getResponsiveClass('gap-2 px-4 py-2', 'gap-1 px-2 py-1', 'gap-2 px-4 py-2', 'gap-3 px-5 py-2.5')}`}
                     title="Search Web"
                   >
                     <Globe size={18} className={`group-hover:scale-110 transition-transform ${getResponsiveClass('', 'w-3.5 h-3.5', 'w-4 h-4', 'w-5 h-5')}`} />
@@ -4208,7 +4225,7 @@ function CoinCollectorApp() {
                       });
                       setIsCompareMode(true);
                     }}
-                    className={`flex items-center bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg ${getResponsiveClass('gap-2 px-4 py-2', 'gap-1 px-2 py-1', 'gap-2 px-4 py-2', 'gap-3 px-5 py-2.5')}`}
+                    className={`flex items-center bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-10 border border-white/20 group shadow-lg active:scale-90 ${getResponsiveClass('gap-2 px-4 py-2', 'gap-1 px-2 py-1', 'gap-2 px-4 py-2', 'gap-3 px-5 py-2.5')}`}
                     title="Compare"
                   >
                     <RefreshCw size={18} className={`group-hover:scale-110 transition-transform ${getResponsiveClass('', 'w-3.5 h-3.5', 'w-4 h-4', 'w-5 h-5')}`} />
@@ -4218,7 +4235,7 @@ function CoinCollectorApp() {
                 {!isZoomed && (
                   <button 
                     onClick={() => setSelectedCoin(null)}
-                    className={`absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all border border-white/20 shadow-lg ${getResponsiveClass('w-10 h-10', 'w-8 h-8', 'w-10 h-10', 'w-12 h-12')}`}
+                    className={`absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all border border-white/20 shadow-lg active:scale-90 ${getResponsiveClass('w-10 h-10', 'w-8 h-8', 'w-10 h-10', 'w-12 h-12')}`}
                   >
                     <X size={20} className={getResponsiveClass('', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
                   </button>
@@ -4229,7 +4246,7 @@ function CoinCollectorApp() {
                 <div className={`bg-white dark:bg-gray-900 max-h-[60vh] overflow-y-auto ${getResponsiveClass('p-6 sm:p-8', 'p-4', 'p-6', 'p-10')}`}>
                   <div className={`flex justify-between items-start ${getResponsiveClass('mb-6', 'mb-4', 'mb-6', 'mb-8')}`}>
                     <div>
-                      <h2 className={`font-black text-gray-900 dark:text-white leading-tight mb-1 ${getResponsiveClass('text-3xl', 'text-2xl', 'text-3xl', 'text-4xl')}`}>{selectedCoin.name}</h2>
+                      <h2 className={`font-display font-bold text-gray-900 dark:text-white leading-tight mb-1 ${getResponsiveClass('text-3xl', 'text-2xl', 'text-3xl', 'text-4xl')}`}>{selectedCoin.name}</h2>
                       <div className="flex items-center gap-2">
                         <span className={`bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full font-black uppercase tracking-widest border border-amber-200 dark:border-amber-800 ${getResponsiveClass('px-3 py-1 text-[10px]', 'px-2 py-0.5 text-[8px]', 'px-3 py-1 text-[10px]', 'px-4 py-1.5 text-xs')}`}>
                           {selectedCoin.denomination}
@@ -4240,7 +4257,7 @@ function CoinCollectorApp() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-black text-gray-900 dark:text-white ${getResponsiveClass('text-2xl', 'text-xl', 'text-2xl', 'text-3xl')}`}>£{(selectedCoin.value || 0).toFixed(2)}</p>
+                      <p className={`font-display font-bold text-gray-900 dark:text-white ${getResponsiveClass('text-2xl', 'text-xl', 'text-2xl', 'text-3xl')}`}>£{(selectedCoin.value || 0).toFixed(2)}</p>
                       <p className={`font-bold text-gray-400 uppercase tracking-widest ${getResponsiveClass('text-[10px]', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>Est. Value</p>
                     </div>
                   </div>
@@ -4610,23 +4627,23 @@ function CoinCollectorApp() {
 
                 {/* Popular Timelines */}
                 <section className="space-y-4">
-                  <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Popular Timelines</h4>
+                  <h4 className={`font-display font-bold text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Popular Timelines</h4>
                   <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
                     {allTimelines.slice(0, 3).map(timeline => {
                       const progress = userProfile.timelineProgress[timeline.id] || 0;
                       return (
                         <motion.div 
                           key={timeline.id}
-                          whileHover={{ scale: 1.02 }}
+                          whileHover={{ y: -5, scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => {
                             setActiveTimeline(timeline);
                             setUserProfile(prev => ({ ...prev, lastTimelineId: timeline.id }));
                           }}
-                          className={`flex-shrink-0 w-64 bg-gray-100 dark:bg-gray-800 rounded-3xl p-6 text-gray-900 dark:text-white shadow-sm hover:shadow-md transition-all cursor-pointer border-2 ${userProfile.lastTimelineId === timeline.id ? 'border-blue-500' : 'border-transparent'}`}
+                          className={`flex-shrink-0 w-64 bg-white dark:bg-gray-900 rounded-premium p-6 text-gray-900 dark:text-white premium-shadow hover:premium-shadow-hover transition-all cursor-pointer border-2 ${userProfile.lastTimelineId === timeline.id ? 'border-blue-500' : 'border-transparent'}`}
                         >
                           <div className="space-y-3">
-                            <h5 className="text-lg font-black leading-tight">{timeline.title}</h5>
+                            <h5 className="text-lg font-display font-bold leading-tight">{timeline.title}</h5>
                             <p className="text-gray-500 dark:text-gray-400 text-xs font-medium line-clamp-2">{timeline.description}</p>
                             
                             <div className="pt-2 space-y-1.5">
@@ -4634,7 +4651,7 @@ function CoinCollectorApp() {
                                 <span>Progress</span>
                                 <span>{progress}%</span>
                               </div>
-                              <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                              <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                                 <motion.div 
                                   initial={{ width: 0 }}
                                   animate={{ width: `${progress}%` }}
