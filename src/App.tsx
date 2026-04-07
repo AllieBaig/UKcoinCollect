@@ -267,6 +267,16 @@ const GAME_MODES: GameMode[] = [
     unlockCondition: 'Reach Level 10'
   },
   {
+    id: 'timeline-puzzle',
+    title: 'Timeline Puzzle',
+    description: 'Reconstruct historical timelines by placing events in the correct order.',
+    icon: <Dices size={24} />,
+    color: 'from-rose-500 to-red-600',
+    progress: 0,
+    isLocked: true,
+    unlockCondition: 'Complete 2 Timelines'
+  },
+  {
     id: 'coin-story',
     title: 'My Coin Story',
     description: 'Your personal journey as a collector, visualized through your discoveries.',
@@ -763,10 +773,17 @@ function CoinCollectorApp() {
   const [isSpinModalOpen, setIsSpinModalOpen] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [isIdentityCardOpen, setIsIdentityCardOpen] = useState(false);
+  const [isStoryModeOpen, setIsStoryModeOpen] = useState(false);
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [isGameModesOpen, setIsGameModesOpen] = useState(false);
   const [activeGameMode, setActiveGameMode] = useState<string | null>(null);
   const [activeTimeline, setActiveTimeline] = useState<Timeline | null>(null);
+  const [puzzleState, setPuzzleState] = useState<{
+    events: TimelineEvent[];
+    userOrder: number[];
+    isComplete: boolean;
+    timelineId: string;
+  } | null>(null);
   const [expandedEvents, setExpandedEvents] = useState<Record<string, Record<number, boolean>>>({});
 
   const [collectionHistory, setCollectionHistory] = useState<Record<string, string>>(() => {
@@ -867,6 +884,36 @@ function CoinCollectorApp() {
     if (count >= 10) return 'Collector';
     return 'Beginner';
   }, [collectedIds.length]);
+
+  const startPuzzle = (timeline: Timeline) => {
+    const shuffledIndices = timeline.events.map((_, i) => i).sort(() => Math.random() - 0.5);
+    setPuzzleState({
+      events: [...timeline.events],
+      userOrder: shuffledIndices,
+      isComplete: false,
+      timelineId: timeline.id
+    });
+    setActiveGameMode('timeline-puzzle');
+  };
+
+  const swapPuzzleItems = (idx1: number, idx2: number) => {
+    if (!puzzleState) return;
+    const newUserOrder = [...puzzleState.userOrder];
+    [newUserOrder[idx1], newUserOrder[idx2]] = [newUserOrder[idx2], newUserOrder[idx1]];
+    
+    // Check if complete
+    const isComplete = newUserOrder.every((val, i) => val === i);
+    
+    setPuzzleState({
+      ...puzzleState,
+      userOrder: newUserOrder,
+      isComplete
+    });
+
+    if (isComplete) {
+      addPoints(500, `Puzzle Solved: ${TIMELINES.find(t => t.id === puzzleState.timelineId)?.title}`);
+    }
+  };
 
   const getEraProgress = (era: Era) => {
     const coinsInEra = allCoins.filter(c => c.year >= era.yearRange[0] && c.year <= era.yearRange[1]);
@@ -2912,51 +2959,68 @@ function CoinCollectorApp() {
               </button>
             </div>
           )}
-          {/* Game Modes Hub Section */}
+          {/* Story Mode Section */}
           <section className="space-y-4">
             <div className="flex items-center justify-between px-2">
-              <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Game Modes</h3>
+              <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Story Mode</h3>
               <button 
-                onClick={() => setIsGameModesOpen(true)}
+                onClick={() => setIsStoryModeOpen(true)}
                 className="text-[10px] font-black text-amber-600 uppercase tracking-widest hover:underline"
               >
-                View All
+                Enter Hub
               </button>
             </div>
             <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
-              {GAME_MODES.map(mode => {
-                const isLocked = mode.isLocked;
-                return (
-                  <motion.div
-                    key={mode.id}
-                    whileHover={isLocked ? {} : { y: -5, scale: 1.02 }}
-                    whileTap={isLocked ? {} : { scale: 0.98 }}
-                    onClick={() => {
-                      if (isLocked) return;
-                      setActiveGameMode(mode.id);
-                      setIsGameModesOpen(true);
-                    }}
-                    className={`flex-shrink-0 w-64 bg-gradient-to-br ${mode.color} rounded-premium p-6 text-white shadow-xl cursor-pointer relative overflow-hidden group ${isLocked ? 'opacity-60 grayscale' : ''}`}
-                  >
-                    <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
-                      {mode.icon}
-                    </div>
-                    <div className="relative z-10 space-y-3">
-                      <h5 className="text-lg font-display font-bold leading-tight">{mode.title}</h5>
-                      <p className="text-white/80 text-xs font-medium line-clamp-2">{isLocked ? mode.unlockCondition : mode.description}</p>
-                      
-                      <div className="pt-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                            {isLocked ? <Shield size={16} /> : <ArrowRight size={16} />}
-                          </div>
-                          <span className="text-[10px] font-black uppercase tracking-widest">{isLocked ? 'Locked' : 'Play Now'}</span>
-                        </div>
+              <motion.div
+                whileHover={{ y: -5, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setIsStoryModeOpen(true)}
+                className="flex-shrink-0 w-72 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-premium p-6 text-white shadow-xl cursor-pointer relative overflow-hidden group"
+              >
+                <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+                  <Sparkles size={80} />
+                </div>
+                <div className="relative z-10 space-y-3">
+                  <h5 className="text-xl font-display font-bold leading-tight">Begin Your Journey</h5>
+                  <p className="text-white/80 text-xs font-medium line-clamp-2">Explore timelines, conquer eras, and reconstruct history.</p>
+                  
+                  <div className="pt-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                        <ArrowRight size={16} />
                       </div>
+                      <span className="text-[10px] font-black uppercase tracking-widest">Enter Story Mode</span>
                     </div>
-                  </motion.div>
-                );
-              })}
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Quick access to Era Conquest */}
+              <motion.div
+                whileHover={{ y: -5, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setActiveGameMode('era-conquest');
+                  setIsStoryModeOpen(true);
+                }}
+                className="flex-shrink-0 w-64 bg-gradient-to-br from-amber-500 to-orange-600 rounded-premium p-6 text-white shadow-xl cursor-pointer relative overflow-hidden group"
+              >
+                <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+                  <Award size={60} />
+                </div>
+                <div className="relative z-10 space-y-3">
+                  <h5 className="text-lg font-display font-bold leading-tight">Era Conquest</h5>
+                  <p className="text-white/80 text-xs font-medium line-clamp-2">Complete challenges across historical periods.</p>
+                  <div className="pt-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                        <ArrowRight size={16} />
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-widest">Resume</span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </section>
 
@@ -4773,16 +4837,16 @@ function CoinCollectorApp() {
         )}
       </AnimatePresence>
 
-      {/* Game Modes Hub Modal */}
+      {/* Story Mode Modal (Merged Hub) */}
       <AnimatePresence>
-        {isGameModesOpen && (
+        {isStoryModeOpen && (
           <div className="fixed inset-0 z-[130] flex items-center justify-center p-0 sm:p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => {
-                setIsGameModesOpen(false);
+                setIsStoryModeOpen(false);
                 setActiveGameMode(null);
               }}
               className="absolute inset-0 bg-black/80 backdrop-blur-md"
@@ -4791,22 +4855,22 @@ function CoinCollectorApp() {
               initial={{ y: "100%", opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: "100%", opacity: 0 }}
-              className={`relative w-full max-w-4xl bg-white dark:bg-gray-950 rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-[95vh] sm:h-[85vh] ${getResponsiveClass('m-0 sm:m-4', 'm-0', 'm-0 sm:m-4', 'm-0 sm:m-6')}`}
+              className={`relative w-full max-w-5xl bg-white dark:bg-gray-950 rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-[95vh] sm:h-[90vh] ${getResponsiveClass('m-0 sm:m-4', 'm-0', 'm-0 sm:m-4', 'm-0 sm:m-6')}`}
             >
               {/* Header */}
               <div className={`border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50 sticky top-0 z-10 ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
                 <div className="flex items-center gap-4">
-                  <div className={`bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center shadow-inner ${getResponsiveClass('w-12 h-12', 'w-10 h-10', 'w-12 h-12', 'w-14 h-14')}`}>
-                    <Trophy size={24} className={getResponsiveClass('w-6 h-6', 'w-5 h-5', 'w-6 h-6', 'w-7 h-7')} />
+                  <div className={`bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center shadow-inner ${getResponsiveClass('w-12 h-12', 'w-10 h-10', 'w-12 h-12', 'w-14 h-14')}`}>
+                    <Sparkles size={24} className={getResponsiveClass('w-6 h-6', 'w-5 h-5', 'w-6 h-6', 'w-7 h-7')} />
                   </div>
                   <div>
-                    <h3 className={`font-black text-gray-900 dark:text-white uppercase tracking-tight ${getResponsiveClass('text-xl', 'text-lg', 'text-xl', 'text-2xl')}`}>Game Modes</h3>
-                    <p className={`text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest ${getResponsiveClass('text-[10px]', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>Challenge your collection</p>
+                    <h3 className={`font-black text-gray-900 dark:text-white uppercase tracking-tight ${getResponsiveClass('text-xl', 'text-lg', 'text-xl', 'text-2xl')}`}>Story Mode</h3>
+                    <p className={`text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest ${getResponsiveClass('text-[10px]', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>Your Numismatic Journey</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => {
-                    setIsGameModesOpen(false);
+                    setIsStoryModeOpen(false);
                     setActiveGameMode(null);
                   }} 
                   className={`bg-white dark:bg-gray-800 rounded-full shadow-sm flex items-center justify-center ${getResponsiveClass('p-3', 'p-2', 'p-3', 'p-4')}`}
@@ -4815,69 +4879,23 @@ function CoinCollectorApp() {
                 </button>
               </div>
 
-              {/* Content */}
-              <div className={`flex-1 overflow-y-auto no-scrollbar ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
-                {!activeGameMode ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {GAME_MODES.map(mode => {
-                      const isLocked = mode.isLocked;
-                      return (
-                        <motion.div
-                          key={mode.id}
-                          whileHover={isLocked ? {} : { scale: 1.02 }}
-                          whileTap={isLocked ? {} : { scale: 0.98 }}
-                          onClick={() => {
-                            if (isLocked) return;
-                            if (mode.id === 'timeline-explorer') {
-                              setIsGameModesOpen(false);
-                              setIsTimelineOpen(true);
-                            } else if (mode.id === 'coin-story') {
-                              setIsGameModesOpen(false);
-                              setActiveTimeline(myCoinStory);
-                              setIsTimelineOpen(true);
-                            } else {
-                              setActiveGameMode(mode.id);
-                            }
-                          }}
-                          className={`bg-white dark:bg-gray-900 rounded-premium p-8 premium-shadow hover:premium-shadow-hover border-2 transition-all cursor-pointer relative overflow-hidden group ${isLocked ? 'opacity-60 grayscale' : 'border-transparent'}`}
-                        >
-                          <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${mode.color} text-white flex items-center justify-center mb-6 shadow-lg`}>
-                            {mode.icon}
-                          </div>
-                          <div className="space-y-2">
-                            <h4 className="text-2xl font-display font-bold text-gray-900 dark:text-white">{mode.title}</h4>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium leading-relaxed">
-                              {isLocked ? `Locked: ${mode.unlockCondition}` : mode.description}
-                            </p>
-                          </div>
-                          <div className="mt-8 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 group-hover:text-amber-500 transition-colors">
-                                {isLocked ? <Shield size={16} /> : <ArrowRight size={16} />}
-                              </div>
-                              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200 transition-colors">
-                                {isLocked ? 'Locked' : 'Start Mode'}
-                              </span>
-                            </div>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                ) : activeGameMode === 'era-conquest' ? (
+              {/* Content (Netflix Style) */}
+              <div className={`flex-1 overflow-y-auto no-scrollbar space-y-10 ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
+                
+                {activeGameMode === 'era-conquest' ? (
                   <div className="space-y-8">
                     <button 
                       onClick={() => setActiveGameMode(null)}
                       className="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
                     >
                       <ArrowLeft size={20} />
-                      <span className="text-xs font-black uppercase tracking-widest">Back to Hub</span>
+                      <span className="text-xs font-black uppercase tracking-widest">Back to Story Hub</span>
                     </button>
 
                     <div className="grid grid-cols-1 gap-6">
                       {ERAS.map(era => {
                         const progress = getEraProgress(era);
-                        const isLocked = era.isLocked && !Object.values(userProfile.eraConquestProgress).some(p => p > 0); // Simple lock logic
+                        const isLocked = era.isLocked && !Object.values(userProfile.eraConquestProgress).some(p => p > 0);
                         
                         return (
                           <div 
@@ -4964,7 +4982,114 @@ function CoinCollectorApp() {
                       })}
                     </div>
                   </div>
-                ) : (
+                ) : activeGameMode === 'timeline-puzzle' ? (
+                  <div className="space-y-8">
+                    <button 
+                      onClick={() => setActiveGameMode(null)}
+                      className="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
+                    >
+                      <ArrowLeft size={20} />
+                      <span className="text-xs font-black uppercase tracking-widest">Back to Story Hub</span>
+                    </button>
+
+                    {!puzzleState ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        {TIMELINES.map(timeline => (
+                          <motion.div
+                            key={timeline.id}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => startPuzzle(timeline)}
+                            className="bg-white dark:bg-gray-900 rounded-premium p-8 premium-shadow border border-gray-100 dark:border-gray-800 cursor-pointer group"
+                          >
+                            <h4 className="text-xl font-display font-bold text-gray-900 dark:text-white mb-2">{timeline.title}</h4>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs font-medium mb-4">{timeline.events.length} Events to Order</p>
+                            <div className="flex items-center gap-2 text-rose-500 font-black text-[10px] uppercase tracking-widest">
+                              <ArrowRight size={14} />
+                              <span>Start Puzzle</span>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="max-w-2xl mx-auto space-y-8">
+                        <div className="text-center space-y-2">
+                          <h4 className="text-3xl font-display font-bold text-gray-900 dark:text-white">Reconstruct History</h4>
+                          <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Click two events to swap their positions. Put them in chronological order!</p>
+                        </div>
+
+                        <div className="space-y-3">
+                          {puzzleState.userOrder.map((eventIdx, currentPos) => {
+                            const event = puzzleState.events[eventIdx];
+                            const isCorrect = eventIdx === currentPos;
+                            
+                            return (
+                              <motion.div
+                                key={eventIdx}
+                                layout
+                                onClick={() => {
+                                  if (puzzleState.isComplete) return;
+                                  // Simple selection logic for swapping
+                                  const selectedIdx = (window as any)._selectedPuzzleIdx;
+                                  if (selectedIdx === undefined) {
+                                    (window as any)._selectedPuzzleIdx = currentPos;
+                                    // Force re-render would be better but this is a quick way to handle state in this environment
+                                    // Actually, let's just use a local state for selection if possible, but we are inside a large component.
+                                    // I'll just use a simple state for selection.
+                                  } else {
+                                    swapPuzzleItems(selectedIdx, currentPos);
+                                    (window as any)._selectedPuzzleIdx = undefined;
+                                  }
+                                }}
+                                className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center gap-4 ${
+                                  puzzleState.isComplete 
+                                    ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800' 
+                                    : (window as any)._selectedPuzzleIdx === currentPos
+                                      ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500'
+                                      : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 hover:border-gray-200'
+                                }`}
+                              >
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs ${
+                                  isCorrect ? 'bg-green-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
+                                }`}>
+                                  {currentPos + 1}
+                                </div>
+                                <div className="flex-1">
+                                  <p className="font-bold text-gray-900 dark:text-white">{event.event}</p>
+                                  {puzzleState.isComplete && (
+                                    <p className="text-[10px] text-green-600 dark:text-green-400 font-black uppercase tracking-widest mt-1">{event.year}</p>
+                                  )}
+                                </div>
+                                {isCorrect && <CheckCircle2 size={20} className="text-green-500" />}
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+
+                        {puzzleState.isComplete && (
+                          <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="bg-green-500 p-8 rounded-premium text-white text-center space-y-4 shadow-xl"
+                          >
+                            <Sparkles size={48} className="mx-auto" />
+                            <h5 className="text-2xl font-display font-bold">Timeline Restored!</h5>
+                            <p className="text-white/80 font-medium">You've successfully reconstructed the historical sequence. +500 XP Awarded!</p>
+                            <button 
+                              onClick={() => {
+                                setPuzzleState(null);
+                                setActiveGameMode(null);
+                              }}
+                              className="px-8 py-3 bg-white text-green-600 font-black uppercase tracking-widest text-xs rounded-full hover:scale-105 transition-transform"
+                            >
+                              Continue Journey
+                            </button>
+                          </motion.div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : activeGameMode ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
                     <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-300">
                       <FlaskConical size={48} />
@@ -4982,230 +5107,191 @@ function CoinCollectorApp() {
                       Back to Hub
                     </button>
                   </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Timeline Hub Modal */}
-      <AnimatePresence>
-        {isTimelineOpen && (
-          <div className="fixed inset-0 z-[130] flex items-center justify-center p-0 sm:p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsTimelineOpen(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ y: "100%", opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: "100%", opacity: 0 }}
-              className={`relative w-full max-w-4xl bg-white dark:bg-gray-950 rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-[95vh] sm:h-[85vh] ${getResponsiveClass('m-0 sm:m-4', 'm-0', 'm-0 sm:m-4', 'm-0 sm:m-6')}`}
-            >
-              {/* Header */}
-              <div className={`border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50 sticky top-0 z-10 ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
-                <div className="flex items-center gap-4">
-                  <div className={`bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center shadow-inner ${getResponsiveClass('w-12 h-12', 'w-10 h-10', 'w-12 h-12', 'w-14 h-14')}`}>
-                    <Clock size={24} className={getResponsiveClass('w-6 h-6', 'w-5 h-5', 'w-6 h-6', 'w-7 h-7')} />
-                  </div>
-                  <div>
-                    <h3 className={`font-black text-gray-900 dark:text-white uppercase tracking-tight ${getResponsiveClass('text-xl', 'text-lg', 'text-xl', 'text-2xl')}`}>Timeline Hub</h3>
-                    <p className={`text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest ${getResponsiveClass('text-[10px]', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>Explore the history of currency</p>
-                  </div>
-                </div>
-                <button onClick={() => setIsTimelineOpen(false)} className={`bg-white dark:bg-gray-800 rounded-full shadow-sm flex items-center justify-center ${getResponsiveClass('p-3', 'p-2', 'p-3', 'p-4')}`}>
-                  <X size={24} className={getResponsiveClass('w-6 h-6', 'w-5 h-5', 'w-6 h-6', 'w-7 h-7')} />
-                </button>
-              </div>
-
-              {/* Content (Netflix Style) */}
-              <div className={`flex-1 overflow-y-auto no-scrollbar space-y-8 ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
-                
-                {/* Continue Exploring */}
-                {userProfile.lastTimelineId && (
-                  <section className="space-y-4">
-                    <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Continue Exploring</h4>
-                    <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
-                      {allTimelines.filter(t => t.id === userProfile.lastTimelineId).map(timeline => {
-                        const progress = userProfile.timelineProgress[timeline.id] || 0;
-                        return (
-                          <motion.div 
-                            key={timeline.id}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => {
-                              setActiveTimeline(timeline);
-                              setUserProfile(prev => ({ ...prev, lastTimelineId: timeline.id }));
-                            }}
-                            className={`flex-shrink-0 w-72 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-6 text-white shadow-xl cursor-pointer relative overflow-hidden group`}
-                          >
-                            <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
-                              <History size={80} />
-                            </div>
-                            <div className="relative z-10 space-y-3">
-                              <h5 className="text-xl font-black leading-tight">{timeline.title}</h5>
-                              <p className="text-white/80 text-xs font-medium line-clamp-2">{timeline.description}</p>
-                              
-                              <div className="pt-2 space-y-1.5">
-                                <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-white/70">
-                                  <span>Progress</span>
-                                  <span>{progress}%</span>
+                ) : (
+                  <>
+                    {/* Continue Exploring */}
+                    {(userProfile.lastTimelineId || activeGameMode) && (
+                      <section className="space-y-4">
+                        <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Continue Exploring</h4>
+                        <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                          {userProfile.lastTimelineId && allTimelines.filter(t => t.id === userProfile.lastTimelineId).map(timeline => {
+                            const progress = userProfile.timelineProgress[timeline.id] || 0;
+                            return (
+                              <motion.div 
+                                key={timeline.id}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => {
+                                  setActiveTimeline(timeline);
+                                  setIsStoryModeOpen(false);
+                                }}
+                                className={`flex-shrink-0 w-80 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-6 text-white shadow-xl cursor-pointer relative overflow-hidden group`}
+                              >
+                                <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+                                  <History size={80} />
                                 </div>
-                                <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
-                                  <motion.div 
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${progress}%` }}
-                                    className="h-full bg-white"
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="pt-2 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                                    <ArrowRight size={16} />
+                                <div className="relative z-10 space-y-3">
+                                  <h5 className="text-xl font-black leading-tight">{timeline.title}</h5>
+                                  <p className="text-white/80 text-xs font-medium line-clamp-2">{timeline.description}</p>
+                                  <div className="pt-2 space-y-1.5">
+                                    <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-white/70">
+                                      <span>Progress</span>
+                                      <span>{progress}%</span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
+                                      <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} className="h-full bg-white" />
+                                    </div>
                                   </div>
-                                  <span className="text-[10px] font-black uppercase tracking-widest">Resume</span>
+                                  <div className="pt-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                                        <ArrowRight size={16} />
+                                      </div>
+                                      <span className="text-[10px] font-black uppercase tracking-widest">Resume Timeline</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      </section>
+                    )}
+
+                    {/* Timelines Section */}
+                    <section className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Historical Timelines</h4>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{allTimelines.length} Available</span>
+                      </div>
+                      <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                        {allTimelines.map(timeline => {
+                          const isLocked = timeline.unlockCondition && (
+                            (timeline.unlockCondition.type === 'coins' && collectedIds.length < (timeline.unlockCondition.value as number)) ||
+                            (timeline.unlockCondition.type === 'level' && userProfile.level < (timeline.unlockCondition.value as number)) ||
+                            (timeline.unlockCondition.type === 'timeline' && (userProfile.timelineProgress[timeline.unlockCondition.value as string] || 0) < 100)
+                          );
+                          const progress = userProfile.timelineProgress[timeline.id] || 0;
+
+                          return (
+                            <motion.div 
+                              key={timeline.id}
+                              whileHover={isLocked ? {} : { y: -5, scale: 1.02 }}
+                              whileTap={isLocked ? {} : { scale: 0.98 }}
+                              onClick={() => {
+                                if (isLocked) return;
+                                setActiveTimeline(timeline);
+                                setIsStoryModeOpen(false);
+                                setUserProfile(prev => ({ ...prev, lastTimelineId: timeline.id }));
+                              }}
+                              className={`flex-shrink-0 w-64 bg-white dark:bg-gray-900 rounded-premium p-6 text-gray-900 dark:text-white premium-shadow hover:premium-shadow-hover transition-all cursor-pointer border-2 relative overflow-hidden group ${isLocked ? 'opacity-60 grayscale' : 'border-transparent'}`}
+                            >
+                              {isLocked && (
+                                <div className="absolute inset-0 bg-black/5 dark:bg-white/5 flex items-center justify-center z-20">
+                                  <Shield size={32} className="text-gray-400" />
+                                </div>
+                              )}
+                              <div className="space-y-3 relative z-10">
+                                <div className="flex items-center justify-between">
+                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLocked ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-500'}`}>
+                                    {timeline.id === 'my-story' ? <Sparkles size={20} /> : <History size={20} />}
+                                  </div>
+                                  {progress === 100 && <CheckCircle2 size={16} className="text-green-500" />}
+                                </div>
+                                <h5 className="text-lg font-display font-bold leading-tight truncate">{timeline.title}</h5>
+                                <p className="text-gray-500 dark:text-gray-400 text-xs font-medium line-clamp-2">
+                                  {isLocked ? timeline.unlockCondition?.description : timeline.description}
+                                </p>
+                                
+                                {!isLocked && (
+                                  <div className="pt-2 space-y-1.5">
+                                    <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-gray-400">
+                                      <span>Progress</span>
+                                      <span>{progress}%</span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                      <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} className="h-full bg-blue-500" />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </section>
+
+                    {/* Game Modes Section */}
+                    <section className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Game Modes</h4>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{GAME_MODES.length} Available</span>
+                      </div>
+                      <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                        {GAME_MODES.map(mode => {
+                          const isLocked = mode.isLocked;
+                          return (
+                            <motion.div
+                              key={mode.id}
+                              whileHover={isLocked ? {} : { y: -5, scale: 1.02 }}
+                              whileTap={isLocked ? {} : { scale: 0.98 }}
+                              onClick={() => {
+                                if (isLocked) return;
+                                if (mode.id === 'coin-story') {
+                                  setActiveTimeline(myCoinStory);
+                                  setIsStoryModeOpen(false);
+                                } else {
+                                  setActiveGameMode(mode.id);
+                                }
+                              }}
+                              className={`flex-shrink-0 w-64 bg-gradient-to-br ${mode.color} rounded-premium p-6 text-white shadow-xl cursor-pointer relative overflow-hidden group ${isLocked ? 'opacity-60 grayscale' : ''}`}
+                            >
+                              <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+                                {mode.icon}
+                              </div>
+                              <div className="relative z-10 space-y-3">
+                                <h5 className="text-lg font-display font-bold leading-tight">{mode.title}</h5>
+                                <p className="text-white/80 text-xs font-medium line-clamp-2">{isLocked ? mode.unlockCondition : mode.description}</p>
+                                
+                                <div className="pt-2 flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                                      {isLocked ? <Shield size={16} /> : <ArrowRight size={16} />}
+                                    </div>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{isLocked ? 'Locked' : 'Play Now'}</span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
-                  </section>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </section>
+
+                    {/* Stats Section */}
+                    <section className="space-y-4">
+                      <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Story Progress</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-3xl border border-indigo-100 dark:border-indigo-800">
+                          <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Total XP</p>
+                          <p className="text-2xl font-black text-gray-900 dark:text-white">{userProfile.points}</p>
+                        </div>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-3xl border border-blue-100 dark:border-blue-800">
+                          <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Timelines</p>
+                          <p className="text-2xl font-black text-gray-900 dark:text-white">{Object.values(userProfile.timelineProgress).filter(p => p === 100).length} / {allTimelines.length}</p>
+                        </div>
+                        <div className="bg-amber-50 dark:bg-amber-900/20 p-5 rounded-3xl border border-amber-100 dark:border-amber-800">
+                          <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Eras</p>
+                          <p className="text-2xl font-black text-gray-900 dark:text-white">{ERAS.filter(e => getEraProgress(e) === 100).length} / {ERAS.length}</p>
+                        </div>
+                        <div className="bg-purple-50 dark:bg-purple-900/20 p-5 rounded-3xl border border-purple-100 dark:border-purple-800">
+                          <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1">Badges</p>
+                          <p className="text-2xl font-black text-gray-900 dark:text-white">{userProfile.badges.length}</p>
+                        </div>
+                      </div>
+                    </section>
+                  </>
                 )}
-
-                {/* Popular Timelines */}
-                <section className="space-y-4">
-                  <h4 className={`font-display font-bold text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Popular Timelines</h4>
-                  <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
-                    {allTimelines.slice(0, 3).map(timeline => {
-                      const progress = userProfile.timelineProgress[timeline.id] || 0;
-                      return (
-                        <motion.div 
-                          key={timeline.id}
-                          whileHover={{ y: -5, scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => {
-                            setActiveTimeline(timeline);
-                            setUserProfile(prev => ({ ...prev, lastTimelineId: timeline.id }));
-                          }}
-                          className={`flex-shrink-0 w-64 bg-white dark:bg-gray-900 rounded-premium p-6 text-gray-900 dark:text-white premium-shadow hover:premium-shadow-hover transition-all cursor-pointer border-2 ${userProfile.lastTimelineId === timeline.id ? 'border-blue-500' : 'border-transparent'}`}
-                        >
-                          <div className="space-y-3">
-                            <h5 className="text-lg font-display font-bold leading-tight">{timeline.title}</h5>
-                            <p className="text-gray-500 dark:text-gray-400 text-xs font-medium line-clamp-2">{timeline.description}</p>
-                            
-                            <div className="pt-2 space-y-1.5">
-                              <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-gray-400">
-                                <span>Progress</span>
-                                <span>{progress}%</span>
-                              </div>
-                              <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                <motion.div 
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${progress}%` }}
-                                  className="h-full bg-blue-500"
-                                />
-                              </div>
-                            </div>
-
-                            <div className="pt-2 flex items-center justify-between">
-                              <div className="text-blue-500 dark:text-blue-400">
-                                <ArrowRight size={20} />
-                              </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </section>
-
-                {/* Timeline Achievements */}
-                <section className="space-y-4">
-                  <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>Your Achievements</h4>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-3xl border border-blue-100 dark:border-blue-800">
-                      <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Level</p>
-                      <p className="text-lg font-black text-gray-900 dark:text-white">{timelineLevel}</p>
-                    </div>
-                    <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-3xl border border-purple-100 dark:border-purple-800">
-                      <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1">Milestones</p>
-                      <p className="text-lg font-black text-gray-900 dark:text-white">
-                        {collectedIds.length >= 50 ? '3/3' : collectedIds.length >= 10 ? '2/3' : '1/3'}
-                      </p>
-                    </div>
-                    <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-3xl border border-amber-100 dark:border-amber-800">
-                      <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Streak</p>
-                      <p className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-1">
-                        {userProfile.timelineStreak} <Zap size={16} className="text-amber-500 fill-amber-500" />
-                      </p>
-                    </div>
-                  </div>
-                </section>
-
-                {/* All Timelines */}
-                <section className="space-y-4">
-                  <h4 className={`font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>All Timelines</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {allTimelines.map(timeline => {
-                      const isLocked = timeline.unlockCondition && (
-                        (timeline.unlockCondition.type === 'coins' && collectedIds.length < (timeline.unlockCondition.value as number)) ||
-                        (timeline.unlockCondition.type === 'level' && userProfile.level < (timeline.unlockCondition.value as number)) ||
-                        (timeline.unlockCondition.type === 'timeline' && (userProfile.timelineProgress[timeline.unlockCondition.value as string] || 0) < 100)
-                      );
-                      const progress = userProfile.timelineProgress[timeline.id] || 0;
-
-                      return (
-                        <motion.div 
-                          key={timeline.id}
-                          whileHover={isLocked ? {} : { x: 5 }}
-                          onClick={() => {
-                            if (isLocked) return;
-                            setActiveTimeline(timeline);
-                            setUserProfile(prev => ({ ...prev, lastTimelineId: timeline.id }));
-                          }}
-                          className={`flex flex-col gap-3 bg-gray-50 dark:bg-gray-900/50 rounded-3xl p-5 cursor-pointer border-2 transition-all ${isLocked ? 'opacity-60 grayscale' : 'hover:bg-gray-100 dark:hover:bg-gray-800'} ${userProfile.lastTimelineId === timeline.id ? 'border-blue-500' : 'border-transparent'}`}
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${isLocked ? 'bg-gray-200 dark:bg-gray-800 text-gray-400' : 'bg-white dark:bg-gray-800 text-blue-500'}`}>
-                              {isLocked ? <Shield size={24} /> : (timeline.id === 'my-story' ? <Sparkles size={24} /> : <History size={24} />)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h5 className="font-black text-gray-900 dark:text-white truncate uppercase tracking-tight">{timeline.title}</h5>
-                              <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate font-bold uppercase tracking-widest">
-                                {isLocked ? timeline.unlockCondition?.description : timeline.description}
-                              </p>
-                            </div>
-                            {!isLocked && <ChevronRight size={20} className="text-gray-300" />}
-                          </div>
-                          
-                          {!isLocked && (
-                            <div className="space-y-1">
-                              <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-gray-400">
-                                <span>Progress</span>
-                                <span>{progress}%</span>
-                              </div>
-                              <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
-                                <motion.div 
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${progress}%` }}
-                                  className="h-full bg-blue-500"
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </section>
               </div>
             </motion.div>
           </div>
