@@ -83,7 +83,9 @@ interface UserProfile {
     isPurchaseMode?: boolean;
     showCoinPrice?: boolean;
     isNightBonusActive: boolean;
-    sortBy?: 'recent-added' | 'recent-opened' | 'name';
+    sortBy?: 'recent-added' | 'recent-opened' | 'name' | 'year' | 'denomination' | 'date-added' | 'month-added';
+    groupBy?: 'year' | 'denomination' | 'date-added' | 'month-added';
+    isGrouped?: boolean;
     theme?: 'default' | 'paper' | 'glass' | 'wood' | 'metal' | 'fabric';
   };
   safeModeBackup?: string;
@@ -601,6 +603,8 @@ function CoinCollectorApp() {
           showCoinPrice: true,
           isNightBonusActive: true,
           sortBy: 'recent-added',
+          groupBy: 'year',
+          isGrouped: false,
           theme: 'default'
         },
         dnaScore: 0,
@@ -1570,6 +1574,142 @@ function CoinCollectorApp() {
     e.currentTarget.src = FALLBACK_COIN_IMAGE;
   };
 
+  const renderCoinCard = (coin: Coin) => {
+    const isCollected = collectedIds.includes(coin.id);
+    return (
+      <motion.div
+        layout
+        key={coin.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        whileHover={{ y: -4 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => handleSelectCoin(coin)}
+        className={`group relative bg-white dark:bg-gray-900 rounded-premium premium-shadow hover:premium-shadow-hover border-2 transition-all cursor-pointer ${
+          isCollected ? 'border-amber-500 bg-amber-50/30 dark:bg-amber-900/10' : 'border-transparent'
+        } ${
+          userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'p-3' : 'p-4 sm:p-5'
+        } ${
+          userProfile.settings?.isTextMode ? 'border-gray-100 dark:border-gray-800' : ''
+        }`}
+      >
+        <div className={`flex items-center ${getResponsiveClass('gap-4 sm:gap-6', 'gap-3', 'gap-4', 'gap-6')}`}>
+          {!userProfile.settings?.isTextMode && (
+            <div className={`relative flex-shrink-0 ${
+              userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'w-14 h-14 sm:w-16 sm:h-16' : 'w-16 h-16 sm:w-20 sm:h-20'
+            }`}>
+              <img 
+                src={coin.imageUrl} 
+                alt={coin.name}
+                referrerPolicy="no-referrer"
+                onError={handleImageError}
+                className={`w-full h-full object-cover rounded-2xl border-2 border-gray-100 dark:border-gray-800 shadow-sm transition-transform duration-500 group-hover:scale-110 ${
+                  !isCollected && 'grayscale opacity-50'
+                }`}
+              />
+              {isCollected && (
+                <div className={`absolute -top-1.5 -right-1.5 bg-amber-500 text-white rounded-full p-1 shadow-lg z-10 ${
+                  userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'scale-75' : ''
+                }`}>
+                  <CheckCircle2 size={14} className={getResponsiveClass('sm:w-4 sm:h-4', 'w-3 h-3', 'w-4 h-4', 'w-5 h-5')} />
+                </div>
+              )}
+              {coin.rarity && coin.rarity !== 'Common' && (
+                <div className={`absolute -bottom-1.5 -left-1.5 px-2.5 py-1 rounded-lg font-black uppercase tracking-widest shadow-md z-10 ${
+                  coin.rarity === 'Ultra Rare' ? 'bg-purple-500 text-white' : 
+                  coin.rarity === 'Rare' ? 'bg-amber-500 text-white' : 
+                  'bg-blue-500 text-white'
+                } ${getResponsiveClass('text-[8px]', 'text-[6px]', 'text-[8px]', 'text-[10px]')}`}>
+                  {coin.rarity}
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div className="flex-1 min-w-0">
+            <div className={`flex items-center justify-between ${getResponsiveClass('mb-1', 'mb-0.5', 'mb-1', 'mb-1.5')}`}>
+              <div className="flex items-center gap-2">
+                {userProfile.settings?.isTextMode && isCollected && <CheckCircle2 size={14} className="text-amber-500" />}
+                <span className={`font-black text-amber-600 uppercase tracking-widest ${getResponsiveClass('text-[10px] sm:text-xs', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>
+                  {coin.denomination} • {coin.year}
+                </span>
+                {userProfile.settings?.isTextMode && coin.rarity && coin.rarity !== 'Common' && (
+                  <span className={`font-black uppercase tracking-widest ${
+                    coin.rarity === 'Ultra Rare' ? 'text-purple-500' : 
+                    coin.rarity === 'Rare' ? 'text-amber-500' : 
+                    'text-blue-500'
+                  } ${getResponsiveClass('text-[8px]', 'text-[6px]', 'text-[8px]', 'text-[10px]')}`}>
+                    [{coin.rarity}]
+                  </span>
+                )}
+              </div>
+              {userProfile.settings?.showCoinPrice && coin.value && (
+                <div className={`bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg font-black shadow-sm ${getResponsiveClass('px-2.5 py-1 text-[10px] sm:text-xs', 'px-1.5 py-0.5 text-[8px]', 'px-2.5 py-1 text-[10px]', 'px-3 py-1.5 text-xs')}`}>
+                  £{coin.value.toFixed(2)}
+                </div>
+              )}
+            </div>
+            <h3 className={`font-display font-bold text-gray-900 dark:text-white truncate tracking-tight ${
+              userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'text-lg' : 'text-xl sm:text-2xl'
+            }`}>{coin.name}</h3>
+            {!userProfile.settings?.isTextMode && (
+              <p className={`text-gray-500 dark:text-gray-400 line-clamp-1 font-medium ${
+                userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'
+              }`}>{coin.description}</p>
+            )}
+          </div>
+
+          <button
+            onClick={(e) => toggleCollected(coin.id, e)}
+            className={`rounded-2xl transition-all active:scale-90 ${
+              isCollected 
+                ? 'bg-amber-500 text-white shadow-lg shadow-amber-200 dark:shadow-none' 
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+            } ${
+              userProfile.settings?.isCompactUI ? 'p-3' : 'p-4'
+            }`}
+            aria-label={isCollected ? "Mark as missing" : "Mark as collected"}
+          >
+            {isCollected ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+          </button>
+        </div>
+      </motion.div>
+    );
+  };
+
+  const renderCoinTableRow = (coin: Coin) => {
+    const isCollected = collectedIds.includes(coin.id);
+    return (
+      <tr 
+        key={coin.id} 
+        onClick={() => handleSelectCoin(coin)}
+        className={`border-b-2 sm:border-b-4 border-gray-100 dark:border-gray-800 cursor-pointer active:bg-gray-100 dark:active:bg-gray-800 transition-colors ${
+          isCollected ? 'bg-amber-50 dark:bg-amber-900/10' : ''
+        }`}
+      >
+        <td className={getResponsiveClass('p-4 sm:p-6', 'p-2', 'p-4', 'p-6')}>
+          <p className={`font-black text-gray-900 dark:text-white leading-tight ${getResponsiveClass('text-xl sm:text-4xl', 'text-lg', 'text-xl', 'text-4xl')}`}>{coin.denomination}</p>
+          <p className={`font-bold text-gray-500 dark:text-gray-400 truncate uppercase tracking-wider ${getResponsiveClass('text-[10px] sm:text-lg max-w-[100px] sm:max-w-[300px]', 'text-[8px] max-w-[80px]', 'text-[10px] max-w-[100px]', 'text-lg max-w-[300px]')}`}>{coin.name}</p>
+        </td>
+        <td className={`font-black text-gray-900 dark:text-white ${getResponsiveClass('p-4 sm:p-6 text-xl sm:text-4xl', 'p-2 text-lg', 'p-4 text-xl', 'p-6 text-4xl')}`}>
+          {coin.year}
+        </td>
+        <td className={`text-center ${getResponsiveClass('p-4 sm:p-6', 'p-2', 'p-4', 'p-6')}`}>
+          {isCollected ? (
+            <div className={`inline-flex items-center justify-center bg-amber-500 text-white rounded-full shadow-lg ${getResponsiveClass('w-8 h-8 sm:w-14 sm:h-14', 'w-6 h-6', 'w-10 h-10', 'w-14 h-14')}`}>
+              <CheckCircle2 className={getResponsiveClass('sm:w-8 sm:h-8', 'w-4 h-4', 'w-6 h-6', 'w-8 h-8')} size={18} />
+            </div>
+          ) : (
+            <div className={`inline-flex items-center justify-center border-gray-200 dark:border-gray-700 rounded-full ${getResponsiveClass('w-8 h-8 sm:w-14 sm:h-14 border-2 sm:border-4', 'w-6 h-6 border', 'w-10 h-10 border-2', 'w-14 h-14 border-4')}`}>
+              <Circle className={`text-gray-200 dark:text-gray-700 ${getResponsiveClass('sm:w-8 sm:h-8', 'w-4 h-4', 'w-6 h-6', 'w-8 h-8')}`} size={18} />
+            </div>
+          )}
+        </td>
+      </tr>
+    );
+  };
+
   const compressImage = (source: File | string, maxWidth = 600): Promise<string> => {
     return new Promise((resolve, reject) => {
       const processImage = (src: string) => {
@@ -1937,6 +2077,27 @@ function CoinCollectorApp() {
         return a.name.localeCompare(b.name);
       } else if (sortBy === 'recent-opened') {
         return (lastOpenedIds[b.id] || 0) - (lastOpenedIds[a.id] || 0);
+      } else if (sortBy === 'year') {
+        return b.year - a.year;
+      } else if (sortBy === 'denomination') {
+        return a.denomination.localeCompare(b.denomination);
+      } else if (sortBy === 'date-added') {
+        const dateA = collectionHistory[a.id] ? new Date(collectionHistory[a.id]).getTime() : 0;
+        const dateB = collectionHistory[b.id] ? new Date(collectionHistory[b.id]).getTime() : 0;
+        return dateB - dateA;
+      } else if (sortBy === 'month-added') {
+        const dateA = collectionHistory[a.id] ? new Date(collectionHistory[a.id]) : null;
+        const dateB = collectionHistory[b.id] ? new Date(collectionHistory[b.id]) : null;
+        
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        
+        const valA = dateA.getFullYear() * 12 + dateA.getMonth();
+        const valB = dateB.getFullYear() * 12 + dateB.getMonth();
+        
+        if (valA !== valB) return valB - valA;
+        return dateB.getTime() - dateA.getTime();
       } else {
         // Default: Recently Added
         const aIsCustom = a.id.startsWith('custom-');
@@ -1951,7 +2112,53 @@ function CoinCollectorApp() {
         return a.name.localeCompare(b.name);
       }
     });
-  }, [searchQuery, filter, collectedIds, activeDenomination, allCoins, purchasedCoins, userProfile.settings?.sortBy, lastOpenedIds]);
+  }, [searchQuery, filter, collectedIds, activeDenomination, allCoins, purchasedCoins, userProfile.settings?.sortBy, lastOpenedIds, collectionHistory]);
+  
+  const groupedCoins = useMemo(() => {
+    if (!userProfile.settings.isGrouped) return null;
+    
+    const groupBy = userProfile.settings.groupBy || 'year';
+    const groups: Record<string, Coin[]> = {};
+    
+    filteredCoins.forEach(coin => {
+      let groupKey = 'Other';
+      
+      if (groupBy === 'year') {
+        groupKey = coin.year.toString();
+      } else if (groupBy === 'denomination') {
+        groupKey = coin.denomination;
+      } else if (groupBy === 'date-added') {
+        const date = collectionHistory[coin.id];
+        groupKey = date ? new Date(date).toLocaleDateString('en-GB') : 'Not Collected';
+      } else if (groupBy === 'month-added') {
+        const date = collectionHistory[coin.id];
+        groupKey = date ? new Date(date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : 'Not Collected';
+      }
+      
+      if (!groups[groupKey]) groups[groupKey] = [];
+      groups[groupKey].push(coin);
+    });
+    
+    // Sort group keys
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+      if (groupBy === 'year') return b.localeCompare(a);
+      if (groupBy === 'denomination') return a.localeCompare(b);
+      if (groupBy === 'date-added' || groupBy === 'month-added') {
+        if (a === 'Not Collected') return 1;
+        if (b === 'Not Collected') return -1;
+        // Parse dates for comparison
+        const dateA = new Date(groups[a][0] ? collectionHistory[groups[a][0].id] : 0).getTime();
+        const dateB = new Date(groups[b][0] ? collectionHistory[groups[b][0].id] : 0).getTime();
+        return dateB - dateA;
+      }
+      return a.localeCompare(b);
+    });
+    
+    return sortedKeys.map(key => ({
+      title: key,
+      coins: groups[key]
+    }));
+  }, [filteredCoins, userProfile.settings.isGrouped, userProfile.settings.groupBy, collectionHistory]);
 
   const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2903,35 +3110,80 @@ function CoinCollectorApp() {
             />
           </div>
           
-          <div className={`flex items-center justify-between ${getResponsiveClass('gap-3', 'gap-1.5', 'gap-3', 'gap-4')}`}>
-            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar flex-1">
-              {(['all', 'collected', 'missing'] as const).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`rounded-full font-black uppercase tracking-widest whitespace-nowrap transition-all ${
-                    filter === f 
-                      ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-md' 
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  } ${getResponsiveClass('px-5 py-2 text-xs', 'px-3 py-1.5 text-[10px]', 'px-5 py-2 text-xs', 'px-6 py-2.5 text-sm')}`}
-                >
-                  {f}
-                </button>
-              ))}
+          <div className={`flex flex-col gap-3 ${getResponsiveClass('', 'gap-2', 'gap-3', 'gap-4')}`}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar flex-1">
+                {(['all', 'collected', 'missing'] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`rounded-full font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+                      filter === f 
+                        ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-md' 
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    } ${getResponsiveClass('px-5 py-2 text-xs', 'px-3 py-1.5 text-[10px]', 'px-5 py-2 text-xs', 'px-6 py-2.5 text-sm')}`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+              
+              <button
+                onClick={() => setUserProfile(prev => ({
+                  ...prev,
+                  settings: { ...prev.settings, isGrouped: !prev.settings.isGrouped }
+                }))}
+                className={`flex items-center gap-2 rounded-full font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+                  userProfile.settings.isGrouped 
+                    ? 'bg-amber-500 text-white shadow-md' 
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                } ${getResponsiveClass('px-4 py-2 text-xs', 'px-3 py-1.5 text-[10px]', 'px-4 py-2 text-xs', 'px-5 py-2.5 text-sm')}`}
+              >
+                <Layout size={14} />
+                {userProfile.settings.isGrouped ? 'Grouped' : 'List'}
+              </button>
             </div>
-            
-            <select
-              value={userProfile.settings.sortBy || 'recent-added'}
-              onChange={(e) => setUserProfile(prev => ({
-                ...prev,
-                settings: { ...prev.settings, sortBy: e.target.value as any }
-              }))}
-              className={`bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full font-black uppercase tracking-widest border-none focus:ring-2 focus:ring-amber-500 transition-all outline-none ${getResponsiveClass('px-4 py-2 text-xs', 'px-2 py-1.5 text-[10px]', 'px-4 py-2 text-xs', 'px-5 py-2.5 text-sm')}`}
-            >
-              <option value="name">Name</option>
-              <option value="recent-added">Recent</option>
-              <option value="recent-opened">Opened</option>
-            </select>
+
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 flex-1">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sort:</span>
+                <select
+                  value={userProfile.settings.sortBy || 'recent-added'}
+                  onChange={(e) => setUserProfile(prev => ({
+                    ...prev,
+                    settings: { ...prev.settings, sortBy: e.target.value as any }
+                  }))}
+                  className={`bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full font-black uppercase tracking-widest border-none focus:ring-2 focus:ring-amber-500 transition-all outline-none flex-1 ${getResponsiveClass('px-4 py-2 text-xs', 'px-2 py-1.5 text-[10px]', 'px-4 py-2 text-xs', 'px-5 py-2.5 text-sm')}`}
+                >
+                  <option value="recent-added">Recently Added</option>
+                  <option value="name">Name</option>
+                  <option value="year">Year</option>
+                  <option value="denomination">Denomination</option>
+                  <option value="date-added">Date Added</option>
+                  <option value="month-added">Month Added</option>
+                  <option value="recent-opened">Recently Opened</option>
+                </select>
+              </div>
+
+              {userProfile.settings.isGrouped && (
+                <div className="flex items-center gap-2 flex-1">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Group:</span>
+                  <select
+                    value={userProfile.settings.groupBy || 'year'}
+                    onChange={(e) => setUserProfile(prev => ({
+                      ...prev,
+                      settings: { ...prev.settings, groupBy: e.target.value as any }
+                    }))}
+                    className={`bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full font-black uppercase tracking-widest border-none focus:ring-2 focus:ring-amber-500 transition-all outline-none flex-1 ${getResponsiveClass('px-4 py-2 text-xs', 'px-2 py-1.5 text-[10px]', 'px-4 py-2 text-xs', 'px-5 py-2.5 text-sm')}`}
+                  >
+                    <option value="year">By Year</option>
+                    <option value="denomination">By Denomination</option>
+                    <option value="date-added">By Date Added</option>
+                    <option value="month-added">By Month Added</option>
+                  </select>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -3131,156 +3383,65 @@ function CoinCollectorApp() {
               </div>
             ) : (
               /* Coin List View */
-              userProfile.settings?.isPurchaseMode ? (
-                <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl ${getResponsiveClass('p-0', 'p-0', 'p-0', 'p-0')}`}>
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-black dark:bg-white text-white dark:text-black">
-                        <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Coin</th>
-                        <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Year</th>
-                        <th className={`font-black uppercase tracking-widest text-center ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredCoins.map((coin) => {
-                        const isCollected = collectedIds.includes(coin.id);
-                        return (
-                          <tr 
-                            key={coin.id} 
-                            onClick={() => handleSelectCoin(coin)}
-                            className={`border-b-2 sm:border-b-4 border-gray-100 dark:border-gray-800 cursor-pointer active:bg-gray-100 dark:active:bg-gray-800 transition-colors ${
-                              isCollected ? 'bg-amber-50 dark:bg-amber-900/10' : ''
-                            }`}
-                          >
-                            <td className={getResponsiveClass('p-4 sm:p-6', 'p-2', 'p-4', 'p-6')}>
-                              <p className={`font-black text-gray-900 dark:text-white leading-tight ${getResponsiveClass('text-xl sm:text-4xl', 'text-lg', 'text-xl', 'text-4xl')}`}>{coin.denomination}</p>
-                              <p className={`font-bold text-gray-500 dark:text-gray-400 truncate uppercase tracking-wider ${getResponsiveClass('text-[10px] sm:text-lg max-w-[100px] sm:max-w-[300px]', 'text-[8px] max-w-[80px]', 'text-[10px] max-w-[100px]', 'text-lg max-w-[300px]')}`}>{coin.name}</p>
-                            </td>
-                            <td className={`font-black text-gray-900 dark:text-white ${getResponsiveClass('p-4 sm:p-6 text-xl sm:text-4xl', 'p-2 text-lg', 'p-4 text-xl', 'p-6 text-4xl')}`}>
-                              {coin.year}
-                            </td>
-                            <td className={`text-center ${getResponsiveClass('p-4 sm:p-6', 'p-2', 'p-4', 'p-6')}`}>
-                              {isCollected ? (
-                                <div className={`inline-flex items-center justify-center bg-amber-500 text-white rounded-full shadow-lg ${getResponsiveClass('w-8 h-8 sm:w-14 sm:h-14', 'w-6 h-6', 'w-10 h-10', 'w-14 h-14')}`}>
-                                  <CheckCircle2 className={getResponsiveClass('sm:w-8 sm:h-8', 'w-4 h-4', 'w-6 h-6', 'w-8 h-8')} size={18} />
-                                </div>
-                              ) : (
-                                <div className={`inline-flex items-center justify-center border-gray-200 dark:border-gray-700 rounded-full ${getResponsiveClass('w-8 h-8 sm:w-14 sm:h-14 border-2 sm:border-4', 'w-6 h-6 border', 'w-10 h-10 border-2', 'w-14 h-14 border-4')}`}>
-                                  <Circle className={`text-gray-200 dark:text-gray-700 ${getResponsiveClass('sm:w-8 sm:h-8', 'w-4 h-4', 'w-6 h-6', 'w-8 h-8')}`} size={18} />
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                filteredCoins.map((coin) => {
-                  const isCollected = collectedIds.includes(coin.id);
-                  return (
-                    <motion.div
-                      layout
-                      key={coin.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      whileHover={{ y: -4 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => handleSelectCoin(coin)}
-                      className={`group relative bg-white dark:bg-gray-900 rounded-premium premium-shadow hover:premium-shadow-hover border-2 transition-all cursor-pointer ${
-                        isCollected ? 'border-amber-500 bg-amber-50/30 dark:bg-amber-900/10' : 'border-transparent'
-                      } ${
-                        userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'p-3' : 'p-4 sm:p-5'
-                      } ${
-                        userProfile.settings?.isTextMode ? 'border-gray-100 dark:border-gray-800' : ''
-                      }`}
-                    >
-                      <div className={`flex items-center ${getResponsiveClass('gap-4 sm:gap-6', 'gap-3', 'gap-4', 'gap-6')}`}>
-                        {!userProfile.settings?.isTextMode && (
-                          <div className={`relative flex-shrink-0 ${
-                            userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'w-14 h-14 sm:w-16 sm:h-16' : 'w-16 h-16 sm:w-20 sm:h-20'
-                          }`}>
-                            <img 
-                              src={coin.imageUrl} 
-                              alt={coin.name}
-                              referrerPolicy="no-referrer"
-                              onError={handleImageError}
-                              className={`w-full h-full object-cover rounded-2xl border-2 border-gray-100 dark:border-gray-800 shadow-sm transition-transform duration-500 group-hover:scale-110 ${
-                                !isCollected && 'grayscale opacity-50'
-                              }`}
-                            />
-                            {isCollected && (
-                              <div className={`absolute -top-1.5 -right-1.5 bg-amber-500 text-white rounded-full p-1 shadow-lg z-10 ${
-                                userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'scale-75' : ''
-                              }`}>
-                                <CheckCircle2 size={14} className={getResponsiveClass('sm:w-4 sm:h-4', 'w-3 h-3', 'w-4 h-4', 'w-5 h-5')} />
-                              </div>
-                            )}
-                            {coin.rarity && coin.rarity !== 'Common' && (
-                              <div className={`absolute -bottom-1.5 -left-1.5 px-2.5 py-1 rounded-lg font-black uppercase tracking-widest shadow-md z-10 ${
-                                coin.rarity === 'Ultra Rare' ? 'bg-purple-500 text-white' : 
-                                coin.rarity === 'Rare' ? 'bg-amber-500 text-white' : 
-                                'bg-blue-500 text-white'
-                              } ${getResponsiveClass('text-[8px]', 'text-[6px]', 'text-[8px]', 'text-[10px]')}`}>
-                                {coin.rarity}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className={`flex items-center justify-between ${getResponsiveClass('mb-1', 'mb-0.5', 'mb-1', 'mb-1.5')}`}>
-                            <div className="flex items-center gap-2">
-                              {userProfile.settings?.isTextMode && isCollected && <CheckCircle2 size={14} className="text-amber-500" />}
-                              <span className={`font-black text-amber-600 uppercase tracking-widest ${getResponsiveClass('text-[10px] sm:text-xs', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>
-                                {coin.denomination} • {coin.year}
-                              </span>
-                              {userProfile.settings?.isTextMode && coin.rarity && coin.rarity !== 'Common' && (
-                                <span className={`font-black uppercase tracking-widest ${
-                                  coin.rarity === 'Ultra Rare' ? 'text-purple-500' : 
-                                  coin.rarity === 'Rare' ? 'text-amber-500' : 
-                                  'text-blue-500'
-                                } ${getResponsiveClass('text-[8px]', 'text-[6px]', 'text-[8px]', 'text-[10px]')}`}>
-                                  [{coin.rarity}]
-                                </span>
-                              )}
-                            </div>
-                            {userProfile.settings?.showCoinPrice && coin.value && (
-                              <div className={`bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg font-black shadow-sm ${getResponsiveClass('px-2.5 py-1 text-[10px] sm:text-xs', 'px-1.5 py-0.5 text-[8px]', 'px-2.5 py-1 text-[10px]', 'px-3 py-1.5 text-xs')}`}>
-                                £{coin.value.toFixed(2)}
-                              </div>
-                            )}
-                          </div>
-                          <h3 className={`font-display font-bold text-gray-900 dark:text-white truncate tracking-tight ${
-                            userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'text-lg' : 'text-xl sm:text-2xl'
-                          }`}>{coin.name}</h3>
-                          {!userProfile.settings?.isTextMode && (
-                            <p className={`text-gray-500 dark:text-gray-400 line-clamp-1 font-medium ${
-                              userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'
-                            }`}>{coin.description}</p>
-                          )}
-                        </div>
-
-                        <button
-                          onClick={(e) => toggleCollected(coin.id, e)}
-                          className={`rounded-2xl transition-all active:scale-90 ${
-                            isCollected 
-                              ? 'bg-amber-500 text-white shadow-lg shadow-amber-200 dark:shadow-none' 
-                              : 'bg-gray-100 dark:bg-gray-800 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                          } ${
-                            userProfile.settings?.isCompactUI ? 'p-3' : 'p-4'
-                          }`}
-                          aria-label={isCollected ? "Mark as missing" : "Mark as collected"}
-                        >
-                          {isCollected ? <CheckCircle2 size={24} /> : <Circle size={24} />}
-                        </button>
+              <div className={`space-y-6 ${getResponsiveClass('mb-8', 'mb-4', 'mb-8', 'mb-12')}`}>
+                {userProfile.settings.isGrouped && groupedCoins ? (
+                  groupedCoins.map((group) => (
+                    <div key={group.title} className="space-y-4">
+                      <div className="flex items-center gap-4 px-2">
+                        <h2 className="text-sm font-black uppercase tracking-[0.2em] text-amber-600 dark:text-amber-500 whitespace-nowrap">
+                          {group.title}
+                        </h2>
+                        <div className="h-px bg-amber-100 dark:bg-amber-900/30 flex-1" />
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                          {group.coins.length} Coins
+                        </span>
                       </div>
-                    </motion.div>
-                  );
-                })
-              )
+                      
+                      {userProfile.settings?.isPurchaseMode ? (
+                        <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl`}>
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="bg-black dark:bg-white text-white dark:text-black">
+                                <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Coin</th>
+                                <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Year</th>
+                                <th className={`font-black uppercase tracking-widest text-center ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {group.coins.map(renderCoinTableRow)}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className={`grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
+                          {group.coins.map(renderCoinCard)}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  userProfile.settings?.isPurchaseMode ? (
+                    <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl`}>
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-black dark:bg-white text-white dark:text-black">
+                            <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Coin</th>
+                            <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Year</th>
+                            <th className={`font-black uppercase tracking-widest text-center ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredCoins.map(renderCoinTableRow)}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className={`grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
+                      {filteredCoins.map(renderCoinCard)}
+                    </div>
+                  )
+                )}
+              </div>
             )}
           </AnimatePresence>
 
