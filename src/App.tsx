@@ -70,6 +70,7 @@ interface UserProfile {
   coinTags: Record<string, string[]>;
   goals: CollectionGoal[];
   timelineProgress: Record<string, number>;
+  eraConquestProgress: Record<string, number>;
   lastTimelineId?: string;
   settings: {
     showBottomMenu: boolean;
@@ -109,6 +110,37 @@ interface CollectionGoal {
   current: number;
   reward: number;
   isCompleted: boolean;
+}
+
+interface EraChallenge {
+  id: string;
+  title: string;
+  description: string;
+  target: number;
+  current: number;
+  isCompleted: boolean;
+  reward: number;
+}
+
+interface Era {
+  id: string;
+  name: string;
+  description: string;
+  yearRange: [number, number];
+  challenges: EraChallenge[];
+  isLocked: boolean;
+  unlockCondition?: string;
+}
+
+interface GameMode {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  color: string;
+  progress: number;
+  isLocked: boolean;
+  unlockCondition?: string;
 }
 
 interface PurchasedCoin {
@@ -156,6 +188,93 @@ const BADGES = [
   { id: 'b7', name: 'Timeline Master', description: 'Complete all timelines', icon: <Star size={16} /> },
   { id: 'b8', name: 'Mint Master', description: 'Collect 100 coins', icon: <Trophy size={16} /> },
   { id: 'b9', name: 'History Explorer', description: 'Reach a 7-day timeline streak', icon: <Calendar size={16} /> }
+];
+
+const ERAS: Era[] = [
+  {
+    id: 'era-1800s',
+    name: 'The 1800s',
+    description: 'The era of industrial revolution and Victorian coinage.',
+    yearRange: [1800, 1899],
+    challenges: [
+      { id: 'c1', title: 'Victorian Starter', description: 'Collect 1 coin from the 1800s', target: 1, current: 0, isCompleted: false, reward: 200 },
+      { id: 'c2', title: 'Century Collector', description: 'Collect 5 coins from the 1800s', target: 5, current: 0, isCompleted: false, reward: 500 }
+    ],
+    isLocked: false
+  },
+  {
+    id: 'era-1900s',
+    name: 'The 1900s',
+    description: 'Early 20th century coins and the transition to modern minting.',
+    yearRange: [1900, 1919],
+    challenges: [
+      { id: 'c3', title: 'Edwardian Era', description: 'Collect 3 coins from 1900-1919', target: 3, current: 0, isCompleted: false, reward: 300 }
+    ],
+    isLocked: true,
+    unlockCondition: 'Complete 1 challenge in the 1800s'
+  },
+  {
+    id: 'era-1920s',
+    name: 'The Roaring 20s',
+    description: 'Post-WWI coinage and the interwar period.',
+    yearRange: [1920, 1929],
+    challenges: [
+      { id: 'c4', title: 'Jazz Age', description: 'Collect 3 coins from the 1920s', target: 3, current: 0, isCompleted: false, reward: 400 }
+    ],
+    isLocked: true,
+    unlockCondition: 'Reach Level 5'
+  },
+  {
+    id: 'era-modern',
+    name: 'Modern Era',
+    description: 'Decimalisation and the latest commemorative designs.',
+    yearRange: [2000, 2026],
+    challenges: [
+      { id: 'c5', title: 'Millennium Collector', description: 'Collect 10 modern coins', target: 10, current: 0, isCompleted: false, reward: 600 }
+    ],
+    isLocked: true,
+    unlockCondition: 'Collect 20 coins total'
+  }
+];
+
+const GAME_MODES: GameMode[] = [
+  {
+    id: 'era-conquest',
+    title: 'Era Conquest',
+    description: 'Conquer different time periods by completing era-specific challenges.',
+    icon: <Award size={24} />,
+    color: 'from-amber-500 to-orange-600',
+    progress: 0,
+    isLocked: false
+  },
+  {
+    id: 'timeline-explorer',
+    title: 'Timeline Explorer',
+    description: 'Journey through historical events and unlock numismatic lore.',
+    icon: <History size={24} />,
+    color: 'from-blue-500 to-indigo-600',
+    progress: 0,
+    isLocked: false
+  },
+  {
+    id: 'mint-detective',
+    title: 'Mint Mark Detective',
+    description: 'Identify rare mint marks and uncover the secrets of the Royal Mint.',
+    icon: <Search size={24} />,
+    color: 'from-emerald-500 to-teal-600',
+    progress: 0,
+    isLocked: true,
+    unlockCondition: 'Reach Level 10'
+  },
+  {
+    id: 'coin-story',
+    title: 'My Coin Story',
+    description: 'Your personal journey as a collector, visualized through your discoveries.',
+    icon: <Sparkles size={24} />,
+    color: 'from-purple-500 to-pink-600',
+    progress: 0,
+    isLocked: false
+  }
 ];
 
 const TIMELINES: Timeline[] = [
@@ -484,6 +603,7 @@ function CoinCollectorApp() {
         coinTags: {},
         goals: [],
         timelineProgress: {},
+        eraConquestProgress: {},
         lastTimelineId: undefined,
       };
 
@@ -511,6 +631,7 @@ function CoinCollectorApp() {
         coinTags: parsed.coinTags || {},
         goals: parsed.goals || [],
         timelineProgress: parsed.timelineProgress || {},
+        eraConquestProgress: parsed.eraConquestProgress || {},
         lastTimelineId: parsed.lastTimelineId,
       };
     } catch (e) {
@@ -540,6 +661,7 @@ function CoinCollectorApp() {
         coinTags: {},
         goals: [],
         timelineProgress: {},
+        eraConquestProgress: {},
         lastTimelineId: undefined,
         settings: {
           showBottomMenu: true,
@@ -642,6 +764,8 @@ function CoinCollectorApp() {
   const [isConverting, setIsConverting] = useState(false);
   const [isIdentityCardOpen, setIsIdentityCardOpen] = useState(false);
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
+  const [isGameModesOpen, setIsGameModesOpen] = useState(false);
+  const [activeGameMode, setActiveGameMode] = useState<string | null>(null);
   const [activeTimeline, setActiveTimeline] = useState<Timeline | null>(null);
   const [expandedEvents, setExpandedEvents] = useState<Record<string, Record<number, boolean>>>({});
 
@@ -743,6 +867,73 @@ function CoinCollectorApp() {
     if (count >= 10) return 'Collector';
     return 'Beginner';
   }, [collectedIds.length]);
+
+  const getEraProgress = (era: Era) => {
+    const coinsInEra = allCoins.filter(c => c.year >= era.yearRange[0] && c.year <= era.yearRange[1]);
+    const collectedInEra = coinsInEra.filter(c => collectedIds.includes(c.id));
+    if (coinsInEra.length === 0) return 0;
+    return Math.round((collectedInEra.length / coinsInEra.length) * 100);
+  };
+
+  const getChallengeProgress = (challenge: EraChallenge) => {
+    if (challenge.id === 'c1' || challenge.id === 'c2') {
+      const count = allCoins.filter(c => c.year >= 1800 && c.year <= 1899 && collectedIds.includes(c.id)).length;
+      return Math.min(count, challenge.target);
+    }
+    if (challenge.id === 'c3') {
+      const count = allCoins.filter(c => c.year >= 1900 && c.year <= 1919 && collectedIds.includes(c.id)).length;
+      return Math.min(count, challenge.target);
+    }
+    if (challenge.id === 'c4') {
+      const count = allCoins.filter(c => c.year >= 1920 && c.year <= 1929 && collectedIds.includes(c.id)).length;
+      return Math.min(count, challenge.target);
+    }
+    if (challenge.id === 'c5') {
+      const count = allCoins.filter(c => c.year >= 2000 && c.year <= 2026 && collectedIds.includes(c.id)).length;
+      return Math.min(count, challenge.target);
+    }
+    return 0;
+  };
+
+  const checkEraChallenges = () => {
+    let pointsAwarded = 0;
+    const newEraProgress = { ...userProfile.eraConquestProgress };
+    let hasChanges = false;
+
+    ERAS.forEach(era => {
+      era.challenges.forEach(challenge => {
+        const current = getChallengeProgress(challenge);
+        const isCompleted = current >= challenge.target;
+        
+        if (isCompleted && !userProfile.eraConquestProgress[challenge.id]) {
+          pointsAwarded += challenge.reward;
+          newEraProgress[challenge.id] = 100;
+          hasChanges = true;
+          
+          // Add notification
+          setPointsNotification({
+            amount: challenge.reward,
+            message: `Challenge Completed: ${challenge.title}!`
+          });
+          setTimeout(() => setPointsNotification(null), 3000);
+        }
+      });
+    });
+
+    if (hasChanges) {
+      setUserProfile(prev => ({
+        ...prev,
+        points: prev.points + pointsAwarded,
+        eraConquestProgress: newEraProgress
+      }));
+    }
+  };
+
+  useEffect(() => {
+    if (collectedIds.length > 0) {
+      checkEraChallenges();
+    }
+  }, [collectedIds]);
 
   const [isCompareMode, setIsCompareMode] = useState(false);
   const [compareCoins, setCompareCoins] = useState<[Coin | null, Coin | null]>([null, null]);
@@ -2721,6 +2912,54 @@ function CoinCollectorApp() {
               </button>
             </div>
           )}
+          {/* Game Modes Hub Section */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between px-2">
+              <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Game Modes</h3>
+              <button 
+                onClick={() => setIsGameModesOpen(true)}
+                className="text-[10px] font-black text-amber-600 uppercase tracking-widest hover:underline"
+              >
+                View All
+              </button>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+              {GAME_MODES.map(mode => {
+                const isLocked = mode.isLocked;
+                return (
+                  <motion.div
+                    key={mode.id}
+                    whileHover={isLocked ? {} : { y: -5, scale: 1.02 }}
+                    whileTap={isLocked ? {} : { scale: 0.98 }}
+                    onClick={() => {
+                      if (isLocked) return;
+                      setActiveGameMode(mode.id);
+                      setIsGameModesOpen(true);
+                    }}
+                    className={`flex-shrink-0 w-64 bg-gradient-to-br ${mode.color} rounded-premium p-6 text-white shadow-xl cursor-pointer relative overflow-hidden group ${isLocked ? 'opacity-60 grayscale' : ''}`}
+                  >
+                    <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+                      {mode.icon}
+                    </div>
+                    <div className="relative z-10 space-y-3">
+                      <h5 className="text-lg font-display font-bold leading-tight">{mode.title}</h5>
+                      <p className="text-white/80 text-xs font-medium line-clamp-2">{isLocked ? mode.unlockCondition : mode.description}</p>
+                      
+                      <div className="pt-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                            {isLocked ? <Shield size={16} /> : <ArrowRight size={16} />}
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-widest">{isLocked ? 'Locked' : 'Play Now'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </section>
+
           <AnimatePresence mode="popLayout">
             {!activeDenomination ? (
               /* Folder View */
@@ -4528,6 +4767,222 @@ function CoinCollectorApp() {
                     </div>
                   )}
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Game Modes Hub Modal */}
+      <AnimatePresence>
+        {isGameModesOpen && (
+          <div className="fixed inset-0 z-[130] flex items-center justify-center p-0 sm:p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setIsGameModesOpen(false);
+                setActiveGameMode(null);
+              }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              className={`relative w-full max-w-4xl bg-white dark:bg-gray-950 rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-[95vh] sm:h-[85vh] ${getResponsiveClass('m-0 sm:m-4', 'm-0', 'm-0 sm:m-4', 'm-0 sm:m-6')}`}
+            >
+              {/* Header */}
+              <div className={`border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50 sticky top-0 z-10 ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
+                <div className="flex items-center gap-4">
+                  <div className={`bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center shadow-inner ${getResponsiveClass('w-12 h-12', 'w-10 h-10', 'w-12 h-12', 'w-14 h-14')}`}>
+                    <Trophy size={24} className={getResponsiveClass('w-6 h-6', 'w-5 h-5', 'w-6 h-6', 'w-7 h-7')} />
+                  </div>
+                  <div>
+                    <h3 className={`font-black text-gray-900 dark:text-white uppercase tracking-tight ${getResponsiveClass('text-xl', 'text-lg', 'text-xl', 'text-2xl')}`}>Game Modes</h3>
+                    <p className={`text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest ${getResponsiveClass('text-[10px]', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>Challenge your collection</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    setIsGameModesOpen(false);
+                    setActiveGameMode(null);
+                  }} 
+                  className={`bg-white dark:bg-gray-800 rounded-full shadow-sm flex items-center justify-center ${getResponsiveClass('p-3', 'p-2', 'p-3', 'p-4')}`}
+                >
+                  <X size={24} className={getResponsiveClass('w-6 h-6', 'w-5 h-5', 'w-6 h-6', 'w-7 h-7')} />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className={`flex-1 overflow-y-auto no-scrollbar ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
+                {!activeGameMode ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {GAME_MODES.map(mode => {
+                      const isLocked = mode.isLocked;
+                      return (
+                        <motion.div
+                          key={mode.id}
+                          whileHover={isLocked ? {} : { scale: 1.02 }}
+                          whileTap={isLocked ? {} : { scale: 0.98 }}
+                          onClick={() => {
+                            if (isLocked) return;
+                            if (mode.id === 'timeline-explorer') {
+                              setIsGameModesOpen(false);
+                              setIsTimelineOpen(true);
+                            } else if (mode.id === 'coin-story') {
+                              setIsGameModesOpen(false);
+                              setActiveTimeline(myCoinStory);
+                              setIsTimelineOpen(true);
+                            } else {
+                              setActiveGameMode(mode.id);
+                            }
+                          }}
+                          className={`bg-white dark:bg-gray-900 rounded-premium p-8 premium-shadow hover:premium-shadow-hover border-2 transition-all cursor-pointer relative overflow-hidden group ${isLocked ? 'opacity-60 grayscale' : 'border-transparent'}`}
+                        >
+                          <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${mode.color} text-white flex items-center justify-center mb-6 shadow-lg`}>
+                            {mode.icon}
+                          </div>
+                          <div className="space-y-2">
+                            <h4 className="text-2xl font-display font-bold text-gray-900 dark:text-white">{mode.title}</h4>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium leading-relaxed">
+                              {isLocked ? `Locked: ${mode.unlockCondition}` : mode.description}
+                            </p>
+                          </div>
+                          <div className="mt-8 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 group-hover:text-amber-500 transition-colors">
+                                {isLocked ? <Shield size={16} /> : <ArrowRight size={16} />}
+                              </div>
+                              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200 transition-colors">
+                                {isLocked ? 'Locked' : 'Start Mode'}
+                              </span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                ) : activeGameMode === 'era-conquest' ? (
+                  <div className="space-y-8">
+                    <button 
+                      onClick={() => setActiveGameMode(null)}
+                      className="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
+                    >
+                      <ArrowLeft size={20} />
+                      <span className="text-xs font-black uppercase tracking-widest">Back to Hub</span>
+                    </button>
+
+                    <div className="grid grid-cols-1 gap-6">
+                      {ERAS.map(era => {
+                        const progress = getEraProgress(era);
+                        const isLocked = era.isLocked && !Object.values(userProfile.eraConquestProgress).some(p => p > 0); // Simple lock logic
+                        
+                        return (
+                          <div 
+                            key={era.id}
+                            className={`bg-white dark:bg-gray-900 rounded-premium p-8 premium-shadow border border-gray-100 dark:border-gray-800 ${isLocked ? 'opacity-60 grayscale' : ''}`}
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                              <div>
+                                <h4 className="text-3xl font-display font-bold text-gray-900 dark:text-white mb-1">{era.name}</h4>
+                                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">{era.description}</p>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <div className="text-right">
+                                  <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Era Progress</p>
+                                  <p className="text-2xl font-black text-gray-900 dark:text-white">{progress}%</p>
+                                </div>
+                                <div className="w-16 h-16 rounded-full border-4 border-amber-100 dark:border-amber-900/30 flex items-center justify-center relative">
+                                  <svg className="w-full h-full -rotate-90">
+                                    <circle
+                                      cx="32"
+                                      cy="32"
+                                      r="28"
+                                      fill="transparent"
+                                      stroke="currentColor"
+                                      strokeWidth="4"
+                                      className="text-amber-500"
+                                      strokeDasharray={175.9}
+                                      strokeDashoffset={175.9 * (1 - progress / 100)}
+                                    />
+                                  </svg>
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <Award size={24} className="text-amber-500" />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="space-y-4">
+                              <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Era Challenges</h5>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {era.challenges.map(challenge => {
+                                  const current = getChallengeProgress(challenge);
+                                  const isCompleted = current >= challenge.target;
+                                  const challengeProgress = (current / challenge.target) * 100;
+
+                                  return (
+                                    <div 
+                                      key={challenge.id}
+                                      className={`p-5 rounded-2xl border-2 transition-all ${isCompleted ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800' : 'bg-gray-50 dark:bg-gray-800/50 border-transparent'}`}
+                                    >
+                                      <div className="flex justify-between items-start mb-3">
+                                        <div>
+                                          <p className="font-bold text-gray-900 dark:text-white">{challenge.title}</p>
+                                          <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">{challenge.description}</p>
+                                        </div>
+                                        {isCompleted ? (
+                                          <CheckCircle2 size={20} className="text-amber-500" />
+                                        ) : (
+                                          <div className="px-2 py-1 bg-white dark:bg-gray-800 rounded-lg text-[8px] font-black text-amber-600 uppercase tracking-widest border border-amber-100 dark:border-amber-800">
+                                            +{challenge.reward} XP
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="space-y-1.5">
+                                        <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-gray-400">
+                                          <span>Progress</span>
+                                          <span>{current} / {challenge.target}</span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                          <motion.div 
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${challengeProgress}%` }}
+                                            className="h-full bg-amber-500"
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
+                    <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-300">
+                      <FlaskConical size={48} />
+                    </div>
+                    <div>
+                      <h4 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Mode Under Construction</h4>
+                      <p className="text-gray-500 dark:text-gray-400 max-w-xs mx-auto mt-2">
+                        We're currently minting this new game mode. Check back soon for more challenges!
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => setActiveGameMode(null)}
+                      className="px-8 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-black uppercase tracking-widest text-xs rounded-full hover:scale-105 transition-transform active:scale-95"
+                    >
+                      Back to Hub
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>
