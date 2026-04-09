@@ -10,6 +10,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import { UK_COINS, Coin } from './data/coins';
 import { GoogleGenAI, Type } from "@google/genai";
 
+export const DENOMINATIONS = [
+  '1p', '2p', '5p', '10p', '20p', '50p', '£1', '£2',
+  'Farthing', 'Half Penny', 'Penny', 'Threepence', 'Sixpence', 'Shilling', 'Florin', 'Half Crown', 'Crown'
+];
+
 interface RequestedCoin {
   id: string;
   denomination: string;
@@ -87,6 +92,7 @@ interface UserProfile {
     groupBy?: 'year' | 'denomination' | 'date-added' | 'month-added';
     isGrouped?: boolean;
     theme?: 'default' | 'paper' | 'glass' | 'wood' | 'metal' | 'fabric';
+    fixedPrices?: Record<string, number>;
   };
   safeModeBackup?: string;
 }
@@ -767,7 +773,8 @@ function CoinCollectorApp() {
           sortBy: 'recent-added',
           groupBy: 'year',
           isGrouped: false,
-          theme: 'default'
+          theme: 'default',
+          fixedPrices: {}
         },
         dnaScore: 0,
         unlockedClues: [],
@@ -792,7 +799,8 @@ function CoinCollectorApp() {
         ...parsed,
         settings: {
           ...defaultProfile.settings,
-          ...parsed.settings
+          ...parsed.settings,
+          fixedPrices: parsed.settings?.fixedPrices || {}
         },
         missions: parsed.missions || defaultProfile.missions,
         timelineStreak: parsed.timelineStreak || 0,
@@ -1294,6 +1302,12 @@ function CoinCollectorApp() {
   const [manualCoinValue, setManualCoinValue] = useState<string>('');
   const [isPurchased, setIsPurchased] = useState(false);
   const [editingCoinId, setEditingCoinId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (userProfile.settings?.fixedPrices && userProfile.settings.fixedPrices[manualCoinDenom]) {
+      setManualCoinValue(userProfile.settings.fixedPrices[manualCoinDenom].toString());
+    }
+  }, [manualCoinDenom, userProfile.settings?.fixedPrices]);
 
   const [lastOpenedIds, setLastOpenedIds] = useState<Record<string, number>>(() => {
     const saved = localStorage.getItem('last_opened_ids');
@@ -2648,7 +2662,7 @@ function CoinCollectorApp() {
         contents: [
           {
             parts: [
-              { text: "Identify this UK coin. Return the denomination (e.g., '50p', '£1', '1p', 'Half Crown', '1 Shilling', '3p', '1/2p', '£2'), the year (e.g., 1967), and a short descriptive name for the design (e.g., 'Kew Gardens', 'Britannia', 'Peter Rabbit'). If you are unsure, return 'unknown' for any field." },
+              { text: "Identify this UK coin. Return the denomination (e.g., '50p', '£1', '1p', 'Farthing', 'Half Penny', 'Penny', 'Threepence', 'Sixpence', 'Shilling', 'Florin', 'Half Crown', 'Crown'), the year (e.g., 1967), and a short descriptive name for the design (e.g., 'Kew Gardens', 'Britannia', 'Peter Rabbit'). If you are unsure, return 'unknown' for any field." },
               { inlineData: { mimeType: "image/jpeg", data: base64Image } }
             ]
           }
@@ -2745,7 +2759,7 @@ function CoinCollectorApp() {
           contents: [
             {
               parts: [
-                { text: "Identify this UK coin. Return the denomination (e.g., '50p', '£1', '1p', 'Half Crown', '1 Shilling', '3p', '1/2p', '£2') and the year (e.g., 1967). If you are unsure, return 'unknown' for either field." },
+                { text: "Identify this UK coin. Return the denomination (e.g., '50p', '£1', '1p', 'Farthing', 'Half Penny', 'Penny', 'Threepence', 'Sixpence', 'Shilling', 'Florin', 'Half Crown', 'Crown') and the year (e.g., 1967). If you are unsure, return 'unknown' for either field." },
                 { inlineData: { mimeType: "image/jpeg", data: base64Image } }
               ]
             }
@@ -4812,6 +4826,47 @@ function CoinCollectorApp() {
                       )}
                     </div>
                   </div>
+
+                  {/* Fixed Prices Section */}
+                  <div className="space-y-4 mt-8">
+                    <div className="flex items-center gap-2 px-2">
+                      <Tag size={16} className="text-amber-500" />
+                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Fixed Prices</h4>
+                    </div>
+                    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-4">
+                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Set default prices for denominations</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                        {DENOMINATIONS.map(denom => (
+                          <div key={denom} className="space-y-1">
+                            <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{denom}</label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">£</span>
+                              <input 
+                                type="number"
+                                step="0.01"
+                                value={userProfile.settings.fixedPrices?.[denom] || ''}
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  setUserProfile(prev => ({
+                                    ...prev,
+                                    settings: {
+                                      ...prev.settings,
+                                      fixedPrices: {
+                                        ...(prev.settings.fixedPrices || {}),
+                                        [denom]: isNaN(val) ? 0 : val
+                                      }
+                                    }
+                                  }));
+                                }}
+                                className="w-full pl-6 pr-3 py-2 bg-gray-50 dark:bg-gray-800 border border-transparent focus:border-amber-500 rounded-xl text-[10px] font-bold transition-all"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-800 text-center">
@@ -6226,7 +6281,7 @@ function CoinCollectorApp() {
                       onChange={(e) => setManualCoinDenom(e.target.value)}
                       className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-amber-500 rounded-2xl text-sm font-bold transition-all appearance-none"
                     >
-                      {['1p', '2p', '5p', '10p', '20p', '50p', '£1', '£2'].map(d => (
+                      {DENOMINATIONS.map(d => (
                         <option key={d} value={d}>{d}</option>
                       ))}
                     </select>
