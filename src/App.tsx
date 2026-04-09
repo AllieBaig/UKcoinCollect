@@ -250,6 +250,15 @@ const GAME_MODES: GameMode[] = [
     isLocked: false
   },
   {
+    id: 'mind-map',
+    title: 'Mind Map Timeline',
+    description: 'Explore the collection in an interactive tree structure.',
+    icon: <Layout size={24} />,
+    color: 'from-indigo-500 to-purple-600',
+    progress: 0,
+    isLocked: false
+  },
+  {
     id: 'timeline-explorer',
     title: 'Timeline Explorer',
     description: 'Journey through historical events and unlock numismatic lore.',
@@ -288,6 +297,144 @@ const GAME_MODES: GameMode[] = [
     isLocked: false
   }
 ];
+
+const MindMapTimeline = ({ coins, collectedIds, onSelectCoin }: { coins: Coin[], collectedIds: string[], onSelectCoin: (coin: Coin) => void }) => {
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['root']));
+
+  const toggleNode = (nodeId: string) => {
+    setExpandedNodes(prev => {
+      const next = new Set(prev);
+      if (next.has(nodeId)) next.delete(nodeId);
+      else next.add(nodeId);
+      return next;
+    });
+  };
+
+  const treeData = useMemo(() => {
+    const root: any = { id: 'root', label: 'UK Coinage', children: {} };
+    
+    coins.forEach(coin => {
+      const year = coin.year.toString();
+      const mint = 'Royal Mint'; // Default for UK coins
+      const denom = coin.denomination;
+      
+      if (!root.children[year]) root.children[year] = { id: year, label: `Year ${year}`, children: {} };
+      if (!root.children[year].children[mint]) root.children[year].children[mint] = { id: `${year}-${mint}`, label: mint, children: {} };
+      if (!root.children[year].children[mint].children[denom]) root.children[year].children[mint].children[denom] = { id: `${year}-${mint}-${denom}`, label: denom, children: {} };
+      
+      const coinId = coin.id;
+      root.children[year].children[mint].children[denom].children[coinId] = { 
+        id: coinId, 
+        label: coin.name, 
+        coin: coin,
+        isCollected: collectedIds.includes(coinId)
+      };
+    });
+    
+    return root;
+  }, [coins, collectedIds]);
+
+  const renderNode = (node: any, depth: number = 0) => {
+    const isExpanded = expandedNodes.has(node.id);
+    const children = node.children ? Object.values(node.children) : [];
+    const hasChildren = children.length > 0;
+    
+    // Calculate progress for this branch
+    const getAllCoinsInBranch = (n: any): string[] => {
+      if (n.coin) return [n.id];
+      if (!n.children) return [];
+      return Object.values(n.children).flatMap(getAllCoinsInBranch);
+    };
+    
+    const coinsInBranch = getAllCoinsInBranch(node);
+    const collectedInBranch = coinsInBranch.filter(id => collectedIds.includes(id)).length;
+    const progress = coinsInBranch.length > 0 ? Math.round((collectedInBranch / coinsInBranch.length) * 100) : 0;
+    const isUnlocked = progress > 0 || node.id === 'root' || depth < 2; // Root and top levels always visible, others if progress > 0
+
+    if (!isUnlocked && depth > 1) return null;
+
+    return (
+      <div key={node.id} className={`${depth > 0 ? 'ml-6 border-l border-gray-100 dark:border-gray-800' : ''}`}>
+        <div 
+          onClick={() => {
+            if (hasChildren) toggleNode(node.id);
+            if (node.coin) onSelectCoin(node.coin);
+          }}
+          className={`group flex items-center gap-3 py-2 px-3 cursor-pointer transition-all rounded-lg ${
+            node.isCollected 
+              ? 'text-amber-600 font-bold bg-amber-50/50 dark:bg-amber-900/10' 
+              : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900'
+          }`}
+        >
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {hasChildren && (
+              <motion.span 
+                animate={{ rotate: isExpanded ? 90 : 0 }}
+                className="text-[10px] text-gray-400 w-4 flex justify-center"
+              >
+                ▶
+              </motion.span>
+            )}
+            {!hasChildren && <div className="w-4 h-4 rounded-full border-2 border-amber-500/30 flex-shrink-0" />}
+            
+            <span className={`text-xs font-black uppercase tracking-widest truncate ${node.coin ? 'text-[10px]' : ''}`}>
+              {node.label}
+            </span>
+            
+            {hasChildren && depth > 0 && (
+              <span className="text-[8px] font-black text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
+                {progress}%
+              </span>
+            )}
+          </div>
+          
+          {node.isCollected && <CheckCircle2 size={14} className="text-amber-500 flex-shrink-0" />}
+          {hasChildren && isExpanded && <div className="w-1 h-1 bg-amber-500 rounded-full" />}
+        </div>
+        
+        <AnimatePresence>
+          {isExpanded && hasChildren && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              {children.map((child: any) => renderNode(child, depth + 1))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white dark:bg-gray-950 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">Interactive Mind Map</h4>
+            <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Year → Mint → Denomination → Coin</p>
+          </div>
+          <div className="bg-amber-100 dark:bg-amber-900/30 text-amber-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+            {collectedIds.length} / {coins.length} Explored
+          </div>
+        </div>
+        
+        <div className="max-h-[60vh] overflow-y-auto no-scrollbar pr-2">
+          {renderNode(treeData)}
+        </div>
+      </div>
+      
+      <div className="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/20">
+        <p className="text-[10px] text-amber-700 dark:text-amber-400 font-bold leading-relaxed">
+          <Sparkles size={12} className="inline mr-1 mb-1" />
+          Branches unlock as you collect coins. Explore the tree to see the full lineage of your collection.
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const TIMELINES: Timeline[] = [
   {
@@ -5249,6 +5396,24 @@ function CoinCollectorApp() {
                         )}
                       </div>
                     )}
+                  </div>
+                ) : activeGameMode === 'mind-map' ? (
+                  <div className="space-y-6">
+                    <button 
+                      onClick={() => setActiveGameMode(null)}
+                      className="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
+                    >
+                      <ArrowLeft size={20} />
+                      <span className="text-xs font-black uppercase tracking-widest">Back to Story Hub</span>
+                    </button>
+                    <MindMapTimeline 
+                      coins={UK_COINS} 
+                      collectedIds={collectedIds} 
+                      onSelectCoin={(coin) => {
+                        handleSelectCoin(coin);
+                        setIsStoryModeOpen(false);
+                      }} 
+                    />
                   </div>
                 ) : activeGameMode ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
