@@ -693,13 +693,24 @@ function CoinCollectorApp() {
       return [];
     }
   });
+  const [userCoinDenominations, setUserCoinDenominations] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem('user_coin_denominations');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      console.error("Failed to load user_coin_denominations", e);
+      return {};
+    }
+  });
+
   const allCoins = useMemo(() => {
     const baseCoins = [...UK_COINS, ...customCoins];
     return baseCoins.map(coin => ({
       ...coin,
-      imageUrl: userCoinImages[coin.id] || coin.imageUrl
+      imageUrl: userCoinImages[coin.id] || coin.imageUrl,
+      denomination: userCoinDenominations[coin.id] || coin.denomination
     }));
-  }, [customCoins, userCoinImages]);
+  }, [customCoins, userCoinImages, userCoinDenominations]);
 
   const [requestedCoins, setRequestedCoins] = useState<RequestedCoin[]>(() => {
     try {
@@ -719,6 +730,10 @@ function CoinCollectorApp() {
       return [];
     }
   });
+
+  const [selectedCoinIds, setSelectedCoinIds] = useState<Set<string>>(new Set());
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
     try {
@@ -1723,6 +1738,8 @@ function CoinCollectorApp() {
 
   const renderCoinCard = (coin: Coin) => {
     const isCollected = collectedIds.includes(coin.id);
+    const isSelected = selectedCoinIds.has(coin.id);
+
     return (
       <motion.div
         layout
@@ -1732,15 +1749,30 @@ function CoinCollectorApp() {
         exit={{ opacity: 0, scale: 0.95 }}
         whileHover={{ y: -4 }}
         whileTap={{ scale: 0.98 }}
-        onClick={() => handleSelectCoin(coin)}
+        onClick={() => handleCoinClick(coin)}
+        onMouseDown={() => startLongPress(coin.id)}
+        onMouseUp={endLongPress}
+        onMouseLeave={endLongPress}
+        onTouchStart={() => startLongPress(coin.id)}
+        onTouchEnd={endLongPress}
         className={`group relative bg-white dark:bg-gray-900 rounded-premium premium-shadow hover:premium-shadow-hover border-2 transition-all cursor-pointer ${
-          isCollected ? 'border-amber-500 bg-amber-50/30 dark:bg-amber-900/10' : 'border-transparent'
+          isSelected ? 'border-amber-500 ring-4 ring-amber-500/20' : 
+          isCollected ? 'border-amber-500/50 bg-amber-50/30 dark:bg-amber-900/10' : 'border-transparent'
         } ${
           userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'p-3' : 'p-4 sm:p-5'
         } ${
           userProfile.settings?.isTextMode ? 'border-gray-100 dark:border-gray-800' : ''
         }`}
       >
+        {isMultiSelectMode && (
+          <div className="absolute top-3 right-3 z-20">
+            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+              isSelected ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-600'
+            }`}>
+              {isSelected && <CheckCircle2 size={16} />}
+            </div>
+          </div>
+        )}
         <div className={`flex items-center ${getResponsiveClass('gap-4 sm:gap-6', 'gap-3', 'gap-4', 'gap-6')}`}>
           {!userProfile.settings?.isTextMode && (
             <div className={`relative flex-shrink-0 ${
@@ -1827,17 +1859,36 @@ function CoinCollectorApp() {
 
   const renderCoinTableRow = (coin: Coin) => {
     const isCollected = collectedIds.includes(coin.id);
+    const isSelected = selectedCoinIds.has(coin.id);
+
     return (
       <tr 
         key={coin.id} 
-        onClick={() => handleSelectCoin(coin)}
+        onClick={() => handleCoinClick(coin)}
+        onMouseDown={() => startLongPress(coin.id)}
+        onMouseUp={endLongPress}
+        onMouseLeave={endLongPress}
+        onTouchStart={() => startLongPress(coin.id)}
+        onTouchEnd={endLongPress}
         className={`border-b-2 sm:border-b-4 border-gray-100 dark:border-gray-800 cursor-pointer active:bg-gray-100 dark:active:bg-gray-800 transition-colors ${
+          isSelected ? 'bg-amber-100 dark:bg-amber-900/20' :
           isCollected ? 'bg-amber-50 dark:bg-amber-900/10' : ''
         }`}
       >
         <td className={getResponsiveClass('p-4 sm:p-6', 'p-2', 'p-4', 'p-6')}>
-          <p className={`font-black text-gray-900 dark:text-white leading-tight ${getResponsiveClass('text-xl sm:text-4xl', 'text-lg', 'text-xl', 'text-4xl')}`}>{coin.denomination}</p>
-          <p className={`font-bold text-gray-500 dark:text-gray-400 truncate uppercase tracking-wider ${getResponsiveClass('text-[10px] sm:text-lg max-w-[100px] sm:max-w-[300px]', 'text-[8px] max-w-[80px]', 'text-[10px] max-w-[100px]', 'text-lg max-w-[300px]')}`}>{coin.name}</p>
+          <div className="flex items-center gap-3">
+            {isMultiSelectMode && (
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                isSelected ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-600'
+              }`}>
+                {isSelected && <CheckCircle2 size={16} />}
+              </div>
+            )}
+            <div>
+              <p className={`font-black text-gray-900 dark:text-white leading-tight ${getResponsiveClass('text-xl sm:text-4xl', 'text-lg', 'text-xl', 'text-4xl')}`}>{coin.denomination}</p>
+              <p className={`font-bold text-gray-500 dark:text-gray-400 truncate uppercase tracking-wider ${getResponsiveClass('text-[10px] sm:text-lg max-w-[100px] sm:max-w-[300px]', 'text-[8px] max-w-[80px]', 'text-[10px] max-w-[100px]', 'text-lg max-w-[300px]')}`}>{coin.name}</p>
+            </div>
+          </div>
         </td>
         <td className={`font-black text-gray-900 dark:text-white ${getResponsiveClass('p-4 sm:p-6 text-xl sm:text-4xl', 'p-2 text-lg', 'p-4 text-xl', 'p-6 text-4xl')}`}>
           {coin.year}
@@ -2046,6 +2097,10 @@ function CoinCollectorApp() {
     localStorage.setItem('user_coin_images', JSON.stringify(userCoinImages));
   }, [userCoinImages]);
 
+  useEffect(() => {
+    localStorage.setItem('user_coin_denominations', JSON.stringify(userCoinDenominations));
+  }, [userCoinDenominations]);
+
   const progress = Math.round((collectedIds.length / allCoins.length) * 100);
 
   useEffect(() => {
@@ -2152,6 +2207,71 @@ function CoinCollectorApp() {
         coinTags: { ...prev.coinTags, [coinId]: newTags }
       };
     });
+  };
+
+  const toggleCoinSelection = (coinId: string) => {
+    setSelectedCoinIds(prev => {
+      const next = new Set(prev);
+      if (next.has(coinId)) {
+        next.delete(coinId);
+        if (next.size === 0) setIsMultiSelectMode(false);
+      } else {
+        next.add(coinId);
+      }
+      return next;
+    });
+  };
+
+  const handleCoinClick = (coin: Coin) => {
+    if (isMultiSelectMode) {
+      toggleCoinSelection(coin.id);
+    } else {
+      handleSelectCoin(coin);
+    }
+  };
+
+  const startLongPress = (coinId: string) => {
+    if (isMultiSelectMode) return;
+    longPressTimer.current = setTimeout(() => {
+      setIsMultiSelectMode(true);
+      setSelectedCoinIds(new Set([coinId]));
+    }, 600);
+  };
+
+  const endLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const applyBulkTag = (tagId: string) => {
+    setUserProfile(prev => {
+      const newCoinTags = { ...prev.coinTags };
+      selectedCoinIds.forEach(coinId => {
+        const currentTags = newCoinTags[coinId] || [];
+        if (!currentTags.includes(tagId)) {
+          newCoinTags[coinId] = [...currentTags, tagId];
+        }
+      });
+      return { ...prev, coinTags: newCoinTags };
+    });
+    setIsMultiSelectMode(false);
+    setSelectedCoinIds(new Set());
+    addPoints(POINT_VALUES.COLLECT_COIN, "Bulk Tags Applied!");
+  };
+
+  const applyBulkDenomination = (denom: string) => {
+    setUserCoinDenominations(prev => {
+      const next = { ...prev };
+      selectedCoinIds.forEach(coinId => {
+        next[coinId] = denom;
+      });
+      return next;
+    });
+    setIsMultiSelectMode(false);
+    setSelectedCoinIds(new Set());
+    addPoints(POINT_VALUES.COLLECT_COIN, "Bulk Denominations Updated!");
   };
 
   const patternInsights = useMemo(() => {
@@ -6533,6 +6653,74 @@ function CoinCollectorApp() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Multi-Select Action Bar */}
+      <AnimatePresence>
+        {isMultiSelectMode && selectedCoinIds.size > 0 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] w-[90%] max-w-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-[2rem] p-4 shadow-2xl flex items-center justify-between gap-4 border border-white/10 dark:border-gray-200"
+          >
+            <div className="flex items-center gap-4 pl-2">
+              <button 
+                onClick={() => {
+                  setIsMultiSelectMode(false);
+                  setSelectedCoinIds(new Set());
+                }}
+                className="p-2 hover:bg-white/10 dark:hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest">{selectedCoinIds.size} Selected</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const denom = prompt("Enter new denomination for selected coins:");
+                  if (denom) applyBulkDenomination(denom);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 dark:bg-gray-100 hover:bg-white/20 dark:hover:bg-gray-200 rounded-xl transition-all"
+              >
+                <Tag size={16} />
+                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Denom</span>
+              </button>
+
+              <div className="relative group">
+                <button
+                  className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20 hover:scale-105 transition-all"
+                >
+                  <Folder size={16} />
+                  <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Folder</span>
+                </button>
+                
+                <div className="absolute bottom-full right-0 mb-2 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all translate-y-2 group-hover:translate-y-0">
+                  <div className="p-2 space-y-1">
+                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest p-2">Apply Tag</p>
+                    {userProfile.tags.map(tag => (
+                      <button
+                        key={tag.id}
+                        onClick={() => applyBulkTag(tag.id)}
+                        className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors text-left"
+                      >
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }} />
+                        <span className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-widest">{tag.name}</span>
+                      </button>
+                    ))}
+                    {userProfile.tags.length === 0 && (
+                      <p className="text-[8px] text-gray-400 italic p-3">No tags found</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
