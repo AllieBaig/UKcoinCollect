@@ -7,7 +7,7 @@ import {
   Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle, ShoppingCart, Tag, Table, History, Moon, HelpCircle, ArrowRight, Star, ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { UK_COINS, Coin } from './data/coins';
+import { EUROPEAN_COINS, Coin } from './data/coins';
 import { GoogleGenAI, Type } from "@google/genai";
 
 export const DENOMINATIONS = [
@@ -723,7 +723,7 @@ function CoinCollectorApp() {
   });
 
   const allCoins = useMemo(() => {
-    const baseCoins = [...UK_COINS, ...customCoins];
+    const baseCoins = [...EUROPEAN_COINS, ...customCoins];
     return baseCoins.map(coin => ({
       ...coin,
       imageUrl: userCoinImages[coin.id] || coin.imageUrl,
@@ -879,7 +879,9 @@ function CoinCollectorApp() {
           isPurchaseMode: false,
           showCoinPrice: true,
           isNightBonusActive: true,
-          sortBy: 'recent-added'
+          sortBy: 'recent-added',
+          showOldEuropeanCoins: true,
+          eraFilter: 'Both'
         }
       };
     }
@@ -2206,7 +2208,7 @@ function CoinCollectorApp() {
 
         // Folder Completion Check
         if (coin) {
-          const coinsInDenom = UK_COINS.filter(c => c.denomination === coin.denomination);
+          const coinsInDenom = EUROPEAN_COINS.filter(c => c.denomination === coin.denomination);
           const collectedInDenom = coinsInDenom.filter(c => [...prev, id].includes(c.id)).length;
           if (collectedInDenom === coinsInDenom.length) {
             addPoints(POINT_VALUES.COMPLETE_FOLDER, `${coin.denomination} Folder Complete!`);
@@ -2453,6 +2455,28 @@ function CoinCollectorApp() {
     if (!userProfile.settings.isGrouped) return null;
     
     const groupBy = userProfile.settings.groupBy || 'year';
+    
+    if (groupBy === 'country') {
+      const countryGroups: Record<string, Record<string, Coin[]>> = {};
+      
+      filteredCoins.forEach(coin => {
+        const country = coin.country;
+        const era = coin.type;
+        
+        if (!countryGroups[country]) countryGroups[country] = {};
+        if (!countryGroups[country][era]) countryGroups[country][era] = [];
+        countryGroups[country][era].push(coin);
+      });
+      
+      return Object.keys(countryGroups).sort().map(country => ({
+        title: country,
+        subGroups: Object.keys(countryGroups[country]).sort((a, b) => b.localeCompare(a)).map(era => ({
+          title: era === 'Modern' ? 'Modern (Euro)' : 'Old (Pre-Euro)',
+          coins: countryGroups[country][era]
+        }))
+      }));
+    }
+
     const groups: Record<string, Coin[]> = {};
     
     filteredCoins.forEach(coin => {
@@ -2468,8 +2492,6 @@ function CoinCollectorApp() {
       } else if (groupBy === 'month-added') {
         const date = collectionHistory[coin.id];
         groupKey = date ? new Date(date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : 'Not Collected';
-      } else if (groupBy === 'country') {
-        groupKey = coin.country;
       }
       
       if (!groups[groupKey]) groups[groupKey] = [];
@@ -2480,7 +2502,6 @@ function CoinCollectorApp() {
     const sortedKeys = Object.keys(groups).sort((a, b) => {
       if (groupBy === 'year') return b.localeCompare(a);
       if (groupBy === 'denomination') return a.localeCompare(b);
-      if (groupBy === 'country') return a.localeCompare(b);
       if (groupBy === 'date-added' || groupBy === 'month-added') {
         if (a === 'Not Collected') return 1;
         if (b === 'Not Collected') return -1;
@@ -3476,6 +3497,25 @@ function CoinCollectorApp() {
                 ))}
               </div>
               
+              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                {(['Modern', 'Old', 'Both'] as const).map((era) => (
+                  <button
+                    key={era}
+                    onClick={() => setUserProfile(prev => ({
+                      ...prev,
+                      settings: { ...prev.settings, eraFilter: era }
+                    }))}
+                    className={`rounded-full font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+                      userProfile.settings.eraFilter === era 
+                        ? 'bg-amber-500 text-white shadow-md' 
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    } ${getResponsiveClass('px-5 py-2 text-xs', 'px-3 py-1.5 text-[10px]', 'px-5 py-2 text-xs', 'px-6 py-2.5 text-sm')}`}
+                  >
+                    {era}
+                  </button>
+                ))}
+              </div>
+              
               <button
                 onClick={() => setUserProfile(prev => ({
                   ...prev,
@@ -3792,25 +3832,41 @@ function CoinCollectorApp() {
                           exit={{ opacity: 0, height: 0 }}
                           className="overflow-hidden"
                         >
-                          {userProfile.settings?.isPurchaseMode ? (
-                            <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl`}>
-                              <table className="w-full text-left border-collapse">
-                                <thead>
-                                  <tr className="bg-black dark:bg-white text-white dark:text-black">
-                                    <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Coin</th>
-                                    <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Year</th>
-                                    <th className={`font-black uppercase tracking-widest text-center ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Status</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {group.coins.map(renderCoinTableRow)}
-                                </tbody>
-                              </table>
+                          {group.subGroups ? (
+                            <div className="space-y-6 pl-4 border-l-2 border-gray-100 dark:border-gray-800 ml-2 mt-2">
+                              {group.subGroups.map(subGroup => (
+                                <div key={subGroup.title} className="space-y-3">
+                                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-2">
+                                    <div className="w-1 h-1 rounded-full bg-amber-500" />
+                                    {subGroup.title}
+                                  </h3>
+                                  <div className={`grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
+                                    {subGroup.coins.map(renderCoinCard)}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           ) : (
-                            <div className={`grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
-                              {group.coins.map(renderCoinCard)}
-                            </div>
+                            userProfile.settings?.isPurchaseMode ? (
+                              <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl`}>
+                                <table className="w-full text-left border-collapse">
+                                  <thead>
+                                    <tr className="bg-black dark:bg-white text-white dark:text-black">
+                                      <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Coin</th>
+                                      <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Year</th>
+                                      <th className={`font-black uppercase tracking-widest text-center ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Status</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {group.coins.map(renderCoinTableRow)}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : (
+                              <div className={`grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
+                                {group.coins.map(renderCoinCard)}
+                              </div>
+                            )
                           )}
                         </motion.div>
                       )}
@@ -4800,6 +4856,24 @@ function CoinCollectorApp() {
                           className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.showBottomMenu ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                         >
                           <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showBottomMenu ? 'right-0.5' : 'left-0.5'}`} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <Globe size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Old European Coins</p>
+                            <p className="text-[10px] text-gray-500">Show pre-Euro currencies</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, showOldEuropeanCoins: !prev.settings.showOldEuropeanCoins } }))}
+                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.showOldEuropeanCoins ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showOldEuropeanCoins ? 'right-0.5' : 'left-0.5'}`} />
                         </button>
                       </div>
 
@@ -5803,7 +5877,7 @@ function CoinCollectorApp() {
                       <span className="text-xs font-black uppercase tracking-widest">Back to Story Hub</span>
                     </button>
                     <MindMapTimeline 
-                      coins={UK_COINS} 
+                      coins={EUROPEAN_COINS} 
                       collectedIds={collectedIds} 
                       onSelectCoin={(coin) => {
                         handleSelectCoin(coin);
