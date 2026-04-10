@@ -12,7 +12,8 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 export const DENOMINATIONS = [
   '1p', '2p', '5p', '10p', '20p', '50p', '£1', '£2',
-  'Farthing', 'Half Penny', 'Penny', 'Threepence', 'Sixpence', 'Shilling', 'Florin', 'Half Crown', 'Crown'
+  'Farthing', 'Half Penny', 'Penny', 'Threepence', 'Sixpence', 'Shilling', 'Florin', 'Half Crown', 'Crown',
+  'Franc', 'Deutsche Mark', 'Lira', 'Peseta', 'Guilder', 'Schilling', '€1', '€2'
 ];
 
 interface RequestedCoin {
@@ -88,11 +89,13 @@ interface UserProfile {
     isPurchaseMode?: boolean;
     showCoinPrice?: boolean;
     isNightBonusActive: boolean;
-    sortBy?: 'recent-added' | 'recent-opened' | 'name' | 'year' | 'denomination' | 'date-added' | 'month-added';
-    groupBy?: 'year' | 'denomination' | 'date-added' | 'month-added';
+    sortBy?: 'recent-added' | 'recent-opened' | 'name' | 'year' | 'denomination' | 'date-added' | 'month-added' | 'country';
+    groupBy?: 'year' | 'denomination' | 'date-added' | 'month-added' | 'country';
     isGrouped?: boolean;
     theme?: 'default' | 'paper' | 'glass' | 'wood' | 'metal' | 'fabric';
     fixedPrices?: Record<string, number>;
+    showOldEuropeanCoins?: boolean;
+    eraFilter?: 'Modern' | 'Old' | 'Both';
   };
   safeModeBackup?: string;
 }
@@ -709,14 +712,25 @@ function CoinCollectorApp() {
     }
   });
 
+  const [userCoinValues, setUserCoinValues] = useState<Record<string, number>>(() => {
+    try {
+      const saved = localStorage.getItem('user_coin_values');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      console.error("Failed to load user_coin_values", e);
+      return {};
+    }
+  });
+
   const allCoins = useMemo(() => {
     const baseCoins = [...UK_COINS, ...customCoins];
     return baseCoins.map(coin => ({
       ...coin,
       imageUrl: userCoinImages[coin.id] || coin.imageUrl,
-      denomination: userCoinDenominations[coin.id] || coin.denomination
+      denomination: userCoinDenominations[coin.id] || coin.denomination,
+      value: userCoinValues[coin.id] !== undefined ? userCoinValues[coin.id] : coin.value
     }));
-  }, [customCoins, userCoinImages, userCoinDenominations]);
+  }, [customCoins, userCoinImages, userCoinDenominations, userCoinValues]);
 
   const [requestedCoins, setRequestedCoins] = useState<RequestedCoin[]>(() => {
     try {
@@ -739,6 +753,9 @@ function CoinCollectorApp() {
 
   const [selectedCoinIds, setSelectedCoinIds] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [isBulkPriceModalOpen, setIsBulkPriceModalOpen] = useState(false);
+  const [bulkPriceInput, setBulkPriceInput] = useState('');
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
@@ -774,7 +791,9 @@ function CoinCollectorApp() {
           groupBy: 'year',
           isGrouped: false,
           theme: 'default',
-          fixedPrices: {}
+          fixedPrices: {},
+          showOldEuropeanCoins: true,
+          eraFilter: 'Both'
         },
         dnaScore: 0,
         unlockedClues: [],
@@ -800,7 +819,9 @@ function CoinCollectorApp() {
         settings: {
           ...defaultProfile.settings,
           ...parsed.settings,
-          fixedPrices: parsed.settings?.fixedPrices || {}
+          fixedPrices: parsed.settings?.fixedPrices || {},
+          showOldEuropeanCoins: parsed.settings?.showOldEuropeanCoins ?? true,
+          eraFilter: parsed.settings?.eraFilter || 'Both'
         },
         missions: parsed.missions || defaultProfile.missions,
         timelineStreak: parsed.timelineStreak || 0,
@@ -1300,6 +1321,8 @@ function CoinCollectorApp() {
   const [manualCoinPhoto, setManualCoinPhoto] = useState<string | null>(null);
   const [manualCoinAmount, setManualCoinAmount] = useState<string>('');
   const [manualCoinValue, setManualCoinValue] = useState<string>('');
+  const [manualCoinCountry, setManualCoinCountry] = useState('UK');
+  const [manualCoinType, setManualCoinType] = useState<'Modern' | 'Old'>('Modern');
   const [isPurchased, setIsPurchased] = useState(false);
   const [editingCoinId, setEditingCoinId] = useState<string | null>(null);
 
@@ -2115,6 +2138,10 @@ function CoinCollectorApp() {
     localStorage.setItem('user_coin_denominations', JSON.stringify(userCoinDenominations));
   }, [userCoinDenominations]);
 
+  useEffect(() => {
+    localStorage.setItem('user_coin_values', JSON.stringify(userCoinValues));
+  }, [userCoinValues]);
+
   const progress = Math.round((collectedIds.length / allCoins.length) * 100);
 
   useEffect(() => {
@@ -2260,6 +2287,7 @@ function CoinCollectorApp() {
   };
 
   const applyBulkTag = (tagId: string) => {
+    const count = selectedCoinIds.size;
     setUserProfile(prev => {
       const newCoinTags = { ...prev.coinTags };
       selectedCoinIds.forEach(coinId => {
@@ -2272,10 +2300,11 @@ function CoinCollectorApp() {
     });
     setIsMultiSelectMode(false);
     setSelectedCoinIds(new Set());
-    addPoints(POINT_VALUES.COLLECT_COIN, "Bulk Tags Applied!");
+    addPoints(POINT_VALUES.COLLECT_COIN, `Tagged ${count} coins!`);
   };
 
   const applyBulkDenomination = (denom: string) => {
+    const count = selectedCoinIds.size;
     setUserCoinDenominations(prev => {
       const next = { ...prev };
       selectedCoinIds.forEach(coinId => {
@@ -2285,7 +2314,21 @@ function CoinCollectorApp() {
     });
     setIsMultiSelectMode(false);
     setSelectedCoinIds(new Set());
-    addPoints(POINT_VALUES.COLLECT_COIN, "Bulk Denominations Updated!");
+    addPoints(POINT_VALUES.COLLECT_COIN, `Updated ${count} coins!`);
+  };
+
+  const applyBulkPrice = (price: number) => {
+    const count = selectedCoinIds.size;
+    setUserCoinValues(prev => {
+      const next = { ...prev };
+      selectedCoinIds.forEach(coinId => {
+        next[coinId] = price;
+      });
+      return next;
+    });
+    setIsMultiSelectMode(false);
+    setSelectedCoinIds(new Set());
+    addPoints(POINT_VALUES.COLLECT_COIN, `Updated ${count} coins!`);
   };
 
   const patternInsights = useMemo(() => {
@@ -2345,12 +2388,21 @@ function CoinCollectorApp() {
         if (activeDenomination === 'Purchased') {
           const purchasedIds = purchasedCoins.map(p => p.coinId);
           matchesDenom = purchasedIds.includes(coin.id);
+        } else if (userProfile.settings.isGrouped && userProfile.settings.groupBy === 'country') {
+          // Check if it's a country or a denomination (fallback)
+          matchesDenom = coin.country === activeDenomination || coin.denomination === activeDenomination;
         } else {
           matchesDenom = coin.denomination === activeDenomination;
         }
       }
       
-      return matchesSearch && matchesFilter && matchesDenom;
+      const matchesEra = userProfile.settings.eraFilter === 'Both' || 
+                         coin.type === userProfile.settings.eraFilter;
+      
+      const isEuropeanNonUK = coin.country !== 'UK';
+      const matchesOldEuro = userProfile.settings.showOldEuropeanCoins || !isEuropeanNonUK || coin.type === 'Modern';
+      
+      return matchesSearch && matchesFilter && matchesDenom && matchesEra && matchesOldEuro;
     }).sort((a, b) => {
       const sortBy = userProfile.settings?.sortBy || 'recent-added';
       
@@ -2358,6 +2410,8 @@ function CoinCollectorApp() {
         return a.name.localeCompare(b.name);
       } else if (sortBy === 'recent-opened') {
         return (lastOpenedIds[b.id] || 0) - (lastOpenedIds[a.id] || 0);
+      } else if (sortBy === 'country') {
+        return (a.country || '').localeCompare(b.country || '');
       } else if (sortBy === 'year') {
         return b.year - a.year;
       } else if (sortBy === 'denomination') {
@@ -2393,7 +2447,7 @@ function CoinCollectorApp() {
         return a.name.localeCompare(b.name);
       }
     });
-  }, [searchQuery, filter, collectedIds, activeDenomination, allCoins, purchasedCoins, userProfile.settings?.sortBy, lastOpenedIds, collectionHistory]);
+  }, [searchQuery, filter, collectedIds, activeDenomination, allCoins, purchasedCoins, userProfile.settings?.sortBy, userProfile.settings?.eraFilter, userProfile.settings?.showOldEuropeanCoins, lastOpenedIds, collectionHistory]);
   
   const groupedCoins = useMemo(() => {
     if (!userProfile.settings.isGrouped) return null;
@@ -2414,6 +2468,8 @@ function CoinCollectorApp() {
       } else if (groupBy === 'month-added') {
         const date = collectionHistory[coin.id];
         groupKey = date ? new Date(date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : 'Not Collected';
+      } else if (groupBy === 'country') {
+        groupKey = coin.country;
       }
       
       if (!groups[groupKey]) groups[groupKey] = [];
@@ -2424,6 +2480,7 @@ function CoinCollectorApp() {
     const sortedKeys = Object.keys(groups).sort((a, b) => {
       if (groupBy === 'year') return b.localeCompare(a);
       if (groupBy === 'denomination') return a.localeCompare(b);
+      if (groupBy === 'country') return a.localeCompare(b);
       if (groupBy === 'date-added' || groupBy === 'month-added') {
         if (a === 'Not Collected') return 1;
         if (b === 'Not Collected') return -1;
@@ -2458,7 +2515,9 @@ function CoinCollectorApp() {
         denomination: reqDenom,
         year: reqYear,
         description: 'Custom added coin.',
-        imageUrl: reqPhoto || FALLBACK_COIN_IMAGE
+        imageUrl: reqPhoto || FALLBACK_COIN_IMAGE,
+        country: manualCoinCountry,
+        type: manualCoinType
       };
       setCustomCoins(prev => [...prev, newCoin]);
       setCollectedIds(prev => [...prev, newCoin.id]);
@@ -2715,7 +2774,9 @@ function CoinCollectorApp() {
           year: result.year || new Date().getFullYear(),
           description: 'Automatically identified via photo.',
           imageUrl: fullPhoto,
-          rarity: 'Common'
+          rarity: 'Common',
+          country: 'UK',
+          type: 'Modern'
         };
         setCustomCoins(prev => [...prev, newCoin]);
         setCollectedIds(prev => [...prev, newCoin.id]);
@@ -2944,7 +3005,9 @@ function CoinCollectorApp() {
       description: manualCoinSummary || `User-added: ${manualCoinName} (${manualCoinDenom})`,
       imageUrl: manualCoinPhoto || FALLBACK_COIN_IMAGE,
       rarity: manualCoinRarity,
-      value: manualCoinValue ? parseFloat(manualCoinValue) : undefined
+      value: manualCoinValue ? parseFloat(manualCoinValue) : undefined,
+      country: manualCoinCountry,
+      type: manualCoinType
     };
 
     if (editingCoinId) {
@@ -2986,6 +3049,8 @@ function CoinCollectorApp() {
     setManualCoinPhoto(null);
     setManualCoinAmount('');
     setManualCoinValue('');
+    setManualCoinCountry('UK');
+    setManualCoinType('Modern');
     setIsPurchased(false);
     setIsManualAddOpen(false);
     setEditingCoinId(null);
@@ -2999,6 +3064,8 @@ function CoinCollectorApp() {
     setManualCoinSummary(coin.description || '');
     setManualCoinRarity(coin.rarity || 'Common');
     setManualCoinValue(coin.value ? coin.value.toString() : '');
+    setManualCoinCountry(coin.country || 'UK');
+    setManualCoinType(coin.type || 'Modern');
     setManualCoinPhoto(userCoinImages[coin.id] || coin.imageUrl || null);
     setIsManualAddOpen(true);
   };
@@ -3443,6 +3510,7 @@ function CoinCollectorApp() {
                   <option value="date-added">Date Added</option>
                   <option value="month-added">Month Added</option>
                   <option value="recent-opened">Recently Opened</option>
+                  <option value="country">Country</option>
                 </select>
               </div>
 
@@ -3461,9 +3529,29 @@ function CoinCollectorApp() {
                     <option value="denomination">By Denomination</option>
                     <option value="date-added">By Date Added</option>
                     <option value="month-added">By Month Added</option>
+                    <option value="country">By Country</option>
                   </select>
                 </div>
               )}
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {(['Both', 'Modern', 'Old'] as const).map((era) => (
+                <button
+                  key={era}
+                  onClick={() => setUserProfile(prev => ({
+                    ...prev,
+                    settings: { ...prev.settings, eraFilter: era }
+                  }))}
+                  className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                    userProfile.settings.eraFilter === era
+                      ? 'bg-purple-500 text-white shadow-md'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {era === 'Both' ? 'All Eras' : era}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -3561,52 +3649,58 @@ function CoinCollectorApp() {
             {!activeDenomination ? (
               /* Folder View */
               <>
-                {denominations
-                  .map(denom => {
-                    let coinsInDenom;
-                    let collectedInDenom;
-                    if (denom === 'Purchased') {
+                {(userProfile.settings.isGrouped && userProfile.settings.groupBy === 'country' 
+                  ? Array.from(new Set(allCoins.map(c => c.country))).sort()
+                  : denominations
+                )
+                  .map(denomOrCountry => {
+                    let coinsInGroup;
+                    let collectedInGroup;
+                    if (denomOrCountry === 'Purchased') {
                       const purchasedIds = purchasedCoins.map(p => p.coinId);
-                      coinsInDenom = allCoins.filter(c => purchasedIds.includes(c.id));
-                      collectedInDenom = coinsInDenom.length;
+                      coinsInGroup = allCoins.filter(c => purchasedIds.includes(c.id));
+                      collectedInGroup = coinsInGroup.length;
+                    } else if (userProfile.settings.isGrouped && userProfile.settings.groupBy === 'country') {
+                      coinsInGroup = allCoins.filter(c => c.country === denomOrCountry);
+                      collectedInGroup = coinsInGroup.filter(c => collectedIds.includes(c.id)).length;
                     } else {
-                      coinsInDenom = allCoins.filter(c => c.denomination === denom);
-                      collectedInDenom = coinsInDenom.filter(c => collectedIds.includes(c.id)).length;
+                      coinsInGroup = allCoins.filter(c => c.denomination === denomOrCountry);
+                      collectedInGroup = coinsInGroup.filter(c => collectedIds.includes(c.id)).length;
                     }
-                    const denomProgress = coinsInDenom.length > 0 ? Math.round((collectedInDenom / coinsInDenom.length) * 100) : 0;
-                    return { denom, coinsInDenom, collectedInDenom, denomProgress };
+                    const progress = coinsInGroup.length > 0 ? Math.round((collectedInGroup / coinsInGroup.length) * 100) : 0;
+                    return { label: denomOrCountry, coinsInGroup, collectedInGroup, progress };
                   })
-                  .sort((a, b) => b.denomProgress - a.denomProgress)
-                  .map(({ denom, coinsInDenom, collectedInDenom, denomProgress }) => (
+                  .sort((a, b) => b.progress - a.progress)
+                  .map(({ label, coinsInGroup, collectedInGroup, progress }) => (
                     <motion.div
-                      key={denom}
+                      key={label}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      onClick={() => setActiveDenomination(denom)}
+                      onClick={() => setActiveDenomination(label)}
                       className={`bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 hover:border-amber-500 dark:hover:border-amber-500 transition-all cursor-pointer flex items-center ${getResponsiveClass('p-5 sm:p-6 gap-4 sm:gap-6', 'p-3 gap-3', 'p-5 gap-4', 'p-6 gap-6')} ${
                         userProfile.settings?.isTextMode ? 'border-gray-100 dark:border-gray-800' : ''
                       }`}
                     >
                       {!userProfile.settings?.isTextMode && (
                         <div className={`bg-amber-50 dark:bg-amber-900/10 text-amber-600 rounded-2xl flex items-center justify-center flex-shrink-0 ${getResponsiveClass('w-14 h-14 sm:w-16 sm:h-16', 'w-10 h-10', 'w-14 h-14', 'w-18 h-18')}`}>
-                          <Folder size={32} className={getResponsiveClass('sm:w-9 sm:h-9', 'w-6 h-6', 'w-8 h-8', 'w-10 h-10')} fill="currentColor" fillOpacity={0.1} />
+                          {userProfile.settings.isGrouped && userProfile.settings.groupBy === 'country' ? <Globe size={32} /> : <Folder size={32} fill="currentColor" fillOpacity={0.1} />}
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <h3 className={`font-black text-gray-900 dark:text-white tracking-tight ${getResponsiveClass('text-xl sm:text-2xl', 'text-lg', 'text-xl', 'text-2xl')}`}>{denom} Coins</h3>
+                        <h3 className={`font-black text-gray-900 dark:text-white tracking-tight ${getResponsiveClass('text-xl sm:text-2xl', 'text-lg', 'text-xl', 'text-2xl')}`}>{label} {userProfile.settings.isGrouped && userProfile.settings.groupBy === 'country' ? '' : 'Coins'}</h3>
                         <div className={`flex items-center gap-3 ${getResponsiveClass('mt-2', 'mt-1', 'mt-2', 'mt-3')}`}>
                           {!userProfile.settings?.isTextMode ? (
                             <div className={`flex-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden ${getResponsiveClass('h-2', 'h-1.5', 'h-2', 'h-2.5')}`}>
                               <div 
                                 className="h-full bg-amber-500 rounded-full" 
-                                style={{ width: `${denomProgress}%` }}
+                                style={{ width: `${progress}%` }}
                               />
                             </div>
                           ) : (
-                            <span className={`font-black text-amber-600 uppercase tracking-widest ${getResponsiveClass('text-[10px] sm:text-xs', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>{denomProgress}% Complete</span>
+                            <span className={`font-black text-amber-600 uppercase tracking-widest ${getResponsiveClass('text-[10px] sm:text-xs', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>{progress}% Complete</span>
                           )}
-                          <span className={`font-black text-gray-400 uppercase tracking-widest whitespace-nowrap ${getResponsiveClass('text-[10px] sm:text-xs', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>{collectedInDenom} / {coinsInDenom.length}</span>
+                          <span className={`font-black text-gray-400 uppercase tracking-widest whitespace-nowrap ${getResponsiveClass('text-[10px] sm:text-xs', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>{collectedInGroup} / {coinsInGroup.length}</span>
                         </div>
                       </div>
                       <ChevronRight className={`text-gray-300 flex-shrink-0 ${getResponsiveClass('sm:w-7 sm:h-7', 'w-5 h-5', 'w-6 h-6', 'w-8 h-8')}`} size={24} />
@@ -3668,8 +3762,21 @@ function CoinCollectorApp() {
                 {userProfile.settings.isGrouped && groupedCoins ? (
                   groupedCoins.map((group) => (
                     <div key={group.title} className="space-y-4">
-                      <div className="flex items-center gap-4 px-2">
-                        <h2 className="text-sm font-black uppercase tracking-[0.2em] text-amber-600 dark:text-amber-500 whitespace-nowrap">
+                      <div 
+                        onClick={() => {
+                          const next = new Set(collapsedGroups);
+                          if (next.has(group.title)) next.delete(group.title);
+                          else next.add(group.title);
+                          setCollapsedGroups(next);
+                        }}
+                        className="flex items-center gap-4 px-2 cursor-pointer group/header"
+                      >
+                        <h2 className="text-sm font-black uppercase tracking-[0.2em] text-amber-600 dark:text-amber-500 whitespace-nowrap flex items-center gap-2">
+                          <motion.div
+                            animate={{ rotate: collapsedGroups.has(group.title) ? -90 : 0 }}
+                          >
+                            <ChevronDown size={14} />
+                          </motion.div>
                           {group.title}
                         </h2>
                         <div className="h-px bg-amber-100 dark:bg-amber-900/30 flex-1" />
@@ -3678,25 +3785,34 @@ function CoinCollectorApp() {
                         </span>
                       </div>
                       
-                      {userProfile.settings?.isPurchaseMode ? (
-                        <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl`}>
-                          <table className="w-full text-left border-collapse">
-                            <thead>
-                              <tr className="bg-black dark:bg-white text-white dark:text-black">
-                                <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Coin</th>
-                                <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Year</th>
-                                <th className={`font-black uppercase tracking-widest text-center ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Status</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {group.coins.map(renderCoinTableRow)}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <div className={`grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
-                          {group.coins.map(renderCoinCard)}
-                        </div>
+                      {!collapsedGroups.has(group.title) && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          {userProfile.settings?.isPurchaseMode ? (
+                            <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl`}>
+                              <table className="w-full text-left border-collapse">
+                                <thead>
+                                  <tr className="bg-black dark:bg-white text-white dark:text-black">
+                                    <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Coin</th>
+                                    <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Year</th>
+                                    <th className={`font-black uppercase tracking-widest text-center ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Status</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {group.coins.map(renderCoinTableRow)}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : (
+                            <div className={`grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
+                              {group.coins.map(renderCoinCard)}
+                            </div>
+                          )}
+                        </motion.div>
                       )}
                     </div>
                   ))
@@ -3990,6 +4106,93 @@ function CoinCollectorApp() {
                   {isAddingToCollection ? 'Add to Collection' : 'Submit Request'}
                 </button>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Bulk Price Edit Modal */}
+      <AnimatePresence>
+        {isBulkPriceModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsBulkPriceModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col"
+            >
+              <div className="p-6 sm:p-8 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-amber-50 dark:bg-amber-900/10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center shadow-inner">
+                    <TrendingUp size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Bulk Price Edit</h3>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest">
+                      Updating {selectedCoinIds.size} coins
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsBulkPriceModalOpen(false)}
+                  className="p-3 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-gray-400 hover:text-amber-600 rounded-full transition-all active:scale-90"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="p-6 sm:p-8 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">
+                    New Price (£)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">£</span>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      value={bulkPriceInput}
+                      onChange={(e) => setBulkPriceInput(e.target.value)}
+                      className="w-full pl-10 pr-5 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-amber-500 rounded-2xl text-sm font-bold transition-all placeholder:text-gray-400"
+                      placeholder="0.00"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-amber-600 font-bold text-center bg-amber-50 dark:bg-amber-900/20 py-2 rounded-xl">
+                  This will overwrite the estimated value for all selected coins.
+                </p>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setIsBulkPriceModalOpen(false)}
+                    className="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-2xl font-black uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-gray-700 transition-all active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      const price = parseFloat(bulkPriceInput);
+                      if (!isNaN(price)) {
+                        applyBulkPrice(price);
+                        setIsBulkPriceModalOpen(false);
+                        setBulkPriceInput('');
+                      }
+                    }}
+                    className="flex-2 py-4 bg-amber-500 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-amber-100 dark:shadow-none hover:bg-amber-600 transition-all active:scale-95"
+                  >
+                    Confirm & Apply
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}
@@ -4789,6 +4992,24 @@ function CoinCollectorApp() {
                           className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.showCoinPrice ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                         >
                           <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showCoinPrice ? 'right-0.5' : 'left-0.5'}`} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <Globe size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Show Old European Coins</p>
+                            <p className="text-[10px] text-gray-500">Enable pre-euro currencies</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, showOldEuropeanCoins: !prev.settings.showOldEuropeanCoins } }))}
+                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.showOldEuropeanCoins ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showOldEuropeanCoins ? 'right-0.5' : 'left-0.5'}`} />
                         </button>
                       </div>
 
@@ -6275,6 +6496,32 @@ function CoinCollectorApp() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Country</label>
+                    <select 
+                      value={manualCoinCountry}
+                      onChange={(e) => setManualCoinCountry(e.target.value)}
+                      className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-amber-500 rounded-2xl text-sm font-bold transition-all appearance-none"
+                    >
+                      {['UK', 'Ireland', 'France', 'Germany', 'Italy', 'Spain', 'Netherlands', 'Belgium', 'Austria'].map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Era</label>
+                    <select 
+                      value={manualCoinType}
+                      onChange={(e) => setManualCoinType(e.target.value as 'Modern' | 'Old')}
+                      className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-amber-500 rounded-2xl text-sm font-bold transition-all appearance-none"
+                    >
+                      <option value="Modern">Modern (Euro/Decimal)</option>
+                      <option value="Old">Old (Pre-Euro/Pre-Decimal)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Denomination</label>
                     <select 
                       value={manualCoinDenom}
@@ -6745,6 +6992,14 @@ function CoinCollectorApp() {
               >
                 <Tag size={16} />
                 <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Denom</span>
+              </button>
+
+              <button
+                onClick={() => setIsBulkPriceModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 dark:bg-gray-100 hover:bg-white/20 dark:hover:bg-gray-200 rounded-xl transition-all"
+              >
+                <TrendingUp size={16} />
+                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Price</span>
               </button>
 
               <div className="relative group">

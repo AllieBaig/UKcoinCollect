@@ -1,0 +1,1119 @@
+366:      <div key={node.id} className={`${depth > 0 ? 'ml-6 border-l border-gray-100 dark:border-gray-800' : ''}`}>
+367:        <div 
+378:          <div className="flex items-center gap-2 flex-1 min-w-0">
+387:            {!hasChildren && <div className="w-4 h-4 rounded-full border-2 border-amber-500/30 flex-shrink-0" />}
+398:          </div>
+401:          {hasChildren && isExpanded && <div className="w-1 h-1 bg-amber-500 rounded-full" />}
+402:        </div>
+416:      </div>
+421:    <div className="space-y-6">
+422:      <div className="bg-white dark:bg-gray-950 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
+423:        <div className="flex items-center justify-between mb-6">
+424:          <div>
+427:          </div>
+428:          <div className="bg-amber-100 dark:bg-amber-900/30 text-amber-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+430:          </div>
+431:        </div>
+433:        <div className="max-h-[60vh] overflow-y-auto no-scrollbar pr-2">
+435:        </div>
+436:      </div>
+438:      <div className="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/20">
+443:      </div>
+444:    </div>
+609:        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
+610:          <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl max-w-sm w-full space-y-6 border-t-8 border-amber-500">
+611:            <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto">
+613:            </div>
+614:            <div className="space-y-2">
+617:            </div>
+619:            <div className="space-y-3">
+650:            </div>
+653:              <div className="p-3 bg-gray-50 rounded-xl">
+657:              </div>
+659:          </div>
+660:        </div>
+1805:          <div className="absolute top-3 right-3 z-20">
+1806:            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+1810:            </div>
+1811:          </div>
+1813:        <div className={`flex items-center ${getResponsiveClass('gap-4 sm:gap-6', 'gap-3', 'gap-4', 'gap-6')}`}>
+1815:            <div className={`relative flex-shrink-0 ${
+1828:                <div className={`absolute -top-1.5 -right-1.5 bg-amber-500 text-white rounded-full p-1 shadow-lg z-10 ${
+1832:                </div>
+1835:                <div className={`absolute -bottom-1.5 -left-1.5 px-2.5 py-1 rounded-lg font-black uppercase tracking-widest shadow-md z-10 ${
+1841:                </div>
+1843:            </div>
+1846:          <div className="flex-1 min-w-0">
+1847:            <div className={`flex items-center justify-between ${getResponsiveClass('mb-1', 'mb-0.5', 'mb-1', 'mb-1.5')}`}>
+1848:              <div className="flex items-center gap-2">
+1862:              </div>
+1864:                <div className={`bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg font-black shadow-sm ${getResponsiveClass('px-2.5 py-1 text-[10px] sm:text-xs', 'px-1.5 py-0.5 text-[8px]', 'px-2.5 py-1 text-[10px]', 'px-3 py-1.5 text-xs')}`}>
+1866:                </div>
+1868:            </div>
+1877:          </div>
+1892:        </div>
+1916:          <div className="flex items-center gap-3">
+1918:              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+1922:              </div>
+1924:            <div>
+1927:            </div>
+1928:          </div>
+1935:            <div className={`inline-flex items-center justify-center bg-amber-500 text-white rounded-full shadow-lg ${getResponsiveClass('w-8 h-8 sm:w-14 sm:h-14', 'w-6 h-6', 'w-10 h-10', 'w-14 h-14')}`}>
+1937:            </div>
+1939:            <div className={`inline-flex items-center justify-center border-gray-200 dark:border-gray-700 rounded-full ${getResponsiveClass('w-8 h-8 sm:w-14 sm:h-14 border-2 sm:border-4', 'w-6 h-6 border', 'w-10 h-10 border-2', 'w-14 h-14 border-4')}`}>
+1941:            </div>
+3119:      <div className="min-h-screen bg-gray-50 flex flex-col">
+3122:          <div className="flex items-center gap-3">
+3124:            <div>
+3127:            </div>
+3128:          </div>
+3141:          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-amber-100 flex flex-col items-center text-center">
+3142:            <div className="w-20 h-20 bg-amber-50 rounded-3xl flex items-center justify-center text-amber-500 mb-6">
+3144:            </div>
+3149:          </div>
+3151:          <div className="space-y-4">
+3153:             <div className="grid grid-cols-2 gap-4">
+3171:             </div>
+3172:          </div>
+3174:          <div className="space-y-4">
+3176:            <div className="space-y-3">
+3178:                <div className="text-center py-16 bg-white rounded-[2rem] border-2 border-dashed border-gray-100">
+3181:                </div>
+3184:                  <div key={coin.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-50 flex items-center justify-between">
+3185:                    <div>
+3188:                    </div>
+3189:                    <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center text-amber-500">
+3191:                    </div>
+3192:                  </div>
+3195:            </div>
+3196:          </div>
+3198:      </div>
+3203:    <div 
+3272:          <div className="fixed inset-0 z-[100] flex items-end justify-center p-4">
+3286:              <div className="flex justify-between items-start">
+3287:                <div className="flex items-center gap-3">
+3288:                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
+3290:                  </div>
+3291:                  <div>
+3294:                  </div>
+3295:                </div>
+3302:              </div>
+3304:              <div className="bg-gray-50 rounded-2xl p-3 sm:p-4 space-y-2 sm:space-y-3">
+3311:              </div>
+3323:          </div>
+3336:            <div className="bg-white/20 p-1 rounded-full">
+3338:            </div>
+3339:            <div className="flex flex-col">
+3342:            </div>
+3349:        <div className={`max-w-2xl mx-auto flex items-center justify-between ${getResponsiveClass('gap-3 sm:gap-4', 'gap-1', 'gap-3', 'gap-4')}`}>
+3350:          <div className="flex items-center gap-3 sm:gap-4">
+3369:          </div>
+3370:            <div className="flex gap-2 sm:gap-3 items-center">
+3381:            <div className="hidden md:flex flex-col items-end mr-2">
+3384:            </div>
+3424:          </div>
+3425:        </div>
+3429:          <div className="max-w-2xl mx-auto mt-4 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+3436:          </div>
+3441:      <div className={`bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors ${userProfile.settings?.isFocusMode ? 'sticky top-0 z-[80] shadow-sm' : ''} ${getResponsiveClass('px-4 py-4', 'px-2 py-2', 'px-4 py-4', 'px-6 py-6')}`}>
+3442:        <div className={`max-w-2xl mx-auto ${getResponsiveClass('space-y-4', 'space-y-2', 'space-y-4', 'space-y-6')}`}>
+3443:          <div className="relative group">
+3455:          </div>
+3457:          <div className={`flex flex-col gap-3 ${getResponsiveClass('', 'gap-2', 'gap-3', 'gap-4')}`}>
+3458:            <div className="flex items-center justify-between gap-2">
+3459:              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar flex-1">
+3473:              </div>
+3489:            </div>
+3491:            <div className="flex items-center justify-between gap-4">
+3492:              <div className="flex items-center gap-2 flex-1">
+3511:              </div>
+3514:                <div className="flex items-center gap-2 flex-1">
+3530:                </div>
+3532:            </div>
+3534:            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+3551:            </div>
+3552:          </div>
+3553:        </div>
+3557:        <div className={`max-w-2xl mx-auto grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
+3559:            <div className="flex items-center justify-between p-4 bg-black dark:bg-white text-white dark:text-black rounded-3xl shadow-xl mb-2 animate-pulse">
+3560:              <div className="flex items-center gap-3">
+3562:                <div>
+3565:                </div>
+3566:              </div>
+3576:            </div>
+3580:            <div className="flex items-center justify-between px-2">
+3588:            </div>
+3589:            <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+3596:                <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+3598:                </div>
+3599:                <div className="relative z-10 space-y-3">
+3603:                  <div className="pt-2 flex items-center justify-between">
+3604:                    <div className="flex items-center gap-2">
+3605:                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+3607:                      </div>
+3609:                    </div>
+3610:                  </div>
+3611:                </div>
+3624:                <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+3626:                </div>
+3627:                <div className="relative z-10 space-y-3">
+3630:                  <div className="pt-2 flex items-center justify-between">
+3631:                    <div className="flex items-center gap-2">
+3632:                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+3634:                      </div>
+3636:                    </div>
+3637:                  </div>
+3638:                </div>
+3640:            </div>
+3681:                        <div className={`bg-amber-50 dark:bg-amber-900/10 text-amber-600 rounded-2xl flex items-center justify-center flex-shrink-0 ${getResponsiveClass('w-14 h-14 sm:w-16 sm:h-16', 'w-10 h-10', 'w-14 h-14', 'w-18 h-18')}`}>
+3683:                        </div>
+3685:                      <div className="flex-1 min-w-0">
+3687:                        <div className={`flex items-center gap-3 ${getResponsiveClass('mt-2', 'mt-1', 'mt-2', 'mt-3')}`}>
+3689:                            <div className={`flex-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden ${getResponsiveClass('h-2', 'h-1.5', 'h-2', 'h-2.5')}`}>
+3690:                              <div 
+3694:                            </div>
+3699:                        </div>
+3700:                      </div>
+3714:                    <div className={`bg-amber-50 dark:bg-amber-900/10 text-amber-500 rounded-2xl flex items-center justify-center ${getResponsiveClass('w-12 h-12 sm:w-14 sm:h-14', 'w-10 h-10', 'w-12 h-12', 'w-14 h-14')}`}>
+3716:                    </div>
+3717:                    <div className="flex-1">
+3720:                    </div>
+3727:              <div className={`space-y-4 ${getResponsiveClass('p-0', 'p-0', 'p-0', 'p-0')}`}>
+3728:                <div className={`flex items-center justify-between ${getResponsiveClass('mb-2', 'mb-1', 'mb-2', 'mb-3')}`}>
+3736:                </div>
+3744:                    <div>
+3747:                    </div>
+3748:                    <div className={`text-gray-400 dark:text-gray-500 ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>
+3750:                    </div>
+3753:              </div>
+3756:              <div className={`space-y-6 ${getResponsiveClass('mb-8', 'mb-4', 'mb-8', 'mb-12')}`}>
+3759:                    <div key={group.title} className="space-y-4">
+3760:                      <div 
+3777:                        <div className="h-px bg-amber-100 dark:bg-amber-900/30 flex-1" />
+3781:                      </div>
+3791:                            <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl`}>
+3804:                            </div>
+3806:                            <div className={`grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
+3808:                            </div>
+3812:                    </div>
+3816:                    <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl`}>
+3829:                    </div>
+3831:                    <div className={`grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
+3833:                    </div>
+3836:              </div>
+3841:            <div className="text-center py-12">
+3842:              <div className="text-gray-300 mb-4 flex justify-center">
+3844:              </div>
+3847:            </div>
+3849:        </div>
+3855:          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md">
+3856:            <div className="text-center text-white p-8">
+3860:            </div>
+3861:          </div>
+3868:          <div className="fixed inset-0 z-[60] flex flex-col bg-black">
+3869:            <div className="relative flex-1">
+3879:              <div className="absolute inset-0 flex items-center justify-center p-12">
+3880:                <div className="w-full aspect-square border-4 border-amber-500 rounded-full relative">
+3881:                  <div className="absolute inset-0 border-4 border-white/20 rounded-full animate-pulse" />
+3882:                </div>
+3883:              </div>
+3886:              <div className="absolute top-6 left-6 right-6 flex justify-between items-center">
+3893:                <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-bold flex items-center gap-2">
+3896:                </div>
+3897:              </div>
+3907:                    <div className="flex flex-col gap-6">
+3908:                      <div className="flex items-center gap-4">
+3909:                        <div className="w-14 h-14 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center text-amber-600 dark:text-amber-400">
+3911:                        </div>
+3912:                        <div>
+3917:                        </div>
+3918:                      </div>
+3920:                      <div className="grid grid-cols-3 gap-3">
+3947:                      </div>
+3948:                    </div>
+3954:              <div className="absolute bottom-10 left-0 right-0 flex justify-center">
+3965:                    <div className="w-16 h-16 rounded-full border-2 border-white/50" />
+3968:              </div>
+3969:            </div>
+3970:          </div>
+3977:          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+3991:              <div className="p-6 sm:p-8 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-amber-50 dark:bg-amber-900/10">
+3992:                <div className="flex items-center gap-4">
+3993:                  <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center shadow-inner">
+3995:                  </div>
+3996:                  <div>
+4003:                  </div>
+4004:                </div>
+4011:              </div>
+4015:                  <div className="space-y-2">
+4026:                  </div>
+4029:                <div className="grid grid-cols-2 gap-4">
+4030:                  <div className="space-y-2">
+4043:                  </div>
+4045:                  <div className="space-y-2">
+4059:                  </div>
+4060:                </div>
+4063:                  <div className="space-y-2">
+4068:                      <div className="relative aspect-video rounded-[1.5rem] overflow-hidden border-4 border-amber-500 shadow-lg">
+4077:                      </div>
+4087:                        <div className="w-14 h-14 bg-white dark:bg-gray-900 rounded-full flex items-center justify-center shadow-sm group-hover:text-amber-500 transition-colors">
+4089:                        </div>
+4093:                  </div>
+4105:          </div>
+4112:          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+4126:              <div className="p-6 sm:p-8 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-amber-50 dark:bg-amber-900/10">
+4127:                <div className="flex items-center gap-4">
+4128:                  <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center shadow-inner">
+4130:                  </div>
+4131:                  <div>
+4136:                  </div>
+4137:                </div>
+4144:              </div>
+4146:              <div className="p-6 sm:p-8 space-y-6">
+4147:                <div className="space-y-2">
+4151:                  <div className="relative">
+4162:                  </div>
+4163:                </div>
+4169:                <div className="flex gap-3">
+4189:                </div>
+4190:              </div>
+4192:          </div>
+4199:          <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+4206:              <div className={`bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between sticky top-0 z-10 ${getResponsiveClass('p-4 sm:p-6', 'p-3', 'p-4', 'p-8')}`}>
+4214:              </div>
+4216:              <div className={`overflow-y-auto ${getResponsiveClass('p-4 sm:p-6 space-y-4 sm:space-y-6', 'p-3 space-y-3', 'p-4 space-y-4', 'p-8 space-y-8')}`}>
+4218:                <div className={`grid grid-cols-1 sm:grid-cols-3 ${getResponsiveClass('gap-3 sm:gap-4', 'gap-2', 'gap-3', 'gap-4')}`}>
+4221:                  <div className={`sm:col-span-2 bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center ${getResponsiveClass('p-4 sm:p-6 gap-3 sm:gap-4', 'p-3 gap-2', 'p-4 gap-3', 'p-8 gap-6')}`}>
+4228:                    <div className="flex-1">
+4229:                      <div className="flex items-center gap-2">
+4240:                      </div>
+4245:                    </div>
+4246:                    <div className="flex flex-col gap-2">
+4261:                    </div>
+4262:                  </div>
+4265:                  <div className="sm:col-span-3 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center justify-between">
+4266:                    <div>
+4269:                    </div>
+4270:                    <div className="text-right">
+4273:                    </div>
+4274:                  </div>
+4278:                    <div className="sm:col-span-3 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 space-y-4">
+4279:                      <div className="flex items-center gap-3 mb-2">
+4280:                        <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 dark:text-indigo-400 rounded-xl">
+4282:                        </div>
+4284:                      </div>
+4286:                      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+4287:                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl space-y-1">
+4290:                        </div>
+4291:                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl space-y-1">
+4294:                        </div>
+4295:                      </div>
+4297:                      <div className="p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-2xl">
+4302:                      </div>
+4303:                    </div>
+4307:                  <div className="sm:col-span-3 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 space-y-4">
+4308:                    <div className="flex items-center gap-3 mb-2">
+4309:                      <div className="p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-500 dark:text-amber-400 rounded-xl">
+4311:                      </div>
+4313:                    </div>
+4315:                    <div className="space-y-3">
+4317:                        <div key={goal.id} className={`p-4 rounded-2xl border-2 transition-all ${goal.isCompleted ? 'bg-green-50 dark:bg-green-900/10 border-green-100 dark:border-green-900/30' : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700'}`}>
+4318:                          <div className="flex justify-between items-start mb-2">
+4319:                            <div>
+4322:                            </div>
+4324:                          </div>
+4326:                          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+4332:                          </div>
+4333:                          <div className="flex justify-between mt-1">
+4336:                          </div>
+4337:                        </div>
+4342:                    </div>
+4343:                  </div>
+4346:                  <div className="sm:col-span-3 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+4347:                    <div className="flex items-center justify-between mb-4">
+4348:                      <div className="flex items-center gap-3">
+4349:                        <div className="p-2 bg-rose-50 dark:bg-rose-900/20 text-rose-500 dark:text-rose-400 rounded-xl">
+4351:                        </div>
+4353:                      </div>
+4366:                    </div>
+4367:                    <div className="flex flex-wrap gap-2">
+4369:                        <div 
+4373:                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }} />
+4381:                        </div>
+4383:                    </div>
+4384:                  </div>
+4387:                  <div className="bg-orange-500 p-4 sm:p-6 rounded-3xl shadow-lg text-white flex flex-col justify-between">
+4388:                    <div className="flex justify-between items-start">
+4391:                    </div>
+4392:                    <div>
+4395:                    </div>
+4396:                  </div>
+4399:                  <div className="bg-amber-500 p-6 rounded-3xl shadow-lg text-white flex flex-col justify-between">
+4400:                    <div className="flex justify-between items-start">
+4403:                    </div>
+4404:                    <div>
+4407:                    </div>
+4408:                  </div>
+4411:                  <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+4412:                    <div className="flex items-center justify-between mb-2">
+4414:                      <div className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg text-[10px] font-bold uppercase tracking-widest">
+4416:                      </div>
+4417:                    </div>
+4421:                    <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mb-1">
+4427:                    </div>
+4428:                    <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+4431:                    </div>
+4432:                  </div>
+4435:                  <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-3xl shadow-lg text-white flex flex-col justify-between">
+4436:                    <div className="flex justify-between items-start">
+4439:                    </div>
+4440:                    <div>
+4443:                    </div>
+4444:                  </div>
+4447:                  <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+4450:                    <div className="mt-4 flex items-center gap-1.5 text-xs font-bold text-blue-500 uppercase tracking-widest">
+4453:                    </div>
+4454:                  </div>
+4457:                  <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+4460:                    <div className="mt-4 h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+4461:                      <div className="h-full bg-amber-500 w-full opacity-20" />
+4462:                    </div>
+4463:                  </div>
+4466:                  <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+4469:                    <div className="mt-4 flex gap-1">
+4471:                        <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= 3 ? 'bg-amber-500' : 'bg-gray-100 dark:bg-gray-800'}`} />
+4473:                    </div>
+4474:                  </div>
+4477:                  <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+4480:                    <div className="mt-4 flex -space-x-2">
+4482:                        <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-900 bg-gray-100 dark:bg-gray-800 overflow-hidden">
+4489:                        </div>
+4492:                        <div className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-900 bg-gray-900 dark:bg-gray-100 flex items-center justify-center text-[10px] text-white dark:text-gray-900 font-bold">
+4494:                        </div>
+4496:                    </div>
+4497:                  </div>
+4499:                    <div className="sm:col-span-3 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+4504:                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+4506:                          <div key={badge} className="px-3 py-1.5 sm:px-4 sm:py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-full text-[10px] sm:text-xs font-bold border border-amber-100 dark:border-amber-900/30 flex items-center gap-1.5 sm:gap-2">
+4509:                          </div>
+4511:                      </div>
+4512:                    </div>
+4516:                  <div className="sm:col-span-3 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+4521:                    <div className="space-y-2 sm:space-y-3">
+4526:                          <div key={id} className="flex items-center justify-between p-2.5 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl">
+4527:                            <div className="flex items-center gap-2 sm:gap-3">
+4528:                              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 overflow-hidden">
+4536:                              </div>
+4537:                              <div>
+4540:                              </div>
+4541:                            </div>
+4543:                          </div>
+4549:                    </div>
+4550:                  </div>
+4552:                </div>
+4555:                <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 mb-4">
+4560:                  <div className="space-y-2">
+4562:                      <div key={mission.id} className={`p-3 rounded-2xl border flex items-center justify-between transition-all ${mission.isCompleted ? 'bg-green-50 dark:bg-green-900/10 border-green-100 dark:border-green-900/30' : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700'}`}>
+4563:                        <div className="flex items-center gap-3">
+4564:                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${mission.isCompleted ? 'bg-green-500 text-white' : 'bg-white dark:bg-gray-700 text-gray-400'}`}>
+4566:                          </div>
+4567:                          <div>
+4570:                          </div>
+4571:                        </div>
+4572:                        <div className="text-right">
+4575:                        </div>
+4576:                      </div>
+4578:                  </div>
+4579:                </div>
+4582:                <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-6">
+4621:                </div>
+4624:                <div className="space-y-8 mb-12">
+4627:                  <div className="space-y-4">
+4628:                    <div className="flex items-center gap-2 px-2">
+4631:                    </div>
+4632:                    <div className="grid grid-cols-1 gap-2">
+4633:                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+4634:                        <div className="flex items-center gap-3">
+4635:                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+4637:                          </div>
+4638:                          <div>
+4641:                          </div>
+4642:                        </div>
+4647:                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isDarkMode ? 'right-0.5' : 'left-0.5'}`} />
+4649:                      </div>
+4651:                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
+4652:                        <div className="flex items-center gap-3">
+4653:                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+4655:                          </div>
+4656:                          <div>
+4659:                          </div>
+4660:                        </div>
+4665:                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.followSystemTheme ? 'right-0.5' : 'left-0.5'}`} />
+4667:                      </div>
+4669:                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
+4670:                        <div className="flex items-center gap-3">
+4671:                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+4673:                          </div>
+4674:                          <div>
+4677:                          </div>
+4678:                        </div>
+4683:                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isCompactUI ? 'right-0.5' : 'left-0.5'}`} />
+4685:                      </div>
+4687:                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
+4688:                        <div className="flex items-center gap-3">
+4689:                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+4691:                          </div>
+4692:                          <div>
+4695:                          </div>
+4696:                        </div>
+4701:                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isTextMode ? 'right-0.5' : 'left-0.5'}`} />
+4703:                      </div>
+4705:                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
+4706:                        <div className="flex items-center gap-3">
+4707:                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+4709:                          </div>
+4710:                          <div>
+4713:                          </div>
+4714:                        </div>
+4727:                      </div>
+4729:                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
+4730:                        <div className="flex items-center gap-3">
+4731:                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+4733:                          </div>
+4734:                          <div>
+4737:                          </div>
+4738:                        </div>
+4754:                      </div>
+4755:                    </div>
+4756:                  </div>
+4759:                  <div className="space-y-4">
+4760:                    <div className="flex items-center gap-2 px-2">
+4763:                    </div>
+4764:                    <div className="grid grid-cols-1 gap-2">
+4765:                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+4766:                        <div className="flex items-center gap-3">
+4767:                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+4769:                          </div>
+4770:                          <div>
+4773:                          </div>
+4774:                        </div>
+4779:                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isFocusMode ? 'right-0.5' : 'left-0.5'}`} />
+4781:                      </div>
+4783:                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+4784:                        <div className="flex items-center gap-3">
+4785:                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+4787:                          </div>
+4788:                          <div>
+4791:                          </div>
+4792:                        </div>
+4797:                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showBottomMenu ? 'right-0.5' : 'left-0.5'}`} />
+4799:                      </div>
+4801:                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+4802:                        <div className="flex items-center gap-3">
+4803:                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+4805:                          </div>
+4806:                          <div>
+4809:                          </div>
+4810:                        </div>
+4815:                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isBackgroundRemovalEnabled ? 'right-0.5' : 'left-0.5'}`} />
+4817:                      </div>
+4819:                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+4820:                        <div className="flex items-center gap-3">
+4821:                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+4823:                          </div>
+4824:                          <div>
+4827:                          </div>
+4828:                        </div>
+4835:                      </div>
+4837:                      <div className="grid grid-cols-2 gap-2">
+4852:                      </div>
+4853:                    </div>
+4854:                  </div>
+4857:                  <div className="space-y-4">
+4858:                    <div className="flex items-center gap-2 px-2">
+4861:                    </div>
+4862:                    <div className="grid grid-cols-1 gap-2">
+4863:                      <div className="grid grid-cols-2 gap-2">
+4878:                      </div>
+4880:                      <div className="p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-3">
+4881:                        <div className="flex items-center justify-between">
+4882:                          <div className="flex items-center gap-3">
+4883:                            <div className="w-8 h-8 bg-amber-50 dark:bg-amber-900/20 rounded-xl flex items-center justify-center text-amber-600">
+4885:                            </div>
+4886:                            <div>
+4889:                            </div>
+4890:                          </div>
+4897:                        </div>
+4899:                          <div className="bg-gray-50 dark:bg-gray-800 p-2.5 rounded-xl flex items-center justify-between border border-gray-100 dark:border-gray-700">
+4912:                          </div>
+4914:                      </div>
+4916:                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+4917:                        <div className="flex items-center gap-3">
+4918:                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+4920:                          </div>
+4921:                          <div>
+4924:                          </div>
+4925:                        </div>
+4946:                      </div>
+4947:                    </div>
+4948:                  </div>
+4951:                  <div className="space-y-4">
+4952:                    <div className="flex items-center gap-2 px-2">
+4955:                    </div>
+4956:                    <div className="grid grid-cols-1 gap-2">
+4957:                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+4958:                        <div className="flex items-center gap-3">
+4959:                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+4961:                          </div>
+4962:                          <div>
+4965:                          </div>
+4966:                        </div>
+4971:                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isPurchaseMode ? 'right-0.5' : 'left-0.5'}`} />
+4973:                      </div>
+4975:                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+4976:                        <div className="flex items-center gap-3">
+4977:                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+4979:                          </div>
+4980:                          <div>
+4983:                          </div>
+4984:                        </div>
+4989:                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showCoinPrice ? 'right-0.5' : 'left-0.5'}`} />
+4991:                      </div>
+4993:                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+4994:                        <div className="flex items-center gap-3">
+4995:                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+4997:                          </div>
+4998:                          <div>
+5001:                          </div>
+5002:                        </div>
+5007:                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showOldEuropeanCoins ? 'right-0.5' : 'left-0.5'}`} />
+5009:                      </div>
+5011:                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+5012:                        <div className="flex items-center gap-3">
+5013:                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+5015:                          </div>
+5016:                          <div>
+5019:                          </div>
+5020:                        </div>
+5027:                      </div>
+5030:                        <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800/50 rounded-2xl flex items-center justify-between">
+5031:                          <div className="flex items-center gap-3">
+5032:                            <div className="w-8 h-8 bg-purple-100 dark:bg-purple-800/40 rounded-xl flex items-center justify-center text-purple-600">
+5034:                            </div>
+5035:                            <div>
+5038:                            </div>
+5039:                          </div>
+5041:                        </div>
+5043:                    </div>
+5044:                  </div>
+5047:                  <div className="space-y-4 mt-8">
+5048:                    <div className="flex items-center gap-2 px-2">
+5051:                    </div>
+5052:                    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-4">
+5054:                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+5056:                          <div key={denom} className="space-y-1">
+5058:                            <div className="relative">
+5080:                            </div>
+5081:                          </div>
+5083:                      </div>
+5084:                    </div>
+5085:                  </div>
+5086:                </div>
+5088:                <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-800 text-center">
+5090:                </div>
+5091:              </div>
+5093:          </div>
+5100:          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+5114:              <div className="w-20 h-20 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center text-amber-500 mx-auto mb-6 border border-amber-200 dark:border-amber-800 shadow-inner">
+5116:              </div>
+5123:                <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-premium border border-gray-100 dark:border-gray-700 mb-8 shadow-inner">
+5129:                </div>
+5155:          </div>
+5162:          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+5181:              <div className={`relative transition-all duration-500 ${isZoomed ? 'h-full' : getResponsiveClass('h-64 sm:h-96', 'h-48', 'h-64', 'h-96')}`}>
+5192:                <div className={`absolute top-4 left-4 flex flex-wrap ${getResponsiveClass('gap-2', 'gap-1', 'gap-2', 'gap-3')}`}>
+5236:                </div>
+5245:              </div>
+5248:                <div className={`bg-white dark:bg-gray-900 max-h-[60vh] overflow-y-auto ${getResponsiveClass('p-6 sm:p-8', 'p-4', 'p-6', 'p-10')}`}>
+5249:                  <div className={`flex justify-between items-start ${getResponsiveClass('mb-6', 'mb-4', 'mb-6', 'mb-8')}`}>
+5250:                    <div>
+5252:                      <div className="flex items-center gap-2">
+5259:                      </div>
+5260:                    </div>
+5261:                    <div className="text-right">
+5264:                    </div>
+5265:                  </div>
+5267:                  <div className="grid grid-cols-1 gap-4 mb-8">
+5268:                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
+5270:                      <div className="flex items-center gap-2">
+5271:                        <div className="flex gap-0.5">
+5275:                              <div 
+5281:                        </div>
+5283:                      </div>
+5284:                    </div>
+5285:                  </div>
+5287:                  <div className="mb-8">
+5292:                  </div>
+5295:                  <div className="mb-8">
+5297:                    <div className="flex flex-wrap gap-2">
+5310:                            <div className={`w-1.5 h-1.5 rounded-full ${isTagged ? 'bg-white' : ''}`} style={{ backgroundColor: isTagged ? 'white' : tag.color }} />
+5318:                    </div>
+5319:                  </div>
+5321:                  <div className="flex gap-3">
+5346:                  </div>
+5350:                    <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-100 dark:border-amber-800 flex items-center justify-between">
+5351:                      <div>
+5354:                      </div>
+5365:                    </div>
+5368:                  <div className="mt-8 flex gap-3">
+5375:                  </div>
+5376:                </div>
+5379:          </div>
+5386:          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+5400:              <div className={`border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50 ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
+5401:                <div className="flex items-center gap-3">
+5402:                  <div className={`bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 ${getResponsiveClass('w-10 h-10', 'w-8 h-8', 'w-10 h-10', 'w-12 h-12')}`}>
+5404:                  </div>
+5405:                  <div>
+5408:                  </div>
+5409:                </div>
+5410:                <div className="flex items-center gap-2">
+5427:                </div>
+5428:              </div>
+5430:              <div className={`flex-1 overflow-y-auto space-y-4 ${getResponsiveClass('p-4 sm:p-6', 'p-3', 'p-4', 'p-8')}`}>
+5432:                  <div className="text-center py-12">
+5433:                    <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+5435:                    </div>
+5438:                  </div>
+5441:                    <div key={p.id} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-3xl border border-gray-100 dark:border-gray-700 flex items-center justify-between">
+5442:                      <div className="flex items-center gap-3">
+5443:                        <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-2xl flex items-center justify-center text-amber-500 font-bold text-xs border border-gray-100 dark:border-gray-600">
+5445:                        </div>
+5446:                        <div>
+5449:                        </div>
+5450:                      </div>
+5451:                      <div className="text-right">
+5454:                      </div>
+5455:                    </div>
+5458:              </div>
+5460:          </div>
+5467:          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+5481:              <div className={`border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50 ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
+5482:                <div className="flex items-center gap-3">
+5483:                  <div className={`bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center text-purple-600 dark:text-purple-400 ${getResponsiveClass('w-10 h-10', 'w-8 h-8', 'w-10 h-10', 'w-12 h-12')}`}>
+5485:                  </div>
+5486:                  <div>
+5489:                  </div>
+5490:                </div>
+5497:              </div>
+5499:              <div className={`flex-1 overflow-y-auto ${getResponsiveClass('p-4 sm:p-6', 'p-3', 'p-4', 'p-8')}`}>
+5500:                <div className={`grid grid-cols-2 sm:grid-cols-3 ${getResponsiveClass('gap-3 sm:gap-4', 'gap-2', 'gap-3', 'gap-4')}`}>
+5503:                    <div 
+5517:                      <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end ${getResponsiveClass('p-3', 'p-2', 'p-3', 'p-4')}`}>
+5520:                      </div>
+5521:                    </div>
+5524:                    <div className="col-span-full text-center py-20">
+5525:                      <div className={`bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300 ${getResponsiveClass('w-20 h-20', 'w-16 h-16', 'w-20 h-20', 'w-24 h-24')}`}>
+5527:                      </div>
+5530:                    </div>
+5532:                </div>
+5533:              </div>
+5535:          </div>
+5542:          <div className="fixed inset-0 z-[130] flex items-center justify-center p-0 sm:p-4">
+5560:              <div className={`border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50 sticky top-0 z-10 ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
+5561:                <div className="flex items-center gap-4">
+5562:                  <div className={`bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center shadow-inner ${getResponsiveClass('w-12 h-12', 'w-10 h-10', 'w-12 h-12', 'w-14 h-14')}`}>
+5564:                  </div>
+5565:                  <div>
+5568:                  </div>
+5569:                </div>
+5579:              </div>
+5582:              <div className={`flex-1 overflow-y-auto no-scrollbar space-y-10 ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
+5585:                  <div className="space-y-8">
+5594:                    <div className="grid grid-cols-1 gap-6">
+5600:                          <div 
+5604:                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+5605:                              <div>
+5608:                              </div>
+5609:                              <div className="flex items-center gap-4">
+5610:                                <div className="text-right">
+5613:                                </div>
+5614:                                <div className="w-16 h-16 rounded-full border-4 border-amber-100 dark:border-amber-900/30 flex items-center justify-center relative">
+5628:                                  <div className="absolute inset-0 flex items-center justify-center">
+5630:                                  </div>
+5631:                                </div>
+5632:                              </div>
+5633:                            </div>
+5635:                            <div className="space-y-4">
+5637:                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+5644:                                    <div 
+5648:                                      <div className="flex justify-between items-start mb-3">
+5649:                                        <div>
+5652:                                        </div>
+5656:                                          <div className="px-2 py-1 bg-white dark:bg-gray-800 rounded-lg text-[8px] font-black text-amber-600 uppercase tracking-widest border border-amber-100 dark:border-amber-800">
+5658:                                          </div>
+5660:                                      </div>
+5661:                                      <div className="space-y-1.5">
+5662:                                        <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-gray-400">
+5665:                                        </div>
+5666:                                        <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+5672:                                        </div>
+5673:                                      </div>
+5674:                                    </div>
+5677:                              </div>
+5678:                            </div>
+5679:                          </div>
+5682:                    </div>
+5683:                  </div>
+5685:                  <div className="space-y-8">
+5695:                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+5706:                            <div className="flex items-center gap-2 text-rose-500 font-black text-[10px] uppercase tracking-widest">
+5709:                            </div>
+5712:                      </div>
+5714:                      <div className="max-w-2xl mx-auto space-y-8">
+5715:                        <div className="text-center space-y-2">
+5718:                        </div>
+5720:                        <div className="space-y-3">
+5751:                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs ${
+5755:                                </div>
+5756:                                <div className="flex-1">
+5761:                                </div>
+5766:                        </div>
+5788:                      </div>
+5790:                  </div>
+5792:                  <div className="space-y-6">
+5808:                  </div>
+5810:                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
+5811:                    <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-300">
+5813:                    </div>
+5814:                    <div>
+5819:                    </div>
+5826:                  </div>
+5833:                        <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+5847:                                <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+5849:                                </div>
+5850:                                <div className="relative z-10 space-y-3">
+5853:                                  <div className="pt-2 space-y-1.5">
+5854:                                    <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-white/70">
+5857:                                    </div>
+5858:                                    <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
+5860:                                    </div>
+5861:                                  </div>
+5862:                                  <div className="pt-2 flex items-center justify-between">
+5863:                                    <div className="flex items-center gap-2">
+5864:                                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+5866:                                      </div>
+5868:                                    </div>
+5869:                                  </div>
+5870:                                </div>
+5874:                        </div>
+5880:                      <div className="flex items-center justify-between">
+5883:                      </div>
+5884:                      <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+5907:                                <div className="absolute inset-0 bg-black/5 dark:bg-white/5 flex items-center justify-center z-20">
+5909:                                </div>
+5911:                              <div className="space-y-3 relative z-10">
+5912:                                <div className="flex items-center justify-between">
+5913:                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLocked ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-500'}`}>
+5915:                                  </div>
+5917:                                </div>
+5924:                                  <div className="pt-2 space-y-1.5">
+5925:                                    <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-gray-400">
+5928:                                    </div>
+5929:                                    <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+5931:                                    </div>
+5932:                                  </div>
+5934:                              </div>
+5938:                      </div>
+5943:                      <div className="flex items-center justify-between">
+5946:                      </div>
+5947:                      <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+5966:                              <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+5968:                              </div>
+5969:                              <div className="relative z-10 space-y-3">
+5973:                                <div className="pt-2 flex items-center justify-between">
+5974:                                  <div className="flex items-center gap-2">
+5975:                                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+5977:                                    </div>
+5979:                                  </div>
+5980:                                </div>
+5981:                              </div>
+5985:                      </div>
+5991:                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+5992:                        <div className="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-3xl border border-indigo-100 dark:border-indigo-800">
+5995:                        </div>
+5996:                        <div className="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-3xl border border-blue-100 dark:border-blue-800">
+5999:                        </div>
+6000:                        <div className="bg-amber-50 dark:bg-amber-900/20 p-5 rounded-3xl border border-amber-100 dark:border-amber-800">
+6003:                        </div>
+6004:                        <div className="bg-purple-50 dark:bg-purple-900/20 p-5 rounded-3xl border border-purple-100 dark:border-purple-800">
+6007:                        </div>
+6008:                      </div>
+6012:              </div>
+6014:          </div>
+6021:          <div className="fixed inset-0 z-[140] flex items-center justify-center p-0 sm:p-4">
+6036:              <div className={`border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50 sticky top-0 z-10 ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
+6037:                <div className="flex items-center gap-4">
+6041:                  <div>
+6044:                  </div>
+6045:                </div>
+6046:                <div className="flex items-center gap-2">
+6047:                  <div className="text-right">
+6050:                  </div>
+6051:                </div>
+6052:              </div>
+6055:              <div className={`flex-1 overflow-y-auto no-scrollbar ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
+6056:                <div className="relative">
+6058:                  <div className="absolute left-4 top-0 bottom-0 w-1 bg-gray-100 dark:bg-gray-800 rounded-full" />
+6060:                  <div className="space-y-12 relative">
+6081:                          <div className={`relative z-10 w-9 h-9 rounded-full flex items-center justify-center border-4 border-white dark:border-gray-950 shadow-sm transition-colors ${isCompleted ? 'bg-blue-500' : 'bg-gray-200 dark:bg-gray-800'}`}>
+6082:                            {isCompleted ? <CheckCircle2 size={16} className="text-white" /> : <div className="w-2 h-2 rounded-full bg-gray-400" />}
+6083:                          </div>
+6085:                          <div className="flex-1 space-y-2">
+6086:                            <div className="flex items-center justify-between">
+6088:                              <div className="flex items-center gap-3">
+6146:                              </div>
+6147:                            </div>
+6157:                                  <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-800 mt-2">
+6159:                                  </div>
+6163:                          </div>
+6167:                  </div>
+6168:                </div>
+6169:              </div>
+6172:              <div className="p-6 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800">
+6179:              </div>
+6181:          </div>
+6188:          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+6202:              <div className={`border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-green-50 dark:bg-green-900/10 ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
+6203:                <div className="flex items-center gap-4">
+6204:                  <div className={`bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-2xl flex items-center justify-center shadow-inner ${getResponsiveClass('w-12 h-12', 'w-10 h-10', 'w-12 h-12', 'w-14 h-14')}`}>
+6206:                  </div>
+6207:                  <div>
+6210:                  </div>
+6211:                </div>
+6215:              </div>
+6217:              <div className={`flex-1 overflow-y-auto space-y-4 no-scrollbar ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
+6219:                  <div key={coin.id} className={`flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-2xl border border-transparent hover:border-green-200 transition-all ${getResponsiveClass('p-4', 'p-2', 'p-4', 'p-6')}`}>
+6220:                    <div className="flex items-center gap-4">
+6221:                      <div className={`bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm ${getResponsiveClass('w-12 h-12', 'w-10 h-10', 'w-12 h-12', 'w-14 h-14')}`}>
+6223:                      </div>
+6224:                      <div>
+6227:                      </div>
+6228:                    </div>
+6235:                  </div>
+6237:              </div>
+6239:              <div className="p-6 bg-gray-50 dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 text-center">
+6241:              </div>
+6243:          </div>
+6250:          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+6263:              <div className="flex flex-col items-center text-center space-y-4">
+6264:                <div className="w-20 h-20 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-3xl flex items-center justify-center">
+6266:                </div>
+6267:                <div>
+6272:                </div>
+6273:              </div>
+6275:              <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 rounded-2xl p-4 space-y-2">
+6283:              </div>
+6286:                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-xl flex items-center gap-3 text-red-600 dark:text-red-400">
+6289:                </div>
+6292:              <div className="grid grid-cols-2 gap-3">
+6309:              </div>
+6315:          </div>
+6322:          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
+6323:            <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 text-center shadow-2xl">
+6324:              <div className="w-20 h-20 bg-amber-100 dark:bg-amber-900/30 rounded-3xl flex items-center justify-center mx-auto mb-6 text-amber-600 dark:text-amber-400">
+6326:              </div>
+6330:              <div className="relative h-4 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mb-4">
+6336:              </div>
+6338:            </div>
+6339:          </div>
+6346:          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+6360:              <div className="p-6 sm:p-8 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-amber-50 dark:bg-amber-900/10">
+6361:                <div className="flex items-center gap-4">
+6362:                  <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center shadow-inner">
+6364:                  </div>
+6365:                  <div>
+6368:                  </div>
+6369:                </div>
+6376:              </div>
+6378:              <div className="p-6 sm:p-8 space-y-6 flex-1 overflow-y-auto no-scrollbar">
+6379:                <div className="relative group">
+6396:                </div>
+6399:                  <div className="flex flex-col items-center justify-center py-16 gap-6">
+6400:                    <div className="relative">
+6401:                      <div className="w-16 h-16 border-4 border-amber-100 rounded-full animate-pulse" />
+6403:                    </div>
+6405:                  </div>
+6407:                  <div className="grid grid-cols-2 gap-4">
+6425:                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center backdrop-blur-[2px] opacity-0 group-hover:opacity-100">
+6427:                        </div>
+6430:                  </div>
+6432:                  <div className="text-center py-16 bg-gray-50 dark:bg-gray-800/50 rounded-[2rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
+6433:                    <div className="w-20 h-20 bg-white dark:bg-gray-800 text-gray-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+6435:                    </div>
+6437:                  </div>
+6439:              </div>
+6441:          </div>
+6448:          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+6462:              <div className="p-6 sm:p-8 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-amber-50 dark:bg-amber-900/10">
+6463:                <div className="flex items-center gap-4">
+6464:                  <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center shadow-inner">
+6466:                  </div>
+6467:                  <div>
+6470:                  </div>
+6471:                </div>
+6478:              </div>
+6480:              <div className="p-6 sm:p-8 space-y-6 overflow-y-auto no-scrollbar">
+6481:                <div className="space-y-2">
+6490:                </div>
+6492:                <div className="grid grid-cols-2 gap-4">
+6493:                  <div className="space-y-2">
+6504:                  </div>
+6505:                  <div className="space-y-2">
+6515:                  </div>
+6516:                </div>
+6518:                <div className="grid grid-cols-2 gap-4">
+6519:                  <div className="space-y-2">
+6530:                  </div>
+6531:                  <div className="space-y-2">
+6539:                  </div>
+6540:                </div>
+6542:                <div className="space-y-2">
+6551:                </div>
+6553:                <div className="grid grid-cols-2 gap-4">
+6554:                  <div className="space-y-2">
+6564:                  </div>
+6565:                  <div className="space-y-2">
+6567:                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+6581:                  </div>
+6582:                </div>
+6583:              </div>
+6585:              <div className="space-y-2">
+6587:                  <div 
+6595:                        <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-300 group-hover:text-amber-500 transition-colors shadow-sm mb-3">
+6597:                        </div>
+6608:                  </div>
+6609:                </div>
+6619:              </div>
+6621:          </div>
+6628:          <div className="fixed inset-0 z-[150] flex items-center justify-center p-6">
+6642:              <div className="bg-amber-500 p-8 text-white text-center space-y-4">
+6643:                <div className="w-24 h-24 bg-white rounded-full mx-auto p-1 shadow-xl">
+6645:                </div>
+6646:                <div>
+6649:                </div>
+6650:              </div>
+6652:              <div className="p-8 space-y-6">
+6653:                <div className="grid grid-cols-2 gap-4">
+6654:                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl text-center">
+6657:                  </div>
+6658:                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl text-center">
+6661:                  </div>
+6662:                </div>
+6664:                <div className="space-y-2">
+6665:                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
+6668:                  </div>
+6669:                  <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+6670:                    <div className="h-full bg-amber-500" style={{ width: `${progress}%` }} />
+6671:                  </div>
+6672:                </div>
+6684:              </div>
+6686:          </div>
+6693:          <div className="fixed inset-0 z-[150] flex items-center justify-center p-6">
+6707:              <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+6712:              </div>
+6714:              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+6721:                      <div key={id} className="flex gap-4 relative">
+6722:                        <div className="absolute left-[19px] top-8 bottom-[-24px] w-0.5 bg-gray-100 dark:bg-gray-800" />
+6723:                        <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center text-amber-600 shrink-0 z-10">
+6725:                        </div>
+6726:                        <div className="flex-1 pt-1">
+6732:                        </div>
+6733:                      </div>
+6737:                  <div className="text-center py-12">
+6740:                  </div>
+6742:              </div>
+6744:          </div>
+6751:          <div className="fixed inset-0 z-[160] flex items-center justify-center p-6">
+6766:                <div key={index} className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden">
+6779:                      <div className="aspect-square rounded-2xl overflow-hidden bg-gray-50 dark:bg-gray-800">
+6785:                      </div>
+6786:                      <div className="text-center space-y-2">
+6789:                      </div>
+6790:                      <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+6791:                        <div className="flex justify-between items-center">
+6794:                        </div>
+6795:                        <div className="flex justify-between items-center">
+6798:                        </div>
+6799:                      </div>
+6802:                    <div className="h-full flex flex-col items-center justify-center text-center space-y-4 py-20">
+6803:                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-300">
+6805:                      </div>
+6807:                    </div>
+6809:                </div>
+6812:              <div className="col-span-2 flex justify-center">
+6819:              </div>
+6821:          </div>
+6828:          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+6842:              <div className="text-center space-y-2">
+6843:                <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+6845:                </div>
+6848:              </div>
+6850:              <div className="grid grid-cols-3 gap-4">
+6852:                  <div key={i} className="aspect-square rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-800/50">
+6862:                  </div>
+6864:              </div>
+6878:          </div>
+6885:          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+6899:              <div className="text-center space-y-2">
+6900:                <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+6902:                </div>
+6905:              </div>
+6907:              <div className="flex items-center justify-between gap-4">
+6908:                <div className="flex-1 space-y-2">
+6910:                  <div className="flex justify-center -space-x-4">
+6911:                    <div className="w-12 h-12 rounded-full border-2 border-white dark:border-gray-900 overflow-hidden bg-gray-100 shadow-sm">
+6913:                    </div>
+6915:                      <div className="w-12 h-12 rounded-full border-2 border-white dark:border-gray-900 bg-gray-900 text-white flex items-center justify-center text-xs font-black">
+6917:                      </div>
+6919:                  </div>
+6920:                </div>
+6922:                <div className="flex-1 space-y-2">
+6924:                  <div className="flex justify-center">
+6925:                    <div className="w-16 h-16 rounded-2xl overflow-hidden bg-amber-50 shadow-inner p-1">
+6926:                      <div className="w-full h-full rounded-xl overflow-hidden relative">
+6928:                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+6930:                        </div>
+6931:                      </div>
+6932:                    </div>
+6933:                  </div>
+6934:                </div>
+6935:              </div>
+6937:              <div className="flex gap-4">
+6950:              </div>
+6952:          </div>
+6965:            <div className="flex items-center gap-4 pl-2">
+6975:              <div>
+6977:              </div>
+6978:            </div>
+6980:            <div className="flex items-center gap-2">
+7000:              <div className="relative group">
+7008:                <div className="absolute bottom-full right-0 mb-2 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all translate-y-2 group-hover:translate-y-0">
+7009:                  <div className="p-2 space-y-1">
+7017:                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }} />
+7024:                  </div>
+7025:                </div>
+7026:              </div>
+7027:            </div>
+7043:            <div className="text-left">
+7046:            </div>
+7067:              <div className={`rounded-xl transition-colors ${(!activeDenomination && !isTimelineOpen) ? 'bg-amber-50 dark:bg-amber-900/20' : ''} ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}>
+7069:              </div>
+7076:              <div className={`rounded-xl transition-colors ${isTimelineOpen ? 'bg-blue-50 dark:bg-blue-900/20' : ''} ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}>
+7078:              </div>
+7097:              <div className={`rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}>
+7099:              </div>
+7106:              <div className={`rounded-xl transition-colors ${isProfileOpen ? 'bg-amber-50 dark:bg-amber-900/20' : ''} ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}>
+7108:              </div>
+7116:      <div className="h-4 sm:hidden" />
+7117:    </div>
