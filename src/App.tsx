@@ -1781,7 +1781,6 @@ function CoinCollectorApp() {
 
     return (
       <motion.div
-        layout
         key={coin.id}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -1794,7 +1793,7 @@ function CoinCollectorApp() {
         onMouseLeave={endLongPress}
         onTouchStart={() => startLongPress(coin.id)}
         onTouchEnd={endLongPress}
-        className={`group relative bg-white dark:bg-gray-900 rounded-premium premium-shadow hover:premium-shadow-hover border-2 transition-all cursor-pointer ${
+        className={`group relative bg-white dark:bg-gray-900 rounded-premium premium-shadow hover:premium-shadow-hover border-2 transition-all cursor-pointer h-[120px] sm:h-[140px] overflow-hidden ${
           isSelected ? 'border-amber-500 ring-4 ring-amber-500/20' : 
           isCollected ? 'border-amber-500/50 bg-amber-50/30 dark:bg-amber-900/10' : 'border-transparent'
         } ${
@@ -1814,15 +1813,16 @@ function CoinCollectorApp() {
         )}
         <div className={`flex items-center ${getResponsiveClass('gap-4 sm:gap-6', 'gap-3', 'gap-4', 'gap-6')}`}>
           {!userProfile.settings?.isTextMode && (
-            <div className={`relative flex-shrink-0 ${
+            <div className={`relative flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden ${
               userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'w-14 h-14 sm:w-16 sm:h-16' : 'w-16 h-16 sm:w-20 sm:h-20'
             }`}>
               <img 
                 src={coin.imageUrl} 
                 alt={coin.name}
+                loading="lazy"
                 referrerPolicy="no-referrer"
                 onError={handleImageError}
-                className={`w-full h-full object-cover rounded-2xl border-2 border-gray-100 dark:border-gray-800 shadow-sm transition-transform duration-500 group-hover:scale-110 ${
+                className={`w-full h-full object-cover border-2 border-gray-100 dark:border-gray-800 shadow-sm transition-transform duration-500 group-hover:scale-110 ${
                   !isCollected && 'grayscale opacity-50'
                 }`}
               />
@@ -1872,7 +1872,7 @@ function CoinCollectorApp() {
               userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'text-lg' : 'text-xl sm:text-2xl'
             }`}>{coin.name}</h3>
             {!userProfile.settings?.isTextMode && (
-              <p className={`text-gray-500 dark:text-gray-400 line-clamp-1 font-medium ${
+              <p className={`text-gray-500 dark:text-gray-400 line-clamp-2 font-medium ${
                 userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'
               }`}>{coin.description}</p>
             )}
@@ -3226,10 +3226,8 @@ function CoinCollectorApp() {
 
   return (
     <div 
-      className={`min-h-screen bg-gray-50 dark:bg-gray-950 dark:text-white flex flex-col transition-colors duration-300 ${getResponsiveClass('', 'text-xs', 'text-sm', 'text-base')}`} 
+      className={`h-screen overflow-hidden bg-gray-50 dark:bg-gray-950 dark:text-white flex flex-col transition-colors duration-300 ${getResponsiveClass('', 'text-xs', 'text-sm', 'text-base')}`} 
       style={{ 
-        paddingTop: 'var(--safe-top)', 
-        paddingBottom: 'var(--safe-bottom)',
         ...themeStyles
       }}
     >
@@ -3370,7 +3368,7 @@ function CoinCollectorApp() {
       </AnimatePresence>
 
       {/* Header */}
-      <header className={`sticky top-0 z-[100] bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 transition-all duration-300 ${getResponsiveClass('p-4 sm:p-6', 'p-2', 'p-4', 'p-6')}`}>
+      <header className={`fixed top-0 left-0 right-0 z-[100] bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 transition-all duration-300 pt-[env(safe-area-inset-top)] ${getResponsiveClass('p-4 sm:p-6', 'p-2', 'p-4', 'p-6')}`}>
         <div className={`max-w-2xl mx-auto flex items-center justify-between ${getResponsiveClass('gap-3 sm:gap-4', 'gap-1', 'gap-3', 'gap-4')}`}>
           <div className="flex items-center gap-3 sm:gap-4">
             {(activeDenomination || activeDenomination === 'Wishlist') && (
@@ -3462,143 +3460,125 @@ function CoinCollectorApp() {
         )}
       </header>
 
-      {/* Search and Filters */}
-      <div className={`bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors ${userProfile.settings?.isFocusMode ? 'sticky top-0 z-[80] shadow-sm' : ''} ${getResponsiveClass('px-4 py-4', 'px-2 py-2', 'px-4 py-4', 'px-6 py-6')}`}>
-        <div className={`max-w-2xl mx-auto ${getResponsiveClass('space-y-4', 'space-y-2', 'space-y-4', 'space-y-6')}`}>
-          <div className="relative group">
-            <Search className={`absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-amber-500 transition-colors ${getResponsiveClass('', 'w-4 h-4 left-3', 'w-5 h-5 left-4', 'w-6 h-6 left-5')}`} size={20} />
-            <input 
-              type="text"
-              placeholder="Search all coins..."
-              className={`w-full bg-gray-50 dark:bg-gray-800 border-2 border-transparent rounded-[1.25rem] font-medium focus:bg-white dark:focus:bg-gray-900 focus:border-amber-500 outline-none transition-all shadow-sm ${getResponsiveClass('pl-12 pr-4 py-3 sm:py-4 text-base sm:text-lg', 'pl-10 pr-3 py-2 text-sm', 'pl-12 pr-4 py-3 text-base', 'pl-14 pr-5 py-4 text-lg')}`}
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                if (e.target.value !== '') setActiveDenomination(null);
-              }}
-            />
-          </div>
-          
-          <div className={`flex flex-col gap-3 ${getResponsiveClass('', 'gap-2', 'gap-3', 'gap-4')}`}>
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar flex-1">
-                {(['all', 'collected', 'missing'] as const).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={`rounded-full font-black uppercase tracking-widest whitespace-nowrap transition-all ${
-                      filter === f 
-                        ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-md' 
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                    } ${getResponsiveClass('px-5 py-2 text-xs', 'px-3 py-1.5 text-[10px]', 'px-5 py-2 text-xs', 'px-6 py-2.5 text-sm')}`}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
-              
-              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                {(['Modern', 'Old', 'Both'] as const).map((era) => (
-                  <button
-                    key={era}
-                    onClick={() => setUserProfile(prev => ({
-                      ...prev,
-                      settings: { ...prev.settings, eraFilter: era }
-                    }))}
-                    className={`rounded-full font-black uppercase tracking-widest whitespace-nowrap transition-all ${
-                      userProfile.settings.eraFilter === era 
-                        ? 'bg-amber-500 text-white shadow-md' 
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                    } ${getResponsiveClass('px-5 py-2 text-xs', 'px-3 py-1.5 text-[10px]', 'px-5 py-2 text-xs', 'px-6 py-2.5 text-sm')}`}
-                  >
-                    {era}
-                  </button>
-                ))}
-              </div>
-              
-              <button
-                onClick={() => setUserProfile(prev => ({
-                  ...prev,
-                  settings: { ...prev.settings, isGrouped: !prev.settings.isGrouped }
-                }))}
-                className={`flex items-center gap-2 rounded-full font-black uppercase tracking-widest whitespace-nowrap transition-all ${
-                  userProfile.settings.isGrouped 
-                    ? 'bg-amber-500 text-white shadow-md' 
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                } ${getResponsiveClass('px-4 py-2 text-xs', 'px-3 py-1.5 text-[10px]', 'px-4 py-2 text-xs', 'px-5 py-2.5 text-sm')}`}
-              >
-                <Layout size={14} />
-                {userProfile.settings.isGrouped ? 'Grouped' : 'List'}
-              </button>
+      {/* Main Content */}
+      <main className={`flex-1 overflow-y-auto no-scrollbar pt-[100px] sm:pt-[140px] pb-[100px] sm:pb-[140px] ${getResponsiveClass('', '', '', '')}`}>
+        {/* Search and Filters */}
+        <div className={`bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors ${getResponsiveClass('px-4 py-4', 'px-2 py-2', 'px-4 py-4', 'px-6 py-6')}`}>
+          <div className={`max-w-2xl mx-auto ${getResponsiveClass('space-y-4', 'space-y-2', 'space-y-4', 'space-y-6')}`}>
+            <div className="relative group">
+              <Search className={`absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-amber-500 transition-colors ${getResponsiveClass('', 'w-4 h-4 left-3', 'w-5 h-5 left-4', 'w-6 h-6 left-5')}`} size={20} />
+              <input 
+                type="text"
+                placeholder="Search all coins..."
+                className={`w-full bg-gray-50 dark:bg-gray-800 border-2 border-transparent rounded-[1.25rem] font-medium focus:bg-white dark:focus:bg-gray-900 focus:border-amber-500 outline-none transition-all shadow-sm ${getResponsiveClass('pl-12 pr-4 py-3 sm:py-4 text-base sm:text-lg', 'pl-10 pr-3 py-2 text-sm', 'pl-12 pr-4 py-3 text-base', 'pl-14 pr-5 py-4 text-lg')}`}
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (e.target.value !== '') setActiveDenomination(null);
+                }}
+              />
             </div>
-
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 flex-1">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sort:</span>
-                <select
-                  value={userProfile.settings.sortBy || 'recent-added'}
-                  onChange={(e) => setUserProfile(prev => ({
+            
+            <div className={`flex flex-col gap-3 ${getResponsiveClass('', 'gap-2', 'gap-3', 'gap-4')}`}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar flex-1">
+                  {(['all', 'collected', 'missing'] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setFilter(f)}
+                      className={`rounded-full font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+                        filter === f 
+                          ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-md' 
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                      } ${getResponsiveClass('px-5 py-2 text-xs', 'px-3 py-1.5 text-[10px]', 'px-5 py-2 text-xs', 'px-6 py-2.5 text-sm')}`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                  {(['Modern', 'Old', 'Both'] as const).map((era) => (
+                    <button
+                      key={era}
+                      onClick={() => setUserProfile(prev => ({
+                        ...prev,
+                        settings: { ...prev.settings, eraFilter: era }
+                      }))}
+                      className={`rounded-full font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+                        userProfile.settings.eraFilter === era 
+                          ? 'bg-amber-500 text-white shadow-md' 
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                      } ${getResponsiveClass('px-5 py-2 text-xs', 'px-3 py-1.5 text-[10px]', 'px-5 py-2 text-xs', 'px-6 py-2.5 text-sm')}`}
+                    >
+                      {era}
+                    </button>
+                  ))}
+                </div>
+                
+                <button
+                  onClick={() => setUserProfile(prev => ({
                     ...prev,
-                    settings: { ...prev.settings, sortBy: e.target.value as any }
+                    settings: { ...prev.settings, isGrouped: !prev.settings.isGrouped }
                   }))}
-                  className={`bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full font-black uppercase tracking-widest border-none focus:ring-2 focus:ring-amber-500 transition-all outline-none flex-1 ${getResponsiveClass('px-4 py-2 text-xs', 'px-2 py-1.5 text-[10px]', 'px-4 py-2 text-xs', 'px-5 py-2.5 text-sm')}`}
+                  className={`flex items-center gap-2 rounded-full font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+                    userProfile.settings.isGrouped 
+                      ? 'bg-amber-500 text-white shadow-md' 
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  } ${getResponsiveClass('px-4 py-2 text-xs', 'px-3 py-1.5 text-[10px]', 'px-4 py-2 text-xs', 'px-5 py-2.5 text-sm')}`}
                 >
-                  <option value="recent-added">Recently Added</option>
-                  <option value="name">Name</option>
-                  <option value="year">Year</option>
-                  <option value="denomination">Denomination</option>
-                  <option value="date-added">Date Added</option>
-                  <option value="month-added">Month Added</option>
-                  <option value="recent-opened">Recently Opened</option>
-                  <option value="country">Country</option>
-                </select>
+                  <Layout size={14} />
+                  {userProfile.settings.isGrouped ? 'Grouped' : 'List'}
+                </button>
               </div>
 
-              {userProfile.settings.isGrouped && (
+              <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2 flex-1">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Group:</span>
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sort:</span>
                   <select
-                    value={userProfile.settings.groupBy || 'year'}
+                    value={userProfile.settings.sortBy || 'recent-added'}
                     onChange={(e) => setUserProfile(prev => ({
                       ...prev,
-                      settings: { ...prev.settings, groupBy: e.target.value as any }
+                      settings: { ...prev.settings, sortBy: e.target.value as any }
                     }))}
                     className={`bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full font-black uppercase tracking-widest border-none focus:ring-2 focus:ring-amber-500 transition-all outline-none flex-1 ${getResponsiveClass('px-4 py-2 text-xs', 'px-2 py-1.5 text-[10px]', 'px-4 py-2 text-xs', 'px-5 py-2.5 text-sm')}`}
                   >
-                    <option value="year">By Year</option>
-                    <option value="denomination">By Denomination</option>
-                    <option value="date-added">By Date Added</option>
-                    <option value="month-added">By Month Added</option>
-                    <option value="country">By Country</option>
+                    <option value="recent-added">Recently Added</option>
+                    <option value="name">Name</option>
+                    <option value="year">Year</option>
+                    <option value="denomination">Denomination</option>
+                    <option value="date-added">Date Added</option>
+                    <option value="month-added">Month Added</option>
+                    <option value="recent-opened">Recently Opened</option>
+                    <option value="country">Country</option>
                   </select>
                 </div>
-              )}
-            </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-              {(['Both', 'Modern', 'Old'] as const).map((era) => (
-                <button
-                  key={era}
-                  onClick={() => setUserProfile(prev => ({
-                    ...prev,
-                    settings: { ...prev.settings, eraFilter: era }
-                  }))}
-                  className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                    userProfile.settings.eraFilter === era
-                      ? 'bg-purple-500 text-white shadow-md'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  {era === 'Both' ? 'All Eras' : era}
-                </button>
-              ))}
+                {userProfile.settings.isGrouped && (
+                  <div className="flex items-center gap-2 flex-1">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Group:</span>
+                    <select
+                      value={userProfile.settings.groupBy || 'year'}
+                      onChange={(e) => setUserProfile(prev => ({
+                        ...prev,
+                        settings: { ...prev.settings, groupBy: e.target.value as any }
+                      }))}
+                      className={`bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full font-black uppercase tracking-widest border-none focus:ring-2 focus:ring-amber-500 transition-all outline-none flex-1 ${getResponsiveClass('px-4 py-2 text-xs', 'px-2 py-1.5 text-[10px]', 'px-4 py-2 text-xs', 'px-5 py-2.5 text-sm')}`}
+                    >
+                      <option value="year">By Year</option>
+                      <option value="denomination">By Denomination</option>
+                      <option value="date-added">By Date Added</option>
+                      <option value="month-added">By Month Added</option>
+                      <option value="country">By Country</option>
+                    </select>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <main className={`flex-1 overflow-y-auto ${getResponsiveClass('p-4', 'p-2', 'p-4', 'p-6')}`}>
+        <div className={`max-w-2xl mx-auto ${getResponsiveClass('p-4 sm:p-6', 'p-2', 'p-4', 'p-6')}`}>
         <div className={`max-w-2xl mx-auto grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
           {userProfile.settings?.isPurchaseMode && (
             <div className="flex items-center justify-between p-4 bg-black dark:bg-white text-white dark:text-black rounded-3xl shadow-xl mb-2 animate-pulse">
@@ -3907,6 +3887,7 @@ function CoinCollectorApp() {
               <p className="text-gray-500">Try a different search or filter</p>
             </div>
           )}
+        </div>
         </div>
       </main>
 
@@ -7134,7 +7115,7 @@ function CoinCollectorApp() {
             initial={{ y: 100 }}
             animate={{ y: 0 }}
             exit={{ y: 100 }}
-            className={`fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl border-t border-gray-100 dark:border-gray-800 flex items-center justify-around z-[90] pb-[calc(16px+var(--safe-bottom))] ${getResponsiveClass('px-8 py-4', 'px-4 py-2', 'px-8 py-4', 'px-12 py-6')}`}
+            className={`fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl border-t border-gray-100 dark:border-gray-800 flex items-center justify-around z-[90] pb-[env(safe-area-inset-bottom)] ${getResponsiveClass('px-8 py-4', 'px-4 py-2', 'px-8 py-4', 'px-12 py-6')}`}
           >
             <button 
               onClick={() => {
@@ -7190,9 +7171,6 @@ function CoinCollectorApp() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Footer / Safe Area Spacer for iOS */}
-      <div className="h-4 sm:hidden" />
     </div>
   );
 }
