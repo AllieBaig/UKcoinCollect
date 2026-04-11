@@ -5,6 +5,7 @@ import {
   User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle, TrendingUp, Trash2, Shield, Copy, Edit,
   Monitor, Smartphone, Database, Settings2, ShieldAlert, FlaskConical,
   Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle, ShoppingCart, Tag, Table, History, Moon, HelpCircle, ArrowRight, Star, ChevronDown,
+  Wind,
   LayoutGrid, List, Columns, Kanban, ImageIcon, Focus, Minimize2, Hexagon, ArrowLeftRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -99,6 +100,7 @@ interface UserProfile {
     eraFilter?: 'Modern' | 'Old' | 'Both';
     layout?: 'grid' | 'list' | 'carousel' | 'masonry' | 'board' | 'timeline' | 'gallery' | 'spotlight' | 'compact' | 'split' | 'hexagon';
     showLayoutSwitcher?: boolean;
+    isAmbientMotionEnabled?: boolean;
   };
   safeModeBackup?: string;
 }
@@ -323,6 +325,57 @@ const GAME_MODES: GameMode[] = [
     isLocked: false
   }
 ];
+
+const AmbientBackground = ({ isEnabled }: { isEnabled: boolean }) => {
+  if (!isEnabled) return null;
+
+  return (
+    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden opacity-30 dark:opacity-10">
+      <motion.div
+        animate={{
+          x: [0, 100, -50, 0],
+          y: [0, 50, 100, 0],
+          scale: [1, 1.2, 0.9, 1],
+          rotate: [0, 90, 180, 0],
+        }}
+        transition={{
+          duration: 40,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+        className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-amber-200/40 dark:bg-amber-500/10 rounded-full blur-[120px]"
+      />
+      <motion.div
+        animate={{
+          x: [0, -120, 60, 0],
+          y: [0, 150, -80, 0],
+          scale: [1, 1.1, 1.3, 1],
+          rotate: [0, -120, -240, 0],
+        }}
+        transition={{
+          duration: 50,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+        className="absolute top-1/4 -right-40 w-[700px] h-[700px] bg-blue-200/30 dark:bg-blue-500/10 rounded-full blur-[140px]"
+      />
+      <motion.div
+        animate={{
+          x: [0, 150, -100, 0],
+          y: [0, -100, 150, 0],
+          scale: [1, 1.4, 0.8, 1],
+          rotate: [0, 180, 360, 0],
+        }}
+        transition={{
+          duration: 60,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+        className="absolute -bottom-40 left-1/4 w-[500px] h-[500px] bg-purple-200/30 dark:bg-purple-500/10 rounded-full blur-[100px]"
+      />
+    </div>
+  );
+};
 
 const MindMapTimeline = ({ coins, collectedIds, onSelectCoin }: { coins: Coin[], collectedIds: string[], onSelectCoin: (coin: Coin) => void }) => {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['root']));
@@ -810,7 +863,8 @@ function CoinCollectorApp() {
           theme: 'default',
           fixedPrices: {},
           showOldEuropeanCoins: true,
-          eraFilter: 'Both'
+          eraFilter: 'Both',
+          isAmbientMotionEnabled: true
         },
         dnaScore: 0,
         unlockedClues: [],
@@ -840,7 +894,8 @@ function CoinCollectorApp() {
           showOldEuropeanCoins: parsed.settings?.showOldEuropeanCoins ?? true,
           eraFilter: parsed.settings?.eraFilter || 'Both',
           layout: parsed.settings?.layout || 'grid',
-          showLayoutSwitcher: parsed.settings?.showLayoutSwitcher ?? true
+          showLayoutSwitcher: parsed.settings?.showLayoutSwitcher ?? true,
+          isAmbientMotionEnabled: parsed.settings?.isAmbientMotionEnabled ?? true
         },
         missions: parsed.missions || defaultProfile.missions,
         timelineStreak: parsed.timelineStreak || 0,
@@ -3421,6 +3476,7 @@ function CoinCollectorApp() {
         ...themeStyles
       }}
     >
+      <AmbientBackground isEnabled={userProfile.settings.isAmbientMotionEnabled ?? true} />
       <style>
         {`
           :root {
@@ -4992,6 +5048,24 @@ function CoinCollectorApp() {
                           className={`w-10 h-5 rounded-full transition-all relative active:scale-90 ${userProfile.settings?.isTextMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                         >
                           <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isTextMode ? 'right-0.5' : 'left-0.5'}`} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <Wind size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Ambient Motion</p>
+                            <p className="text-[10px] text-gray-500">Subtle background movement</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isAmbientMotionEnabled: !prev.settings.isAmbientMotionEnabled } }))}
+                          className={`w-10 h-5 rounded-full transition-all relative active:scale-90 ${userProfile.settings?.isAmbientMotionEnabled ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isAmbientMotionEnabled ? 'right-0.5' : 'left-0.5'}`} />
                         </button>
                       </div>
 
