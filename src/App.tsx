@@ -4,7 +4,8 @@ import {
   ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
   User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle, TrendingUp, Trash2, Shield, Copy, Edit,
   Monitor, Smartphone, Database, Settings2, ShieldAlert, FlaskConical,
-  Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle, ShoppingCart, Tag, Table, History, Moon, HelpCircle, ArrowRight, Star, ChevronDown
+  Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle, ShoppingCart, Tag, Table, History, Moon, HelpCircle, ArrowRight, Star, ChevronDown,
+  LayoutGrid, List, Columns, Kanban, ImageIcon, Focus, Minimize2, Hexagon, ArrowLeftRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { EUROPEAN_COINS, Coin } from './data/coins';
@@ -96,6 +97,8 @@ interface UserProfile {
     fixedPrices?: Record<string, number>;
     showOldEuropeanCoins?: boolean;
     eraFilter?: 'Modern' | 'Old' | 'Both';
+    layout?: 'grid' | 'list' | 'carousel' | 'masonry' | 'board' | 'timeline' | 'gallery' | 'spotlight' | 'compact' | 'split' | 'hexagon';
+    showLayoutSwitcher?: boolean;
   };
   safeModeBackup?: string;
 }
@@ -199,6 +202,20 @@ const BADGES = [
   { id: 'b7', name: 'Timeline Master', description: 'Complete all timelines', icon: <Star size={16} /> },
   { id: 'b8', name: 'Mint Master', description: 'Collect 100 coins', icon: <Trophy size={16} /> },
   { id: 'b9', name: 'History Explorer', description: 'Reach a 7-day timeline streak', icon: <Calendar size={16} /> }
+];
+
+const LAYOUT_OPTIONS = [
+  { id: 'grid', label: 'Grid', icon: <LayoutGrid size={16} /> },
+  { id: 'list', label: 'List', icon: <List size={16} /> },
+  { id: 'carousel', label: 'Carousel', icon: <ArrowLeftRight size={16} /> },
+  { id: 'masonry', label: 'Masonry', icon: <Columns size={16} /> },
+  { id: 'board', label: 'Board', icon: <Kanban size={16} /> },
+  { id: 'timeline', label: 'Timeline', icon: <History size={16} /> },
+  { id: 'gallery', label: 'Gallery', icon: <ImageIcon size={16} /> },
+  { id: 'spotlight', label: 'Spotlight', icon: <Focus size={16} /> },
+  { id: 'compact', label: 'Compact', icon: <Minimize2 size={16} /> },
+  { id: 'split', label: 'Split', icon: <Columns size={16} /> },
+  { id: 'hexagon', label: 'Hexagon', icon: <Hexagon size={16} /> },
 ];
 
 const ERAS: Era[] = [
@@ -821,7 +838,9 @@ function CoinCollectorApp() {
           ...parsed.settings,
           fixedPrices: parsed.settings?.fixedPrices || {},
           showOldEuropeanCoins: parsed.settings?.showOldEuropeanCoins ?? true,
-          eraFilter: parsed.settings?.eraFilter || 'Both'
+          eraFilter: parsed.settings?.eraFilter || 'Both',
+          layout: parsed.settings?.layout || 'grid',
+          showLayoutSwitcher: parsed.settings?.showLayoutSwitcher ?? true
         },
         missions: parsed.missions || defaultProfile.missions,
         timelineStreak: parsed.timelineStreak || 0,
@@ -881,7 +900,9 @@ function CoinCollectorApp() {
           isNightBonusActive: true,
           sortBy: 'recent-added',
           showOldEuropeanCoins: true,
-          eraFilter: 'Both'
+          eraFilter: 'Both',
+          layout: 'grid',
+          showLayoutSwitcher: true
         }
       };
     }
@@ -983,6 +1004,7 @@ function CoinCollectorApp() {
   } | null>(null);
   const [expandedEvents, setExpandedEvents] = useState<Record<string, Record<number, boolean>>>({});
 
+  const [isLayoutMenuOpen, setIsLayoutMenuOpen] = useState(false);
   const [collectionHistory, setCollectionHistory] = useState<Record<string, string>>(() => {
     try {
       const saved = localStorage.getItem('collection_history');
@@ -1775,9 +1797,57 @@ function CoinCollectorApp() {
     e.currentTarget.src = FALLBACK_COIN_IMAGE;
   };
 
-  const renderCoinCard = (coin: Coin) => {
+  const renderCoinCard = (coin: Coin, layout: string = 'grid') => {
     const isCollected = collectedIds.includes(coin.id);
     const isSelected = selectedCoinIds.has(coin.id);
+
+    // Layout specific styles
+    let cardClasses = `group relative bg-white dark:bg-gray-900 rounded-premium premium-shadow hover:premium-shadow-hover border-2 transition-all cursor-pointer overflow-hidden ${
+      isSelected ? 'border-amber-500 ring-4 ring-amber-500/20' : 
+      isCollected ? 'border-amber-500/50 bg-amber-50/30 dark:bg-amber-900/10' : 'border-transparent'
+    }`;
+    
+    let contentClasses = "flex items-center h-full";
+    let imageContainerClasses = "relative flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden";
+    let infoClasses = "flex-1 min-w-0";
+    
+    if (layout === 'grid') {
+      cardClasses += ` h-[120px] sm:h-[140px] ${userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'p-3' : 'p-4 sm:p-5'}`;
+      contentClasses += ` ${getResponsiveClass('gap-4 sm:gap-6', 'gap-3', 'gap-4', 'gap-6')}`;
+      imageContainerClasses += ` ${userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'w-14 h-14 sm:w-16 sm:h-16' : 'w-16 h-16 sm:w-20 sm:h-20'}`;
+    } else if (layout === 'list') {
+      cardClasses += " h-auto py-3 px-4";
+      contentClasses += " gap-4";
+      imageContainerClasses += " w-12 h-12";
+    } else if (layout === 'compact') {
+      cardClasses += " aspect-square p-2";
+      contentClasses += " flex-col gap-1 text-center justify-center";
+      imageContainerClasses += " w-10 h-10 sm:w-12 sm:h-12";
+      infoClasses = "w-full";
+    } else if (layout === 'gallery') {
+      cardClasses += " aspect-[4/5] p-0";
+      contentClasses += " flex-col";
+      imageContainerClasses += " w-full flex-1 rounded-none";
+      infoClasses = "p-3 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm";
+    } else if (layout === 'hexagon') {
+      cardClasses = cardClasses.replace('rounded-premium', '');
+      cardClasses += " hexagon bg-amber-500 text-white w-40 h-40 p-0";
+      contentClasses += " flex-col justify-center items-center p-4 text-center";
+      imageContainerClasses += " w-14 h-14 rounded-full mb-2";
+      infoClasses = "w-full";
+    } else if (layout === 'spotlight') {
+      cardClasses += " h-[200px] sm:h-[240px] p-6";
+      contentClasses += " gap-8";
+      imageContainerClasses += " w-32 h-32 sm:w-40 sm:h-40";
+    } else if (layout === 'carousel') {
+      cardClasses += " h-[160px] p-4";
+      contentClasses += " gap-4";
+      imageContainerClasses += " w-24 h-24";
+    } else {
+      cardClasses += ` h-[120px] sm:h-[140px] ${userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'p-3' : 'p-4 sm:p-5'}`;
+      contentClasses += " gap-4";
+      imageContainerClasses += " w-16 h-16 sm:w-20 sm:h-20";
+    }
 
     return (
       <motion.div
@@ -1793,14 +1863,7 @@ function CoinCollectorApp() {
         onMouseLeave={endLongPress}
         onTouchStart={() => startLongPress(coin.id)}
         onTouchEnd={endLongPress}
-        className={`group relative bg-white dark:bg-gray-900 rounded-premium premium-shadow hover:premium-shadow-hover border-2 transition-all cursor-pointer h-[120px] sm:h-[140px] overflow-hidden ${
-          isSelected ? 'border-amber-500 ring-4 ring-amber-500/20' : 
-          isCollected ? 'border-amber-500/50 bg-amber-50/30 dark:bg-amber-900/10' : 'border-transparent'
-        } ${
-          userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'p-3' : 'p-4 sm:p-5'
-        } ${
-          userProfile.settings?.isTextMode ? 'border-gray-100 dark:border-gray-800' : ''
-        }`}
+        className={cardClasses}
       >
         {isMultiSelectMode && (
           <div className="absolute top-3 right-3 z-20">
@@ -1811,11 +1874,9 @@ function CoinCollectorApp() {
             </div>
           </div>
         )}
-        <div className={`flex items-center ${getResponsiveClass('gap-4 sm:gap-6', 'gap-3', 'gap-4', 'gap-6')}`}>
-          {!userProfile.settings?.isTextMode && (
-            <div className={`relative flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden ${
-              userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'w-14 h-14 sm:w-16 sm:h-16' : 'w-16 h-16 sm:w-20 sm:h-20'
-            }`}>
+        <div className={contentClasses}>
+          {!userProfile.settings?.isTextMode && layout !== 'compact' && layout !== 'hexagon' && (
+            <div className={imageContainerClasses}>
               <img 
                 src={coin.imageUrl} 
                 alt={coin.name}
@@ -1833,7 +1894,7 @@ function CoinCollectorApp() {
                   <CheckCircle2 size={14} className={getResponsiveClass('sm:w-4 sm:h-4', 'w-3 h-3', 'w-4 h-4', 'w-5 h-5')} />
                 </div>
               )}
-              {coin.rarity && coin.rarity !== 'Common' && (
+              {coin.rarity && coin.rarity !== 'Common' && layout !== 'list' && (
                 <div className={`absolute -bottom-1.5 -left-1.5 px-2.5 py-1 rounded-lg font-black uppercase tracking-widest shadow-md z-10 ${
                   coin.rarity === 'Ultra Rare' ? 'bg-purple-500 text-white' : 
                   coin.rarity === 'Rare' ? 'bg-amber-500 text-white' : 
@@ -1844,56 +1905,175 @@ function CoinCollectorApp() {
               )}
             </div>
           )}
+
+          {(layout === 'compact' || layout === 'hexagon') && (
+             <div className={imageContainerClasses}>
+                <img 
+                  src={coin.imageUrl} 
+                  alt={coin.name}
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  onError={handleImageError}
+                  className={`w-full h-full object-cover ${!isCollected && 'grayscale opacity-50'}`}
+                />
+             </div>
+          )}
           
-          <div className="flex-1 min-w-0">
-            <div className={`flex items-center justify-between ${getResponsiveClass('mb-1', 'mb-0.5', 'mb-1', 'mb-1.5')}`}>
+          <div className={infoClasses}>
+            <div className={`flex items-center justify-between ${layout === 'compact' || layout === 'hexagon' ? 'hidden' : getResponsiveClass('mb-1', 'mb-0.5', 'mb-1', 'mb-1.5')}`}>
               <div className="flex items-center gap-2">
                 {userProfile.settings?.isTextMode && isCollected && <CheckCircle2 size={14} className="text-amber-500" />}
                 <span className={`font-black text-amber-600 uppercase tracking-widest ${getResponsiveClass('text-[10px] sm:text-xs', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>
                   {coin.denomination} • {coin.year}
                 </span>
-                {userProfile.settings?.isTextMode && coin.rarity && coin.rarity !== 'Common' && (
-                  <span className={`font-black uppercase tracking-widest ${
-                    coin.rarity === 'Ultra Rare' ? 'text-purple-500' : 
-                    coin.rarity === 'Rare' ? 'text-amber-500' : 
-                    'text-blue-500'
-                  } ${getResponsiveClass('text-[8px]', 'text-[6px]', 'text-[8px]', 'text-[10px]')}`}>
-                    [{coin.rarity}]
-                  </span>
-                )}
               </div>
-              {userProfile.settings?.showCoinPrice && coin.value && (
+              {userProfile.settings?.showCoinPrice && coin.value && layout !== 'carousel' && (
                 <div className={`bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg font-black shadow-sm ${getResponsiveClass('px-2.5 py-1 text-[10px] sm:text-xs', 'px-1.5 py-0.5 text-[8px]', 'px-2.5 py-1 text-[10px]', 'px-3 py-1.5 text-xs')}`}>
                   £{coin.value.toFixed(2)}
                 </div>
               )}
             </div>
             <h3 className={`font-display font-bold text-gray-900 dark:text-white truncate tracking-tight ${
+              layout === 'compact' || layout === 'hexagon' ? 'text-[10px] uppercase tracking-widest' :
               userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'text-lg' : 'text-xl sm:text-2xl'
             }`}>{coin.name}</h3>
-            {!userProfile.settings?.isTextMode && (
+            {!userProfile.settings?.isTextMode && layout !== 'compact' && layout !== 'hexagon' && (
               <p className={`text-gray-500 dark:text-gray-400 line-clamp-2 font-medium ${
                 userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'
               }`}>{coin.description}</p>
             )}
           </div>
 
-          <button
-            onClick={(e) => toggleCollected(coin.id, e)}
-            className={`rounded-2xl transition-all active:scale-90 ${
-              isCollected 
-                ? 'bg-amber-500 text-white shadow-lg shadow-amber-200 dark:shadow-none' 
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            } ${
-              userProfile.settings?.isCompactUI ? 'p-3' : 'p-4'
-            }`}
-            aria-label={isCollected ? "Mark as missing" : "Mark as collected"}
-          >
-            {isCollected ? <CheckCircle2 size={24} /> : <Circle size={24} />}
-          </button>
+          {layout !== 'compact' && layout !== 'hexagon' && layout !== 'gallery' && (
+            <button
+              onClick={(e) => toggleCollected(coin.id, e)}
+              className={`rounded-2xl transition-all active:scale-90 ${
+                isCollected 
+                  ? 'bg-amber-500 text-white shadow-lg shadow-amber-200 dark:shadow-none' 
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              } ${
+                userProfile.settings?.isCompactUI ? 'p-3' : 'p-4'
+              }`}
+              aria-label={isCollected ? "Mark as missing" : "Mark as collected"}
+            >
+              {isCollected ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+            </button>
+          )}
         </div>
       </motion.div>
     );
+  };
+
+  const renderCoinList = (coins: Coin[]) => {
+    const layout = userProfile.settings.layout || 'grid';
+    
+    switch (layout) {
+      case 'list':
+        return (
+          <div className="flex flex-col gap-3">
+            {coins.map(coin => renderCoinCard(coin, 'list'))}
+          </div>
+        );
+      case 'carousel':
+        return (
+          <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar snap-x px-2">
+            {coins.map(coin => (
+              <div key={coin.id} className="flex-shrink-0 w-[300px] snap-center">
+                {renderCoinCard(coin, 'carousel')}
+              </div>
+            ))}
+          </div>
+        );
+      case 'masonry':
+        return (
+          <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+            {coins.map(coin => (
+              <div key={coin.id} className="break-inside-avoid">
+                {renderCoinCard(coin, 'masonry')}
+              </div>
+            ))}
+          </div>
+        );
+      case 'board':
+        const rarityGroups = ['Common', 'Uncommon', 'Rare', 'Ultra Rare'].map(rarity => ({
+          title: rarity,
+          coins: coins.filter(c => c.rarity === rarity || (!c.rarity && rarity === 'Common'))
+        }));
+        return (
+          <div className="flex gap-6 overflow-x-auto pb-6 no-scrollbar min-h-[400px]">
+            {rarityGroups.map(group => (
+              <div key={group.title} className="flex-shrink-0 w-[300px] bg-gray-100/50 dark:bg-gray-800/50 rounded-3xl p-4 flex flex-col gap-4">
+                <div className="flex items-center justify-between px-2">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-gray-500">{group.title}</h4>
+                  <span className="bg-white dark:bg-gray-700 px-2 py-0.5 rounded-lg text-[10px] font-bold">{group.coins.length}</span>
+                </div>
+                <div className="flex flex-col gap-3 overflow-y-auto no-scrollbar flex-1">
+                  {group.coins.map(coin => renderCoinCard(coin, 'board'))}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      case 'timeline':
+        return (
+          <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-amber-200 before:to-transparent">
+            {coins.sort((a, b) => (a.year || 0) - (b.year || 0)).map((coin, idx) => (
+              <div key={coin.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white dark:border-gray-900 bg-amber-500 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                  <span className="text-[10px] font-bold">{coin.year}</span>
+                </div>
+                <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-3xl bg-white dark:bg-gray-900 shadow-sm border border-gray-100 dark:border-gray-800">
+                  {renderCoinCard(coin, 'timeline')}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      case 'gallery':
+        return (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {coins.map(coin => renderCoinCard(coin, 'gallery'))}
+          </div>
+        );
+      case 'spotlight':
+        return (
+          <div className="flex flex-col gap-8 items-center py-8">
+            {coins.map(coin => (
+              <div key={coin.id} className="w-full max-w-lg transform transition-all hover:scale-[1.02]">
+                {renderCoinCard(coin, 'spotlight')}
+              </div>
+            ))}
+          </div>
+        );
+      case 'compact':
+        return (
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+            {coins.map(coin => renderCoinCard(coin, 'compact'))}
+          </div>
+        );
+      case 'split':
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {coins.map(coin => renderCoinCard(coin, 'split'))}
+          </div>
+        );
+      case 'hexagon':
+        return (
+          <div className="flex flex-wrap justify-center gap-4 py-8">
+            {coins.map(coin => (
+              <div key={coin.id} className="w-40 h-40">
+                {renderCoinCard(coin, 'hexagon')}
+              </div>
+            ))}
+          </div>
+        );
+      default:
+        return (
+          <div className={`grid ${getResponsiveClass('grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4', 'grid-cols-1 gap-2', 'grid-cols-1 sm:grid-cols-2 gap-4', 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6')}`}>
+            {coins.map(coin => renderCoinCard(coin))}
+          </div>
+        );
+    }
   };
 
   const renderCoinTableRow = (coin: Coin) => {
@@ -2157,6 +2337,16 @@ function CoinCollectorApp() {
       setUserProfile(prev => ({ ...prev, rank: newRank }));
     }
   }, [progress, userProfile.rank]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isLayoutMenuOpen) {
+        setIsLayoutMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isLayoutMenuOpen]);
 
   const toggleCollected = (id: string, e: React.MouseEvent, isDuplicate: boolean = false) => {
     e.stopPropagation();
@@ -3405,6 +3595,55 @@ function CoinCollectorApp() {
               <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Level {userProfile.level}</span>
               <span className="text-sm font-black text-gray-900 dark:text-white">{userProfile.points.toLocaleString()} pts</span>
             </div>
+            
+            {userProfile.settings.showLayoutSwitcher && (
+              <div className="relative">
+                <button 
+                  onClick={() => setIsLayoutMenuOpen(!isLayoutMenuOpen)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors active:scale-90 flex items-center gap-1"
+                  title="Change Layout"
+                >
+                  {LAYOUT_OPTIONS.find(l => l.id === (userProfile.settings.layout || 'grid'))?.icon || <LayoutGrid size={22} />}
+                  <ChevronDown size={14} className={`transition-transform duration-200 ${isLayoutMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                <AnimatePresence>
+                  {isLayoutMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-[110]"
+                    >
+                      <div className="p-2 space-y-1">
+                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest p-2">Switch Layout</p>
+                        {LAYOUT_OPTIONS.map(layout => (
+                          <button
+                            key={layout.id}
+                            onClick={() => {
+                              setUserProfile(prev => ({
+                                ...prev,
+                                settings: { ...prev.settings, layout: layout.id as any }
+                              }));
+                              setIsLayoutMenuOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${
+                              (userProfile.settings.layout || 'grid') === layout.id 
+                                ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600' 
+                                : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
+                            }`}
+                          >
+                            {layout.icon}
+                            <span className="text-[10px] font-bold uppercase tracking-widest">{layout.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
             <button 
               onClick={() => setIsProfileOpen(true)}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors active:scale-90"
@@ -3820,9 +4059,7 @@ function CoinCollectorApp() {
                                     <div className="w-1 h-1 rounded-full bg-amber-500" />
                                     {subGroup.title}
                                   </h3>
-                                  <div className={`grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
-                                    {subGroup.coins.map(renderCoinCard)}
-                                  </div>
+                                  {renderCoinList(subGroup.coins)}
                                 </div>
                               ))}
                             </div>
@@ -3843,9 +4080,7 @@ function CoinCollectorApp() {
                                 </table>
                               </div>
                             ) : (
-                              <div className={`grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
-                                {group.coins.map(renderCoinCard)}
-                              </div>
+                              renderCoinList(group.coins)
                             )
                           )}
                         </motion.div>
@@ -3869,9 +4104,7 @@ function CoinCollectorApp() {
                       </table>
                     </div>
                   ) : (
-                    <div className={`grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
-                      {filteredCoins.map(renderCoinCard)}
-                    </div>
+                    renderCoinList(filteredCoins)
                   )
                 )}
               </div>
@@ -4723,6 +4956,24 @@ function CoinCollectorApp() {
                           className={`w-10 h-5 rounded-full transition-all relative active:scale-90 ${userProfile.settings?.isCompactUI ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                         >
                           <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isCompactUI ? 'right-0.5' : 'left-0.5'}`} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+                            <LayoutGrid size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-gray-900 dark:text-white">Layout Switcher</p>
+                            <p className="text-[10px] text-gray-500">Show switcher in header</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, showLayoutSwitcher: !prev.settings.showLayoutSwitcher } }))}
+                          className={`w-10 h-5 rounded-full transition-all relative active:scale-90 ${userProfile.settings?.showLayoutSwitcher ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showLayoutSwitcher ? 'right-0.5' : 'left-0.5'}`} />
                         </button>
                       </div>
 
