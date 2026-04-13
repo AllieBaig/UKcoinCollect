@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
-  Trophy, Search, Folder, ChevronRight, CheckCircle2, Circle, 
+  Trophy, Search, ChevronRight, CheckCircle2, Circle, 
   ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
   User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle, TrendingUp, Trash2, Shield, Copy, Edit,
   Monitor, Smartphone, Database, Settings2, ShieldAlert, FlaskConical,
   Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle, ShoppingCart, Tag, Table, History, Moon, HelpCircle, ArrowRight, Star, ChevronDown,
-  Wind,
+  Wind, ShoppingBag, Tags,
   LayoutGrid, List, Columns, Kanban, ImageIcon, Focus, Minimize2, Hexagon, ArrowLeftRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -1022,7 +1022,6 @@ function CoinCollectorApp() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'collected' | 'missing'>('all');
   const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null);
-  const [activeDenomination, setActiveDenomination] = useState<string | null>(null);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   
   // Request Form State
@@ -1978,9 +1977,14 @@ function CoinCollectorApp() {
             <div className={`flex items-center justify-between ${layout === 'compact' || layout === 'hexagon' ? 'hidden' : getResponsiveClass('mb-1', 'mb-0.5', 'mb-1', 'mb-1.5')}`}>
               <div className="flex items-center gap-2">
                 {userProfile.settings?.isTextMode && isCollected && <CheckCircle2 size={14} className="text-amber-500" />}
-                <span className={`font-black text-amber-600 uppercase tracking-widest ${getResponsiveClass('text-[10px] sm:text-xs', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>
-                  {coin.denomination} • {coin.year}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className={`px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-md font-black uppercase tracking-widest ${getResponsiveClass('text-[8px] sm:text-[10px]', 'text-[6px]', 'text-[8px]', 'text-[10px]')}`}>
+                    {coin.denomination}
+                  </span>
+                  <span className={`font-black text-gray-400 uppercase tracking-widest ${getResponsiveClass('text-[10px] sm:text-xs', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>
+                    {coin.year}
+                  </span>
+                </div>
               </div>
               {userProfile.settings?.showCoinPrice && coin.value && layout !== 'carousel' && (
                 <div className={`bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg font-black shadow-sm ${getResponsiveClass('px-2.5 py-1 text-[10px] sm:text-xs', 'px-1.5 py-0.5 text-[8px]', 'px-2.5 py-1 text-[10px]', 'px-3 py-1.5 text-xs')}`}>
@@ -2446,17 +2450,12 @@ function CoinCollectorApp() {
           return up;
         });
 
-        // Navigate to folder if not already in one
-        if (!activeDenomination && coin) {
-          setActiveDenomination(coin.denomination);
-        }
-
-        // Folder Completion Check
+        // Set Completion Check
         if (coin) {
           const coinsInDenom = EUROPEAN_COINS.filter(c => c.denomination === coin.denomination);
           const collectedInDenom = coinsInDenom.filter(c => [...prev, id].includes(c.id)).length;
           if (collectedInDenom === coinsInDenom.length) {
-            addPoints(POINT_VALUES.COMPLETE_FOLDER, `${coin.denomination} Folder Complete!`);
+            addPoints(POINT_VALUES.COMPLETE_FOLDER, `${coin.denomination} Set Complete!`);
             setUserProfile(up => {
               const newBadges = [...up.badges];
               const badgeName = `${coin.denomination} Master`;
@@ -2631,17 +2630,6 @@ function CoinCollectorApp() {
                            (filter === 'missing' && !collectedIds.includes(coin.id));
       
       let matchesDenom = true;
-      if (activeDenomination) {
-        if (activeDenomination === 'Purchased') {
-          const purchasedIds = purchasedCoins.map(p => p.coinId);
-          matchesDenom = purchasedIds.includes(coin.id);
-        } else if (userProfile.settings.isGrouped && userProfile.settings.groupBy === 'country') {
-          // Check if it's a country or a denomination (fallback)
-          matchesDenom = coin.country === activeDenomination || coin.denomination === activeDenomination;
-        } else {
-          matchesDenom = coin.denomination === activeDenomination;
-        }
-      }
       
       const matchesEra = userProfile.settings.eraFilter === 'Both' || 
                          coin.type === userProfile.settings.eraFilter;
@@ -2694,7 +2682,7 @@ function CoinCollectorApp() {
         return a.name.localeCompare(b.name);
       }
     });
-  }, [searchQuery, filter, collectedIds, activeDenomination, allCoins, purchasedCoins, userProfile.settings?.sortBy, userProfile.settings?.eraFilter, userProfile.settings?.showOldEuropeanCoins, lastOpenedIds, collectionHistory]);
+  }, [searchQuery, filter, collectedIds, allCoins, purchasedCoins, userProfile.settings?.sortBy, userProfile.settings?.eraFilter, userProfile.settings?.showOldEuropeanCoins, lastOpenedIds, collectionHistory]);
   
   const groupedCoins = useMemo(() => {
     if (!userProfile.settings.isGrouped) return null;
@@ -3446,7 +3434,7 @@ function CoinCollectorApp() {
             <div className="space-y-3">
               {allCoins.filter(c => collectedIds.includes(c.id)).length === 0 ? (
                 <div className="text-center py-16 bg-white rounded-[2rem] border-2 border-dashed border-gray-100">
-                  <Folder size={48} className="mx-auto text-gray-200 mb-4" />
+                  <LayoutGrid size={48} className="mx-auto text-gray-200 mb-4" />
                   <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">No coins collected</p>
                 </div>
               ) : (
@@ -3617,22 +3605,10 @@ function CoinCollectorApp() {
       <header className={`fixed top-0 left-0 right-0 z-[100] bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 transition-all duration-300 pt-[env(safe-area-inset-top)] ${getResponsiveClass('p-4 sm:p-6', 'p-2', 'p-4', 'p-6')}`}>
         <div className={`max-w-2xl mx-auto flex items-center justify-between ${getResponsiveClass('gap-3 sm:gap-4', 'gap-1', 'gap-3', 'gap-4')}`}>
           <div className="flex items-center gap-3 sm:gap-4">
-            {(activeDenomination || activeDenomination === 'Wishlist') && (
-              <button 
-                onClick={() => {
-                  setActiveDenomination(null);
-                  setIsZoomed(false);
-                }}
-                className="p-2 -ml-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors active:scale-90"
-                aria-label="Back to folders"
-              >
-                <ArrowLeft size={22} className="sm:w-6 sm:h-6" />
-              </button>
-            )}
             <h1 className="text-xl sm:text-2xl font-display font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
               <Trophy className="text-amber-500 w-6 h-6 sm:w-7 sm:h-7" />
               <span className="truncate max-w-[140px] sm:max-w-none">
-                {activeDenomination ? activeDenomination : 'Coin Collector'}
+                Coin Collector
               </span>
             </h1>
           </div>
@@ -3769,7 +3745,6 @@ function CoinCollectorApp() {
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  if (e.target.value !== '') setActiveDenomination(null);
                 }}
               />
             </div>
@@ -3961,213 +3936,100 @@ function CoinCollectorApp() {
           </section>
 
           <AnimatePresence mode="popLayout">
-            {!activeDenomination ? (
-              /* Folder View */
-              <>
-                {(userProfile.settings.isGrouped && userProfile.settings.groupBy === 'country' 
-                  ? Array.from(new Set(allCoins.map(c => c.country))).sort()
-                  : denominations
-                )
-                  .map(denomOrCountry => {
-                    let coinsInGroup;
-                    let collectedInGroup;
-                    if (denomOrCountry === 'Purchased') {
-                      const purchasedIds = purchasedCoins.map(p => p.coinId);
-                      coinsInGroup = allCoins.filter(c => purchasedIds.includes(c.id));
-                      collectedInGroup = coinsInGroup.length;
-                    } else if (userProfile.settings.isGrouped && userProfile.settings.groupBy === 'country') {
-                      coinsInGroup = allCoins.filter(c => c.country === denomOrCountry);
-                      collectedInGroup = coinsInGroup.filter(c => collectedIds.includes(c.id)).length;
-                    } else {
-                      coinsInGroup = allCoins.filter(c => c.denomination === denomOrCountry);
-                      collectedInGroup = coinsInGroup.filter(c => collectedIds.includes(c.id)).length;
-                    }
-                    const progress = coinsInGroup.length > 0 ? Math.round((collectedInGroup / coinsInGroup.length) * 100) : 0;
-                    return { label: denomOrCountry, coinsInGroup, collectedInGroup, progress };
-                  })
-                  .sort((a, b) => b.progress - a.progress)
-                  .map(({ label, coinsInGroup, collectedInGroup, progress }) => (
-                    <motion.div
-                      key={label}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      onClick={() => setActiveDenomination(label)}
-                      className={`bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 hover:border-amber-500 dark:hover:border-amber-500 transition-all cursor-pointer flex items-center ${getResponsiveClass('p-5 sm:p-6 gap-4 sm:gap-6', 'p-3 gap-3', 'p-5 gap-4', 'p-6 gap-6')} ${
-                        userProfile.settings?.isTextMode ? 'border-gray-100 dark:border-gray-800' : ''
-                      }`}
+            <div className={`space-y-6 ${getResponsiveClass('mb-8', 'mb-4', 'mb-8', 'mb-12')}`}>
+              {userProfile.settings.isGrouped && groupedCoins ? (
+                groupedCoins.map((group) => (
+                  <div key={group.title} className="space-y-4">
+                    <div 
+                      onClick={() => {
+                        const next = new Set(collapsedGroups);
+                        if (next.has(group.title)) next.delete(group.title);
+                        else next.add(group.title);
+                        setCollapsedGroups(next);
+                      }}
+                      className="flex items-center gap-4 px-2 cursor-pointer group/header"
                     >
-                      {!userProfile.settings?.isTextMode && (
-                        <div className={`bg-amber-50 dark:bg-amber-900/10 text-amber-600 rounded-2xl flex items-center justify-center flex-shrink-0 ${getResponsiveClass('w-14 h-14 sm:w-16 sm:h-16', 'w-10 h-10', 'w-14 h-14', 'w-18 h-18')}`}>
-                          {userProfile.settings.isGrouped && userProfile.settings.groupBy === 'country' ? <Globe size={32} /> : <Folder size={32} fill="currentColor" fillOpacity={0.1} />}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h3 className={`font-black text-gray-900 dark:text-white tracking-tight ${getResponsiveClass('text-xl sm:text-2xl', 'text-lg', 'text-xl', 'text-2xl')}`}>{label} {userProfile.settings.isGrouped && userProfile.settings.groupBy === 'country' ? '' : 'Coins'}</h3>
-                        <div className={`flex items-center gap-3 ${getResponsiveClass('mt-2', 'mt-1', 'mt-2', 'mt-3')}`}>
-                          {!userProfile.settings?.isTextMode ? (
-                            <div className={`flex-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden ${getResponsiveClass('h-2', 'h-1.5', 'h-2', 'h-2.5')}`}>
-                              <div 
-                                className="h-full bg-amber-500 rounded-full" 
-                                style={{ width: `${progress}%` }}
-                              />
-                            </div>
-                          ) : (
-                            <span className={`font-black text-amber-600 uppercase tracking-widest ${getResponsiveClass('text-[10px] sm:text-xs', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>{progress}% Complete</span>
-                          )}
-                          <span className={`font-black text-gray-400 uppercase tracking-widest whitespace-nowrap ${getResponsiveClass('text-[10px] sm:text-xs', 'text-[8px]', 'text-[10px]', 'text-xs')}`}>{collectedInGroup} / {coinsInGroup.length}</span>
-                        </div>
-                      </div>
-                      <ChevronRight className={`text-gray-300 flex-shrink-0 ${getResponsiveClass('sm:w-7 sm:h-7', 'w-5 h-5', 'w-6 h-6', 'w-8 h-8')}`} size={24} />
-                    </motion.div>
-                  ))}
-
-                {/* Wishlist Folder */}
-                {requestedCoins.length > 0 && (
-                  <motion.div
-                    key="Wishlist"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    onClick={() => setActiveDenomination('Wishlist')}
-                    className={`bg-white dark:bg-gray-900 rounded-2xl shadow-sm border-2 border-dashed border-amber-300 dark:border-amber-900/50 hover:border-amber-500 transition-all cursor-pointer flex items-center ${getResponsiveClass('p-4 sm:p-5 gap-3 sm:gap-4', 'p-2 gap-2', 'p-4 gap-3', 'p-5 gap-4')}`}
-                  >
-                    <div className={`bg-amber-50 dark:bg-amber-900/10 text-amber-500 rounded-2xl flex items-center justify-center ${getResponsiveClass('w-12 h-12 sm:w-14 sm:h-14', 'w-10 h-10', 'w-12 h-12', 'w-14 h-14')}`}>
-                      <Folder size={28} className={getResponsiveClass('sm:w-8 sm:h-8', 'w-5 h-5', 'w-6 h-6', 'w-8 h-8')} fill="currentColor" fillOpacity={0.1} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className={`font-bold text-gray-900 dark:text-white italic ${getResponsiveClass('text-lg sm:text-xl', 'text-base', 'text-lg', 'text-xl')}`}>My Wishlist</h3>
-                      <p className={`text-gray-500 dark:text-gray-400 ${getResponsiveClass('text-xs sm:text-sm', 'text-[10px]', 'text-xs', 'text-sm')}`}>{requestedCoins.length} coins requested</p>
-                    </div>
-                    <ChevronRight className={`text-gray-300 flex-shrink-0 ${getResponsiveClass('sm:w-6 sm:h-6', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')}`} size={20} />
-                  </motion.div>
-                )}
-              </>
-            ) : activeDenomination === 'Wishlist' ? (
-              /* Wishlist View */
-              <div className={`space-y-4 ${getResponsiveClass('p-0', 'p-0', 'p-0', 'p-0')}`}>
-                <div className={`flex items-center justify-between ${getResponsiveClass('mb-2', 'mb-1', 'mb-2', 'mb-3')}`}>
-                  <p className={`text-gray-500 dark:text-gray-400 ${getResponsiveClass('text-sm', 'text-xs', 'text-sm', 'text-base')}`}>Coins you've requested for future updates:</p>
-                  <button 
-                    onClick={copyRequestsToClipboard}
-                    className={`flex items-center gap-2 text-amber-600 font-bold hover:underline ${getResponsiveClass('text-sm', 'text-xs', 'text-sm', 'text-base')}`}
-                  >
-                    <Clipboard size={16} className={getResponsiveClass('w-4 h-4', 'w-3 h-3', 'w-4 h-4', 'w-5 h-5')} /> Copy List
-                  </button>
-                </div>
-                {requestedCoins.map((req) => (
-                  <motion.div
-                    key={req.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center justify-between ${getResponsiveClass('p-4', 'p-2', 'p-4', 'p-6')}`}
-                  >
-                    <div>
-                      <h4 className={`font-bold text-gray-900 dark:text-white ${getResponsiveClass('text-lg', 'text-base', 'text-lg', 'text-xl')}`}>{req.denomination}</h4>
-                      <p className={`text-gray-500 dark:text-gray-400 ${getResponsiveClass('text-sm', 'text-xs', 'text-sm', 'text-base')}`}>Year: {req.year}</p>
-                    </div>
-                    <div className={`text-gray-400 dark:text-gray-500 ${getResponsiveClass('text-xs', 'text-[10px]', 'text-xs', 'text-sm')}`}>
-                      {new Date(req.timestamp).toLocaleDateString()}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              /* Coin List View */
-              <div className={`space-y-6 ${getResponsiveClass('mb-8', 'mb-4', 'mb-8', 'mb-12')}`}>
-                {userProfile.settings.isGrouped && groupedCoins ? (
-                  groupedCoins.map((group) => (
-                    <div key={group.title} className="space-y-4">
-                      <div 
-                        onClick={() => {
-                          const next = new Set(collapsedGroups);
-                          if (next.has(group.title)) next.delete(group.title);
-                          else next.add(group.title);
-                          setCollapsedGroups(next);
-                        }}
-                        className="flex items-center gap-4 px-2 cursor-pointer group/header"
-                      >
-                        <h2 className="text-sm font-black uppercase tracking-[0.2em] text-amber-600 dark:text-amber-500 whitespace-nowrap flex items-center gap-2">
-                          <motion.div
-                            animate={{ rotate: collapsedGroups.has(group.title) ? -90 : 0 }}
-                          >
-                            <ChevronDown size={14} />
-                          </motion.div>
-                          {group.title}
-                        </h2>
-                        <div className="h-px bg-amber-100 dark:bg-amber-900/30 flex-1" />
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                          {group.coins.length} Coins
-                        </span>
-                      </div>
-                      
-                      {!collapsedGroups.has(group.title) && (
+                      <h2 className="text-sm font-black uppercase tracking-[0.2em] text-amber-600 dark:text-amber-500 whitespace-nowrap flex items-center gap-2">
                         <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="overflow-hidden"
+                          animate={{ rotate: collapsedGroups.has(group.title) ? -90 : 0 }}
                         >
-                          {group.subGroups ? (
-                            <div className="space-y-6 pl-4 border-l-2 border-gray-100 dark:border-gray-800 ml-2 mt-2">
-                              {group.subGroups.map(subGroup => (
-                                <div key={subGroup.title} className="space-y-3">
-                                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-2">
-                                    <div className="w-1 h-1 rounded-full bg-amber-500" />
-                                    {subGroup.title}
-                                  </h3>
-                                  {renderCoinList(subGroup.coins)}
-                                </div>
-                              ))}
+                          <ChevronDown size={14} />
+                        </motion.div>
+                        {group.title}
+                      </h2>
+                      <div className="h-px bg-amber-100 dark:bg-amber-900/30 flex-1" />
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        {group.coins.length} Coins
+                      </span>
+                    </div>
+                    
+                    {!collapsedGroups.has(group.title) && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        {group.subGroups ? (
+                          <div className="space-y-6 pl-4 border-l-2 border-gray-100 dark:border-gray-800 ml-2 mt-2">
+                            {group.subGroups.map(subGroup => (
+                              <div key={subGroup.title} className="space-y-3">
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-2">
+                                  <div className="w-1 h-1 rounded-full bg-amber-500" />
+                                  {subGroup.title}
+                                </h3>
+                                {renderCoinList(subGroup.coins)}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          userProfile.settings?.isPurchaseMode ? (
+                            <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl`}>
+                              <table className="w-full text-left border-collapse">
+                                <thead>
+                                  <tr className="bg-black dark:bg-white text-white dark:text-black">
+                                    <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Coin</th>
+                                    <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Year</th>
+                                    <th className={`font-black uppercase tracking-widest text-center ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Status</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {group.coins.map(renderCoinTableRow)}
+                                </tbody>
+                              </table>
                             </div>
                           ) : (
-                            userProfile.settings?.isPurchaseMode ? (
-                              <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl`}>
-                                <table className="w-full text-left border-collapse">
-                                  <thead>
-                                    <tr className="bg-black dark:bg-white text-white dark:text-black">
-                                      <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Coin</th>
-                                      <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Year</th>
-                                      <th className={`font-black uppercase tracking-widest text-center ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Status</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {group.coins.map(renderCoinTableRow)}
-                                  </tbody>
-                                </table>
-                              </div>
-                            ) : (
-                              renderCoinList(group.coins)
-                            )
-                          )}
-                        </motion.div>
-                      )}
-                    </div>
-                  ))
+                            renderCoinList(group.coins)
+                          )
+                        )}
+                      </motion.div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                userProfile.settings?.isPurchaseMode ? (
+                  <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl`}>
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-black dark:bg-white text-white dark:text-black">
+                          <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Coin</th>
+                          <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Year</th>
+                          <th className={`font-black uppercase tracking-widest text-center ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredCoins.map(renderCoinTableRow)}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
-                  userProfile.settings?.isPurchaseMode ? (
-                    <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl`}>
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-black dark:bg-white text-white dark:text-black">
-                            <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Coin</th>
-                            <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Year</th>
-                            <th className={`font-black uppercase tracking-widest text-center ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredCoins.map(renderCoinTableRow)}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    renderCoinList(filteredCoins)
-                  )
-                )}
-              </div>
-            )}
+                  renderCoinList(filteredCoins)
+                )
+              )}
+            </div>
           </AnimatePresence>
 
-          {activeDenomination && filteredCoins.length === 0 && activeDenomination !== 'Wishlist' && (
+          {filteredCoins.length === 0 && (
             <div className="text-center py-12">
               <div className="text-gray-300 mb-4 flex justify-center">
                 <Search size={64} />
@@ -4929,7 +4791,7 @@ function CoinCollectorApp() {
                     onClick={() => setIsPurchasedAddOpen(true)}
                     className="p-4 bg-blue-500 text-white font-bold rounded-2xl hover:bg-blue-600 transition-all flex flex-col items-center justify-center gap-2 shadow-lg"
                   >
-                    <Folder size={24} />
+                    <ShoppingBag size={24} />
                     <span className="text-[10px] uppercase tracking-widest font-black">Purchased</span>
                   </button>
                   <button 
@@ -5785,7 +5647,7 @@ function CoinCollectorApp() {
               <div className={`border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50 ${getResponsiveClass('p-6', 'p-3', 'p-6', 'p-8')}`}>
                 <div className="flex items-center gap-3">
                   <div className={`bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 ${getResponsiveClass('w-10 h-10', 'w-8 h-8', 'w-10 h-10', 'w-12 h-12')}`}>
-                    <Folder size={20} className={getResponsiveClass('w-5 h-5', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
+                    <ShoppingBag size={20} className={getResponsiveClass('w-5 h-5', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
                   </div>
                   <div>
                     <h2 className={`font-black text-gray-900 dark:text-white ${getResponsiveClass('text-xl', 'text-lg', 'text-xl', 'text-2xl')}`}>Purchased Coins</h2>
@@ -5816,7 +5678,7 @@ function CoinCollectorApp() {
                 {purchasedCoins.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
-                      <Folder size={40} />
+                      <ShoppingBag size={40} />
                     </div>
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">No purchases logged</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Log your coin purchases when adding them manually.</p>
@@ -7386,8 +7248,8 @@ function CoinCollectorApp() {
                 <button
                   className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20 hover:scale-105 transition-all"
                 >
-                  <Folder size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Folder</span>
+                  <Tags size={16} />
+                  <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Tags</span>
                 </button>
                 
                 <div className="absolute bottom-full right-0 mb-2 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all translate-y-2 group-hover:translate-y-0">
@@ -7444,15 +7306,14 @@ function CoinCollectorApp() {
           >
             <button 
               onClick={() => {
-                setActiveDenomination(null);
                 setSearchQuery('');
               }}
-              className={`flex flex-col items-center transition-all active:scale-90 ${(!activeDenomination && !isTimelineOpen) ? 'text-amber-500' : 'text-gray-400'} ${getResponsiveClass('gap-1.5', 'gap-0.5', 'gap-1.5', 'gap-2')}`}
+              className={`flex flex-col items-center transition-all active:scale-90 ${!isTimelineOpen ? 'text-amber-500' : 'text-gray-400'} ${getResponsiveClass('gap-1.5', 'gap-0.5', 'gap-1.5', 'gap-2')}`}
             >
-              <div className={`rounded-xl transition-colors ${(!activeDenomination && !isTimelineOpen) ? 'bg-amber-50 dark:bg-amber-900/20' : ''} ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}>
-                <Folder size={22} className={getResponsiveClass('', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
+              <div className={`rounded-xl transition-colors ${!isTimelineOpen ? 'bg-amber-50 dark:bg-amber-900/20' : ''} ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}>
+                <LayoutGrid size={22} className={getResponsiveClass('', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
               </div>
-              <span className={`font-black uppercase tracking-[0.2em] ${getResponsiveClass('text-[9px]', 'text-[7px]', 'text-[9px]', 'text-[10px]')}`}>Home</span>
+              <span className={`font-black uppercase tracking-[0.2em] ${getResponsiveClass('text-[9px]', 'text-[7px]', 'text-[9px]', 'text-[10px]')}`}>Collection</span>
             </button>
             <button 
               onClick={() => setIsTimelineOpen(true)}
