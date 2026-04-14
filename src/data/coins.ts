@@ -11,6 +11,8 @@ export interface Coin {
   clue?: string;
   country: string;
   type: 'Modern' | 'Old';
+  mint?: string;
+  condition?: string;
 }
 
 export const EUROPEAN_COINS: Coin[] = [

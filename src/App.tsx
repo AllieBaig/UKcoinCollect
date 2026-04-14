@@ -98,9 +98,16 @@ interface UserProfile {
     fixedPrices?: Record<string, number>;
     showOldEuropeanCoins?: boolean;
     eraFilter?: 'Modern' | 'Old' | 'Both';
-    layout?: 'grid' | 'list' | 'carousel' | 'masonry' | 'board' | 'timeline' | 'gallery' | 'spotlight' | 'compact' | 'split' | 'hexagon';
+    layout?: 'grid' | 'list' | 'carousel' | 'masonry' | 'board' | 'timeline' | 'gallery' | 'spotlight' | 'compact' | 'split' | 'hexagon' | 'table' | 'text-card' | 'text-list' | 'text-compact';
     showLayoutSwitcher?: boolean;
     isAmbientMotionEnabled?: boolean;
+    enabledLayouts?: Record<string, boolean>;
+    visibleFields?: {
+      denomination: boolean;
+      year: boolean;
+      mint: boolean;
+      condition: boolean;
+    };
   };
   safeModeBackup?: string;
 }
@@ -209,6 +216,7 @@ const BADGES = [
 const LAYOUT_OPTIONS = [
   { id: 'grid', label: 'Grid', icon: <LayoutGrid size={16} /> },
   { id: 'list', label: 'List', icon: <List size={16} /> },
+  { id: 'table', label: 'Table', icon: <Table size={16} /> },
   { id: 'carousel', label: 'Carousel', icon: <ArrowLeftRight size={16} /> },
   { id: 'masonry', label: 'Masonry', icon: <Columns size={16} /> },
   { id: 'board', label: 'Board', icon: <Kanban size={16} /> },
@@ -218,6 +226,20 @@ const LAYOUT_OPTIONS = [
   { id: 'compact', label: 'Compact', icon: <Minimize2 size={16} /> },
   { id: 'split', label: 'Split', icon: <Columns size={16} /> },
   { id: 'hexagon', label: 'Hexagon', icon: <Hexagon size={16} /> },
+  { id: 'text-card', label: 'Card', icon: <LayoutGrid size={16} /> },
+  { id: 'text-list', label: 'List', icon: <List size={16} /> },
+  { id: 'text-compact', label: 'Compact', icon: <Minimize2 size={16} /> },
+];
+
+const LAYOUT_GROUPS = [
+  {
+    name: 'Visual Modes',
+    options: ['grid', 'carousel', 'masonry', 'board', 'timeline', 'gallery', 'spotlight', 'split', 'hexagon', 'list', 'compact']
+  },
+  {
+    name: 'Text Modes',
+    options: ['text-card', 'table', 'text-list', 'text-compact']
+  }
 ];
 
 const ERAS: Era[] = [
@@ -864,7 +886,27 @@ function CoinCollectorApp() {
           fixedPrices: {},
           showOldEuropeanCoins: true,
           eraFilter: 'Both',
-          isAmbientMotionEnabled: true
+          isAmbientMotionEnabled: true,
+          enabledLayouts: {
+            grid: true,
+            list: true,
+            table: true,
+            compact: true,
+            carousel: true,
+            masonry: true,
+            board: true,
+            timeline: true,
+            gallery: true,
+            spotlight: true,
+            split: true,
+            hexagon: true
+          },
+          visibleFields: {
+            denomination: true,
+            year: true,
+            mint: true,
+            condition: true
+          }
         },
         dnaScore: 0,
         unlockedClues: [],
@@ -2023,10 +2065,120 @@ function CoinCollectorApp() {
     );
   };
 
+  const renderTextCard = (coin: Coin) => {
+    const isCollected = collectedIds.includes(coin.id);
+    const fields = userProfile.settings.visibleFields || { denomination: true, year: true, mint: true, condition: true };
+    
+    return (
+      <motion.div 
+        key={coin.id}
+        layout
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        onClick={() => handleCoinClick(coin)}
+        className="p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+      >
+        <div className="flex justify-between items-start mb-2">
+          <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-amber-500 transition-colors truncate pr-2">{coin.name}</h3>
+          {isCollected && <CheckCircle2 size={16} className="text-amber-500 shrink-0" />}
+        </div>
+        <div className="flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
+          {fields.denomination && <span className="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-md">{coin.denomination}</span>}
+          {fields.year && <span>{coin.year}</span>}
+          {fields.mint && coin.mint && <span>{coin.mint}</span>}
+          {fields.condition && coin.condition && <span className="text-blue-500 dark:text-blue-400">{coin.condition}</span>}
+        </div>
+      </motion.div>
+    );
+  };
+
+  const renderTextTable = (coins: Coin[]) => {
+    const fields = userProfile.settings.visibleFields || { denomination: true, year: true, mint: true, condition: true };
+    
+    return (
+      <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-x-auto shadow-sm">
+        <table className="w-full text-left border-collapse min-w-[600px]">
+          <thead>
+            <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+              <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Name</th>
+              {fields.year && <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Year</th>}
+              {fields.mint && <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Mint</th>}
+              <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Value</th>
+              {fields.condition && <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Condition</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {coins.map(coin => (
+              <tr 
+                key={coin.id} 
+                onClick={() => handleCoinClick(coin)}
+                className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer"
+              >
+                <td className="p-4 font-bold text-sm text-gray-900 dark:text-white">{coin.name}</td>
+                {fields.year && <td className="p-4 text-xs text-gray-500">{coin.year}</td>}
+                {fields.mint && <td className="p-4 text-xs text-gray-500">{coin.mint || '-'}</td>}
+                <td className="p-4 text-xs font-black text-green-600">£{coin.value?.toFixed(2) || '0.00'}</td>
+                {fields.condition && <td className="p-4 text-xs text-blue-500 font-bold">{coin.condition || '-'}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const renderTextList = (coins: Coin[]) => {
+    return (
+      <div className="space-y-2">
+        {coins.map(coin => (
+          <div 
+            key={coin.id}
+            onClick={() => handleCoinClick(coin)}
+            className="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer group"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            <span className="font-bold text-gray-900 dark:text-white group-hover:text-amber-500 transition-colors truncate">{coin.name}</span>
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-auto shrink-0">{coin.year} • {coin.denomination}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderTextCompact = (coins: Coin[]) => {
+    return (
+      <div className="flex flex-wrap gap-2">
+        {coins.map(coin => (
+          <div 
+            key={coin.id}
+            onClick={() => handleCoinClick(coin)}
+            className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-full transition-all cursor-pointer group"
+          >
+            <span className="text-[10px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-amber-600 transition-colors">
+              {coin.name} <span className="text-gray-400 font-medium">({coin.year})</span> <span className="text-amber-500 ml-1">{coin.rarity}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const renderCoinList = (coins: Coin[]) => {
     const layout = userProfile.settings.layout || 'grid';
     
     switch (layout) {
+      case 'text-card':
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {coins.map(coin => renderTextCard(coin))}
+          </div>
+        );
+      case 'table':
+        return renderTextTable(coins);
+      case 'text-list':
+        return renderTextList(coins);
+      case 'text-compact':
+        return renderTextCompact(coins);
       case 'list':
         return (
           <div className="flex flex-col gap-3">
@@ -3645,29 +3797,39 @@ function CoinCollectorApp() {
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-[110]"
+                      className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-[110]"
                     >
-                      <div className="p-2 space-y-1">
-                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest p-2">Switch Layout</p>
-                        {LAYOUT_OPTIONS.map(layout => (
-                          <button
-                            key={layout.id}
-                            onClick={() => {
-                              setUserProfile(prev => ({
-                                ...prev,
-                                settings: { ...prev.settings, layout: layout.id as any }
-                              }));
-                              setIsLayoutMenuOpen(false);
-                            }}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${
-                              (userProfile.settings.layout || 'grid') === layout.id 
-                                ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600' 
-                                : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
-                            }`}
-                          >
-                            {layout.icon}
-                            <span className="text-[10px] font-bold uppercase tracking-widest">{layout.label}</span>
-                          </button>
+                      <div className="p-2 space-y-3 max-h-[70vh] overflow-y-auto no-scrollbar">
+                        {LAYOUT_GROUPS.map(group => (
+                          <div key={group.name} className="space-y-1">
+                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest px-2 pb-1">{group.name}</p>
+                            <div className="grid grid-cols-1 gap-1">
+                              {group.options.filter(id => userProfile.settings.enabledLayouts?.[id] !== false).map(id => {
+                                const layout = LAYOUT_OPTIONS.find(l => l.id === id);
+                                if (!layout) return null;
+                                return (
+                                  <button
+                                    key={layout.id}
+                                    onClick={() => {
+                                      setUserProfile(prev => ({
+                                        ...prev,
+                                        settings: { ...prev.settings, layout: layout.id as any }
+                                      }));
+                                      setIsLayoutMenuOpen(false);
+                                    }}
+                                    className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left ${
+                                      (userProfile.settings.layout || 'grid') === layout.id 
+                                        ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600' 
+                                        : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
+                                    }`}
+                                  >
+                                    <div className="shrink-0">{layout.icon}</div>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest">{layout.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
                         ))}
                       </div>
                     </motion.div>
@@ -4980,6 +5142,81 @@ function CoinCollectorApp() {
                           <option value="metal">Metal</option>
                           <option value="fabric">Fabric</option>
                         </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* View Modes Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-2">
+                      <LayoutGrid size={16} className="text-amber-500" />
+                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">View Modes</h4>
+                    </div>
+                    <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-4 space-y-6">
+                      
+                      {/* Layout Visibility Toggles */}
+                      <div className="space-y-3">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Enabled Layouts</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {LAYOUT_OPTIONS.map(opt => (
+                            <button
+                              key={opt.id}
+                              onClick={() => {
+                                const current = userProfile.settings.enabledLayouts || {};
+                                setUserProfile(prev => ({
+                                  ...prev,
+                                  settings: {
+                                    ...prev.settings,
+                                    enabledLayouts: {
+                                      ...current,
+                                      [opt.id]: current[opt.id] === false ? true : false
+                                    }
+                                  }
+                                }));
+                              }}
+                              className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${
+                                userProfile.settings.enabledLayouts?.[opt.id] !== false
+                                  ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-900/30 text-amber-700 dark:text-amber-400'
+                                  : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-400'
+                              }`}
+                            >
+                              {opt.icon}
+                              <span className="text-[10px] font-bold uppercase tracking-widest">{opt.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Visible Fields Toggles */}
+                      <div className="space-y-3">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Text Field Visibility</p>
+                        <div className="flex flex-wrap gap-2">
+                          {['denomination', 'year', 'mint', 'condition'].map(field => (
+                            <button
+                              key={field}
+                              onClick={() => {
+                                const current = userProfile.settings.visibleFields || { denomination: true, year: true, mint: true, condition: true };
+                                setUserProfile(prev => ({
+                                  ...prev,
+                                  settings: {
+                                    ...prev.settings,
+                                    visibleFields: {
+                                      ...current,
+                                      [field]: !current[field as keyof typeof current]
+                                    }
+                                  }
+                                }));
+                              }}
+                              className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${
+                                (userProfile.settings.visibleFields?.[field as keyof typeof userProfile.settings.visibleFields] ?? true)
+                                  ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-900/30 text-blue-600 dark:text-blue-400'
+                                  : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-400'
+                              }`}
+                            >
+                              {field}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
