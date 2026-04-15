@@ -1101,6 +1101,7 @@ function CoinCollectorApp() {
   const [expandedEvents, setExpandedEvents] = useState<Record<string, Record<number, boolean>>>({});
 
   const [isLayoutMenuOpen, setIsLayoutMenuOpen] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
   const [collectionHistory, setCollectionHistory] = useState<Record<string, string>>(() => {
     try {
       const saved = localStorage.getItem('collection_history');
@@ -1898,9 +1899,9 @@ function CoinCollectorApp() {
     const isSelected = selectedCoinIds.has(coin.id);
 
     // Layout specific styles
-    let cardClasses = `group relative bg-white dark:bg-gray-900 rounded-premium premium-shadow hover:premium-shadow-hover border-2 transition-all cursor-pointer overflow-hidden ${
-      isSelected ? 'border-amber-500 ring-4 ring-amber-500/20' : 
-      isCollected ? 'border-amber-500/50 bg-amber-50/30 dark:bg-amber-900/10' : 'border-transparent'
+    let cardClasses = `group relative bg-white dark:bg-gray-900 rounded-[2rem] transition-all cursor-pointer overflow-hidden border border-gray-100 dark:border-gray-800 ${
+      isSelected ? 'ring-4 ring-amber-500/20 border-amber-500' : 
+      isCollected ? 'bg-amber-50/10 dark:bg-amber-900/5' : ''
     }`;
     
     let contentClasses = "flex items-center h-full";
@@ -1908,9 +1909,9 @@ function CoinCollectorApp() {
     let infoClasses = "flex-1 min-w-0";
     
     if (layout === 'grid') {
-      cardClasses += ` h-[120px] sm:h-[140px] ${userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'p-3' : 'p-4 sm:p-5'}`;
-      contentClasses += ` ${getResponsiveClass('gap-4 sm:gap-6', 'gap-3', 'gap-4', 'gap-6')}`;
-      imageContainerClasses += ` ${userProfile.settings?.isCompactUI || uiDensity === 'compact' ? 'w-14 h-14 sm:w-16 sm:h-16' : 'w-16 h-16 sm:w-20 sm:h-20'}`;
+      cardClasses += ` h-[110px] sm:h-[130px] p-3 sm:p-4`;
+      contentClasses += ` gap-4 sm:gap-6`;
+      imageContainerClasses += ` w-16 h-16 sm:w-20 sm:h-20`;
     } else if (layout === 'list') {
       cardClasses += " h-auto py-3 px-4";
       contentClasses += " gap-4";
@@ -2280,7 +2281,7 @@ function CoinCollectorApp() {
         );
       default:
         return (
-          <div className={`grid ${getResponsiveClass('grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4', 'grid-cols-1 gap-2', 'grid-cols-1 sm:grid-cols-2 gap-4', 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6')}`}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {coins.map(coin => renderCoinCard(coin))}
           </div>
         );
@@ -2535,7 +2536,33 @@ function CoinCollectorApp() {
     localStorage.setItem('user_coin_values', JSON.stringify(userCoinValues));
   }, [userCoinValues]);
 
+  useEffect(() => {
+    const handleScroll = (e: any) => {
+      setScrollY(e.target.scrollTop);
+    };
+    const mainElement = document.querySelector('main');
+    mainElement?.addEventListener('scroll', handleScroll);
+    return () => mainElement?.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const progress = Math.round((collectedIds.length / allCoins.length) * 100);
+
+  const renderProgressBar = () => (
+    <div className="flex flex-col gap-1 w-full">
+      <div className="flex items-center justify-between px-1">
+        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Collection Progress</span>
+        <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">{progress}%</span>
+      </div>
+      <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+        <motion.div 
+          className="h-full bg-amber-500"
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 0.5 }}
+        />
+      </div>
+    </div>
+  );
 
   useEffect(() => {
     let newRank = 'Novice Hunter';
@@ -3609,9 +3636,27 @@ function CoinCollectorApp() {
     );
   }
 
+  const SegmentedControl = ({ options, value, onChange }: { options: string[], value: string, onChange: (val: any) => void }) => (
+    <div className="flex bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm p-1 rounded-xl w-full border border-gray-200/50 dark:border-gray-700/50">
+      {options.map(opt => (
+        <button
+          key={opt}
+          onClick={() => onChange(opt)}
+          className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all duration-200 ${
+            value === opt 
+              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/5' 
+              : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+          }`}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div 
-      className={`h-screen overflow-hidden bg-gray-50 dark:bg-gray-950 dark:text-white flex flex-col transition-colors duration-300 ${getResponsiveClass('', 'text-xs', 'text-sm', 'text-base')}`} 
+      className={`h-screen overflow-hidden bg-white dark:bg-gray-950 dark:text-white flex flex-col transition-colors duration-300 ${getResponsiveClass('', 'text-xs', 'text-sm', 'text-base')}`} 
       style={{ 
         ...themeStyles
       }}
@@ -3753,454 +3798,186 @@ function CoinCollectorApp() {
         )}
       </AnimatePresence>
 
-      {/* Header */}
-      <header className={`fixed top-0 left-0 right-0 z-[100] bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 transition-all duration-300 pt-[env(safe-area-inset-top)] ${getResponsiveClass('p-4 sm:p-6', 'p-2', 'p-4', 'p-6')}`}>
-        <div className={`max-w-2xl mx-auto flex items-center justify-between ${getResponsiveClass('gap-3 sm:gap-4', 'gap-1', 'gap-3', 'gap-4')}`}>
-          <div className="flex items-center gap-3 sm:gap-4">
-            <h1 className="text-xl sm:text-2xl font-display font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-              <Trophy className="text-amber-500 w-6 h-6 sm:w-7 sm:h-7" />
-              <span className="truncate max-w-[140px] sm:max-w-none">
-                Coin Collector
-              </span>
+       {/* Sticky Header (Appears on scroll) */}
+      <header className={`fixed top-0 left-0 right-0 z-[100] bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl border-b border-gray-100 dark:border-gray-800 transition-all duration-300 pt-[env(safe-area-inset-top)] ${
+        scrollY > 60 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
+      }`}>
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Trophy className="text-amber-500 w-5 h-5" />
+            <h1 className="text-sm font-bold text-gray-900 dark:text-white tracking-tight">
+              Coin Collector
             </h1>
           </div>
-            <div className="flex gap-2 sm:gap-3 items-center">
-            {isNightBonus && userProfile.settings.isNightBonusActive && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex items-center gap-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded-full"
-              >
-                <Moon size={12} className="fill-current" />
-                <span className="text-[8px] font-black uppercase tracking-widest">Night Bonus</span>
-              </motion.div>
-            )}
-            <div className="hidden md:flex flex-col items-end mr-2">
-              <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Level {userProfile.level}</span>
-              <span className="text-sm font-black text-gray-900 dark:text-white">{userProfile.points.toLocaleString()} pts</span>
-            </div>
-            
+          <div className="flex items-center gap-2">
             {userProfile.settings.showLayoutSwitcher && (
-              <div className="relative">
-                <button 
-                  onClick={() => setIsLayoutMenuOpen(!isLayoutMenuOpen)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors active:scale-90 flex items-center gap-1"
-                  title="Change Layout"
-                >
-                  {LAYOUT_OPTIONS.find(l => l.id === (userProfile.settings.layout || 'grid'))?.icon || <LayoutGrid size={22} />}
-                  <ChevronDown size={14} className={`transition-transform duration-200 ${isLayoutMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-                
-                <AnimatePresence>
-                  {isLayoutMenuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-[110]"
-                    >
-                      <div className="p-2 space-y-3 max-h-[70vh] overflow-y-auto no-scrollbar">
-                        {LAYOUT_GROUPS.map(group => (
-                          <div key={group.name} className="space-y-1">
-                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest px-2 pb-1">{group.name}</p>
-                            <div className="grid grid-cols-1 gap-1">
-                              {group.options.filter(id => userProfile.settings.enabledLayouts?.[id] !== false).map(id => {
-                                const layout = LAYOUT_OPTIONS.find(l => l.id === id);
-                                if (!layout) return null;
-                                return (
-                                  <button
-                                    key={layout.id}
-                                    onClick={() => {
-                                      setUserProfile(prev => ({
-                                        ...prev,
-                                        settings: { ...prev.settings, layout: layout.id as any }
-                                      }));
-                                      setIsLayoutMenuOpen(false);
-                                    }}
-                                    className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left ${
-                                      (userProfile.settings.layout || 'grid') === layout.id 
-                                        ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600' 
-                                        : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
-                                    }`}
-                                  >
-                                    <div className="shrink-0">{layout.icon}</div>
-                                    <span className="text-[10px] font-bold uppercase tracking-widest">{layout.label}</span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              <button 
+                onClick={() => setIsLayoutMenuOpen(!isLayoutMenuOpen)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+              >
+                {LAYOUT_OPTIONS.find(l => l.id === (userProfile.settings.layout || 'grid'))?.icon || <LayoutGrid size={18} />}
+              </button>
             )}
-
             <button 
               onClick={() => setIsProfileOpen(true)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors active:scale-90"
-              title="View Profile"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
             >
-              <User size={22} className="text-gray-700 dark:text-gray-300 sm:w-6 sm:h-6" />
-            </button>
-            <button 
-              onClick={() => {
-                if (isOffline) {
-                  alert("Scanning requires an internet connection for AI analysis. Please try again when online.");
-                  return;
-                }
-                fileInputRef.current?.click();
-              }}
-              className={`bg-amber-500 text-white rounded-full shadow-lg shadow-amber-200 dark:shadow-none hover:bg-amber-600 transition-all flex items-center gap-2 active:scale-95 ${getResponsiveClass('p-2 px-4 sm:p-2 sm:px-4', 'p-1.5 px-3', 'p-2 px-4', 'p-2.5 px-5')} ${isOffline ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-              title="Take a photo of a coin"
-            >
-              <Camera size={20} className={getResponsiveClass('sm:w-6 sm:h-6', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
-              <span className="hidden sm:inline font-black uppercase tracking-widest text-xs">Scan</span>
-            </button>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept="image/*" 
-              capture="environment"
-              onChange={handleFileSelect}
-            />
-            <button 
-              onClick={() => {
-                setIsAddingToCollection(false);
-                setIsRequestModalOpen(true);
-              }}
-              className={`bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-full shadow-lg hover:bg-black dark:hover:bg-white transition-all active:scale-90 ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}
-              title="Manual Request"
-            >
-              <Plus size={22} className={getResponsiveClass('sm:w-6 sm:h-6', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
+              <User size={18} />
             </button>
           </div>
         </div>
-        
-        {/* Progress Bar */}
-        {!userProfile.settings?.isFocusMode && (
-          <div className="max-w-2xl mx-auto mt-4 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-            <motion.div 
-              className="h-full bg-amber-500"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.5 }}
-            />
-          </div>
-        )}
       </header>
 
       {/* Main Content */}
-      <main className={`flex-1 overflow-y-auto no-scrollbar pt-[100px] sm:pt-[140px] pb-[100px] sm:pb-[140px] ${getResponsiveClass('', '', '', '')}`}>
-        {/* Search and Filters */}
-        <div className={`bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors ${getResponsiveClass('px-4 py-4', 'px-2 py-2', 'px-4 py-4', 'px-6 py-6')}`}>
-          <div className={`max-w-2xl mx-auto ${getResponsiveClass('space-y-4', 'space-y-2', 'space-y-4', 'space-y-6')}`}>
-            <div className="relative group">
-              <Search className={`absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-amber-500 transition-colors ${getResponsiveClass('', 'w-4 h-4 left-3', 'w-5 h-5 left-4', 'w-6 h-6 left-5')}`} size={20} />
-              <input 
-                type="text"
-                placeholder="Search all coins..."
-                className={`w-full bg-gray-50 dark:bg-gray-800 border-2 border-transparent rounded-[1.25rem] font-medium focus:bg-white dark:focus:bg-gray-900 focus:border-amber-500 outline-none transition-all shadow-sm ${getResponsiveClass('pl-12 pr-4 py-3 sm:py-4 text-base sm:text-lg', 'pl-10 pr-3 py-2 text-sm', 'pl-12 pr-4 py-3 text-base', 'pl-14 pr-5 py-4 text-lg')}`}
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                }}
-              />
+      <main className="flex-1 overflow-y-auto no-scrollbar pt-[env(safe-area-inset-top)]">
+        <div className="max-w-2xl mx-auto px-4 pt-12 pb-6 space-y-6">
+          <div className="flex items-end justify-between">
+            <motion.h1 
+              style={{ 
+                opacity: 1 - Math.min(scrollY / 100, 1),
+                y: scrollY * 0.2
+              }}
+              className="text-4xl font-display font-bold text-gray-900 dark:text-white tracking-tight"
+            >
+              Library
+            </motion.h1>
+            <div className="flex items-center gap-2 mb-1">
+              <button 
+                onClick={() => setIsLayoutMenuOpen(!isLayoutMenuOpen)}
+                className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-400"
+              >
+                <LayoutGrid size={20} />
+              </button>
+              <button 
+                onClick={() => setIsProfileOpen(true)}
+                className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-400"
+              >
+                <User size={20} />
+              </button>
             </div>
-            
-            <div className={`flex flex-col gap-3 ${getResponsiveClass('', 'gap-2', 'gap-3', 'gap-4')}`}>
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar flex-1">
-                  {(['all', 'collected', 'missing'] as const).map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => setFilter(f)}
-                      className={`rounded-full font-black uppercase tracking-widest whitespace-nowrap transition-all ${
-                        filter === f 
-                          ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-md' 
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                      } ${getResponsiveClass('px-5 py-2 text-xs', 'px-3 py-1.5 text-[10px]', 'px-5 py-2 text-xs', 'px-6 py-2.5 text-sm')}`}
-                    >
-                      {f}
-                    </button>
-                  ))}
-                </div>
-                
-                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                  {(['Modern', 'Old', 'Both'] as const).map((era) => (
-                    <button
-                      key={era}
-                      onClick={() => setUserProfile(prev => ({
-                        ...prev,
-                        settings: { ...prev.settings, eraFilter: era }
-                      }))}
-                      className={`rounded-full font-black uppercase tracking-widest whitespace-nowrap transition-all ${
-                        userProfile.settings.eraFilter === era 
-                          ? 'bg-amber-500 text-white shadow-md' 
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                      } ${getResponsiveClass('px-5 py-2 text-xs', 'px-3 py-1.5 text-[10px]', 'px-5 py-2 text-xs', 'px-6 py-2.5 text-sm')}`}
-                    >
-                      {era}
-                    </button>
-                  ))}
-                </div>
-                
+          </div>
+
+          <div className="space-y-4">
+            <SegmentedControl 
+              options={['Modern', 'Old', 'Both']} 
+              value={userProfile.settings.eraFilter || 'Both'} 
+              onChange={(era) => setUserProfile(prev => ({
+                ...prev,
+                settings: { ...prev.settings, eraFilter: era }
+              }))}
+            />
+
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+              <div className="flex bg-gray-100/50 dark:bg-gray-800/50 p-1 rounded-xl">
+                {(['all', 'collected', 'missing'] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                      filter === f 
+                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
+                        : 'text-gray-500'
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+
+              <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 mx-1" />
+
+              <div className="flex gap-2">
+                <select
+                  value={userProfile.settings.sortBy || 'recent-added'}
+                  onChange={(e) => setUserProfile(prev => ({
+                    ...prev,
+                    settings: { ...prev.settings, sortBy: e.target.value as any }
+                  }))}
+                  className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-none outline-none"
+                >
+                  <option value="recent-added">Sort: Recent</option>
+                  <option value="name">Sort: Name</option>
+                  <option value="year">Sort: Year</option>
+                  <option value="denomination">Sort: Denom</option>
+                </select>
+
                 <button
                   onClick={() => setUserProfile(prev => ({
                     ...prev,
                     settings: { ...prev.settings, isGrouped: !prev.settings.isGrouped }
                   }))}
-                  className={`flex items-center gap-2 rounded-full font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                     userProfile.settings.isGrouped 
-                      ? 'bg-amber-500 text-white shadow-md' 
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  } ${getResponsiveClass('px-4 py-2 text-xs', 'px-3 py-1.5 text-[10px]', 'px-4 py-2 text-xs', 'px-5 py-2.5 text-sm')}`}
+                      ? 'bg-amber-500 text-white' 
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                  }`}
                 >
-                  <Layout size={14} />
                   {userProfile.settings.isGrouped ? 'Grouped' : 'List'}
                 </button>
-              </div>
-
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2 flex-1">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sort:</span>
-                  <select
-                    value={userProfile.settings.sortBy || 'recent-added'}
-                    onChange={(e) => setUserProfile(prev => ({
-                      ...prev,
-                      settings: { ...prev.settings, sortBy: e.target.value as any }
-                    }))}
-                    className={`bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full font-black uppercase tracking-widest border-none focus:ring-2 focus:ring-amber-500 transition-all outline-none flex-1 ${getResponsiveClass('px-4 py-2 text-xs', 'px-2 py-1.5 text-[10px]', 'px-4 py-2 text-xs', 'px-5 py-2.5 text-sm')}`}
-                  >
-                    <option value="recent-added">Recently Added</option>
-                    <option value="name">Name</option>
-                    <option value="year">Year</option>
-                    <option value="denomination">Denomination</option>
-                    <option value="date-added">Date Added</option>
-                    <option value="month-added">Month Added</option>
-                    <option value="recent-opened">Recently Opened</option>
-                    <option value="country">Country</option>
-                  </select>
-                </div>
 
                 {userProfile.settings.isGrouped && (
-                  <div className="flex items-center gap-2 flex-1">
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Group:</span>
-                    <select
-                      value={userProfile.settings.groupBy || 'year'}
-                      onChange={(e) => setUserProfile(prev => ({
-                        ...prev,
-                        settings: { ...prev.settings, groupBy: e.target.value as any }
-                      }))}
-                      className={`bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full font-black uppercase tracking-widest border-none focus:ring-2 focus:ring-amber-500 transition-all outline-none flex-1 ${getResponsiveClass('px-4 py-2 text-xs', 'px-2 py-1.5 text-[10px]', 'px-4 py-2 text-xs', 'px-5 py-2.5 text-sm')}`}
-                    >
-                      <option value="year">By Year</option>
-                      <option value="denomination">By Denomination</option>
-                      <option value="date-added">By Date Added</option>
-                      <option value="month-added">By Month Added</option>
-                      <option value="country">By Country</option>
-                    </select>
-                  </div>
+                  <select
+                    value={userProfile.settings.groupBy || 'year'}
+                    onChange={(e) => setUserProfile(prev => ({
+                      ...prev,
+                      settings: { ...prev.settings, groupBy: e.target.value as any }
+                    }))}
+                    className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-none outline-none"
+                  >
+                    <option value="year">By Year</option>
+                    <option value="denomination">By Denom</option>
+                    <option value="rarity">By Rarity</option>
+                    <option value="country">By Country</option>
+                  </select>
                 )}
               </div>
+            </div>
+
+            <div className="relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-amber-500 transition-colors" size={18} />
+              <input 
+                type="text"
+                placeholder="Search coins..."
+                className="w-full bg-gray-100/50 dark:bg-gray-800/50 border-2 border-transparent rounded-2xl pl-12 pr-4 py-3 focus:bg-white dark:focus:bg-gray-900 focus:border-amber-500 outline-none transition-all"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
           </div>
         </div>
 
-        <div className={`max-w-2xl mx-auto ${getResponsiveClass('p-4 sm:p-6', 'p-2', 'p-4', 'p-6')}`}>
-        <div className={`max-w-2xl mx-auto grid ${getResponsiveClass('gap-4', 'gap-2', 'gap-4', 'gap-6')}`}>
-          {userProfile.settings?.isPurchaseMode && (
-            <div className="flex items-center justify-between p-4 bg-black dark:bg-white text-white dark:text-black rounded-3xl shadow-xl mb-2 animate-pulse">
-              <div className="flex items-center gap-3">
-                <ShoppingCart size={24} />
-                <div>
-                  <h4 className="text-lg font-black uppercase tracking-widest">Purchase Mode Active</h4>
-                  <p className="text-[10px] opacity-70 font-bold uppercase tracking-wider">High-contrast table view enabled</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setUserProfile(prev => ({
-                  ...prev,
-                  settings: { ...prev.settings, isPurchaseMode: false }
-                }))}
-                className="px-4 py-2 bg-white/20 dark:bg-black/20 hover:bg-white/30 dark:hover:bg-black/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
-              >
-                Exit
-              </button>
-            </div>
-          )}
-          {/* Story Mode Section */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between px-2">
-              <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Story Mode</h3>
-              <button 
-                onClick={() => setIsStoryModeOpen(true)}
-                className="text-[10px] font-black text-amber-600 uppercase tracking-widest hover:underline"
-              >
-                Enter Hub
-              </button>
-            </div>
-            <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
-              <motion.div
-                whileHover={{ y: -5, scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setIsStoryModeOpen(true)}
-                className="flex-shrink-0 w-72 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-premium p-6 text-white shadow-xl cursor-pointer relative overflow-hidden group"
-              >
-                <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
-                  <Sparkles size={80} />
-                </div>
-                <div className="relative z-10 space-y-3">
-                  <h5 className="text-xl font-display font-bold leading-tight">Begin Your Journey</h5>
-                  <p className="text-white/80 text-xs font-medium line-clamp-2">Explore timelines, conquer eras, and reconstruct history.</p>
-                  
-                  <div className="pt-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                        <ArrowRight size={16} />
-                      </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest">Enter Story Mode</span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Quick access to Era Conquest */}
-              <motion.div
-                whileHover={{ y: -5, scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  setActiveGameMode('era-conquest');
-                  setIsStoryModeOpen(true);
-                }}
-                className="flex-shrink-0 w-64 bg-gradient-to-br from-amber-500 to-orange-600 rounded-premium p-6 text-white shadow-xl cursor-pointer relative overflow-hidden group"
-              >
-                <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
-                  <Award size={60} />
-                </div>
-                <div className="relative z-10 space-y-3">
-                  <h5 className="text-lg font-display font-bold leading-tight">Era Conquest</h5>
-                  <p className="text-white/80 text-xs font-medium line-clamp-2">Complete challenges across historical periods.</p>
-                  <div className="pt-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                        <ArrowRight size={16} />
-                      </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest">Resume</span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </section>
-
+        <div className="max-w-2xl mx-auto px-4 pb-32">
           <AnimatePresence mode="popLayout">
-            <div className={`space-y-6 ${getResponsiveClass('mb-8', 'mb-4', 'mb-8', 'mb-12')}`}>
+            <div className="space-y-8">
               {userProfile.settings.isGrouped && groupedCoins ? (
                 groupedCoins.map((group) => (
                   <div key={group.title} className="space-y-4">
-                    <div 
-                      onClick={() => {
-                        const next = new Set(collapsedGroups);
-                        if (next.has(group.title)) next.delete(group.title);
-                        else next.add(group.title);
-                        setCollapsedGroups(next);
-                      }}
-                      className="flex items-center gap-4 px-2 cursor-pointer group/header"
-                    >
-                      <h2 className="text-sm font-black uppercase tracking-[0.2em] text-amber-600 dark:text-amber-500 whitespace-nowrap flex items-center gap-2">
-                        <motion.div
-                          animate={{ rotate: collapsedGroups.has(group.title) ? -90 : 0 }}
-                        >
-                          <ChevronDown size={14} />
-                        </motion.div>
+                    <div className="sticky top-[52px] z-20 py-2 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md -mx-4 px-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
                         {group.title}
                       </h2>
-                      <div className="h-px bg-amber-100 dark:bg-amber-900/30 flex-1" />
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        {group.coins.length} Coins
+                        {group.coins.length}
                       </span>
                     </div>
-                    
-                    {!collapsedGroups.has(group.title) && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
-                      >
-                        {group.subGroups ? (
-                          <div className="space-y-6 pl-4 border-l-2 border-gray-100 dark:border-gray-800 ml-2 mt-2">
-                            {group.subGroups.map(subGroup => (
-                              <div key={subGroup.title} className="space-y-3">
-                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-2">
-                                  <div className="w-1 h-1 rounded-full bg-amber-500" />
-                                  {subGroup.title}
-                                </h3>
-                                {renderCoinList(subGroup.coins)}
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          userProfile.settings?.isPurchaseMode ? (
-                            <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl`}>
-                              <table className="w-full text-left border-collapse">
-                                <thead>
-                                  <tr className="bg-black dark:bg-white text-white dark:text-black">
-                                    <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Coin</th>
-                                    <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Year</th>
-                                    <th className={`font-black uppercase tracking-widest text-center ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Status</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {group.coins.map(renderCoinTableRow)}
-                                </tbody>
-                              </table>
-                            </div>
-                          ) : (
-                            renderCoinList(group.coins)
-                          )
-                        )}
-                      </motion.div>
-                    )}
+                    {renderCoinList(group.coins)}
                   </div>
                 ))
               ) : (
-                userProfile.settings?.isPurchaseMode ? (
-                  <div className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-black dark:border-white overflow-hidden shadow-2xl`}>
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-black dark:bg-white text-white dark:text-black">
-                          <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Coin</th>
-                          <th className={`font-black uppercase tracking-widest ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Year</th>
-                          <th className={`font-black uppercase tracking-widest text-center ${getResponsiveClass('p-4 sm:p-6 text-lg sm:text-2xl', 'p-2 text-base', 'p-4 text-lg', 'p-6 text-2xl')}`}>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredCoins.map(renderCoinTableRow)}
-                      </tbody>
-                    </table>
+                renderCoinList(filteredCoins)
+              )}
+
+              {filteredCoins.length === 0 && (
+                <div className="text-center py-20">
+                  <div className="text-gray-200 dark:text-gray-800 mb-4 flex justify-center">
+                    <Search size={64} />
                   </div>
-                ) : (
-                  renderCoinList(filteredCoins)
-                )
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">No coins found</h3>
+                  <p className="text-gray-500">Try a different search or filter</p>
+                </div>
               )}
             </div>
           </AnimatePresence>
-
-          {filteredCoins.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-gray-300 mb-4 flex justify-center">
-                <Search size={64} />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900">No coins found</h3>
-              <p className="text-gray-500">Try a different search or filter</p>
-            </div>
-          )}
-        </div>
         </div>
       </main>
 
@@ -7539,27 +7316,27 @@ function CoinCollectorApp() {
             initial={{ y: 100 }}
             animate={{ y: 0 }}
             exit={{ y: 100 }}
-            className={`fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl border-t border-gray-100 dark:border-gray-800 flex items-center justify-around z-[90] pb-[env(safe-area-inset-bottom)] ${getResponsiveClass('px-8 py-4', 'px-4 py-2', 'px-8 py-4', 'px-12 py-6')}`}
+            className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl border-t border-gray-100 dark:border-gray-800 flex items-center justify-around z-[90] px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))]"
           >
             <button 
               onClick={() => {
                 setSearchQuery('');
               }}
-              className={`flex flex-col items-center transition-all active:scale-90 ${!isTimelineOpen ? 'text-amber-500' : 'text-gray-400'} ${getResponsiveClass('gap-1.5', 'gap-0.5', 'gap-1.5', 'gap-2')}`}
+              className={`flex flex-col items-center transition-all active:scale-90 ${!isTimelineOpen ? 'text-amber-500' : 'text-gray-400'} gap-1.5`}
             >
-              <div className={`rounded-xl transition-colors ${!isTimelineOpen ? 'bg-amber-50 dark:bg-amber-900/20' : ''} ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}>
-                <LayoutGrid size={22} className={getResponsiveClass('', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
+              <div className={`rounded-xl transition-colors ${!isTimelineOpen ? 'bg-amber-50 dark:bg-amber-900/20' : ''} p-2`}>
+                <LayoutGrid size={22} />
               </div>
-              <span className={`font-black uppercase tracking-[0.2em] ${getResponsiveClass('text-[9px]', 'text-[7px]', 'text-[9px]', 'text-[10px]')}`}>Collection</span>
+              <span className="font-black uppercase tracking-[0.2em] text-[9px]">Collection</span>
             </button>
             <button 
               onClick={() => setIsTimelineOpen(true)}
-              className={`flex flex-col items-center transition-all active:scale-90 ${isTimelineOpen ? 'text-blue-500' : 'text-gray-400'} ${getResponsiveClass('gap-1.5', 'gap-0.5', 'gap-1.5', 'gap-2')}`}
+              className={`flex flex-col items-center transition-all active:scale-90 ${isTimelineOpen ? 'text-blue-500' : 'text-gray-400'} gap-1.5`}
             >
-              <div className={`rounded-xl transition-colors ${isTimelineOpen ? 'bg-blue-50 dark:bg-blue-900/20' : ''} ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}>
-                <Clock size={22} className={getResponsiveClass('', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
+              <div className={`rounded-xl transition-colors ${isTimelineOpen ? 'bg-blue-50 dark:bg-blue-900/20' : ''} p-2`}>
+                <Clock size={22} />
               </div>
-              <span className={`font-black uppercase tracking-[0.2em] ${getResponsiveClass('text-[9px]', 'text-[7px]', 'text-[9px]', 'text-[10px]')}`}>Timeline</span>
+              <span className="font-black uppercase tracking-[0.2em] text-[9px]">Timeline</span>
             </button>
             <button 
               onClick={() => {
@@ -7569,27 +7346,27 @@ function CoinCollectorApp() {
                 }
                 setIsScanning(true);
               }}
-              className={`bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-amber-200 dark:shadow-none border-4 border-white dark:border-gray-900 transition-all active:scale-90 hover:bg-amber-600 ${isOffline ? 'opacity-50 grayscale cursor-not-allowed' : ''} ${getResponsiveClass('w-14 h-14 -mt-10', 'w-11 h-11 -mt-8', 'w-14 h-14 -mt-10', 'w-16 h-16 -mt-12')}`}
+              className={`bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-amber-200 dark:shadow-none border-4 border-white dark:border-gray-900 transition-all active:scale-90 hover:bg-amber-600 ${isOffline ? 'opacity-50 grayscale cursor-not-allowed' : ''} w-14 h-14 -mt-10`}
             >
-              <Camera size={28} className={getResponsiveClass('', 'w-5 h-5', 'w-6 h-6', 'w-8 h-8')} />
+              <Camera size={28} />
             </button>
             <button 
               onClick={() => setIsManualAddOpen(true)}
-              className={`flex flex-col items-center text-gray-400 hover:text-amber-500 transition-all active:scale-90 ${getResponsiveClass('gap-1.5', 'gap-0.5', 'gap-1.5', 'gap-2')}`}
+              className="flex flex-col items-center text-gray-400 hover:text-amber-500 transition-all active:scale-90 gap-1.5"
             >
-              <div className={`rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}>
-                <Plus size={22} className={getResponsiveClass('', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
+              <div className="rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors p-2">
+                <Plus size={22} />
               </div>
-              <span className={`font-black uppercase tracking-[0.2em] ${getResponsiveClass('text-[9px]', 'text-[7px]', 'text-[9px]', 'text-[10px]')}`}>Add</span>
+              <span className="font-black uppercase tracking-[0.2em] text-[9px]">Add</span>
             </button>
             <button 
               onClick={() => setIsProfileOpen(true)}
-              className={`flex flex-col items-center transition-all active:scale-90 ${isProfileOpen ? 'text-amber-500' : 'text-gray-400'} ${getResponsiveClass('gap-1.5', 'gap-0.5', 'gap-1.5', 'gap-2')}`}
+              className={`flex flex-col items-center transition-all active:scale-90 ${isProfileOpen ? 'text-amber-500' : 'text-gray-400'} gap-1.5`}
             >
-              <div className={`rounded-xl transition-colors ${isProfileOpen ? 'bg-amber-50 dark:bg-amber-900/20' : ''} ${getResponsiveClass('p-2', 'p-1.5', 'p-2', 'p-2.5')}`}>
-                <User size={22} className={getResponsiveClass('', 'w-4 h-4', 'w-5 h-5', 'w-6 h-6')} />
+              <div className={`rounded-xl transition-colors ${isProfileOpen ? 'bg-amber-50 dark:bg-amber-900/20' : ''} p-2`}>
+                <User size={22} />
               </div>
-              <span className={`font-black uppercase tracking-[0.2em] ${getResponsiveClass('text-[9px]', 'text-[7px]', 'text-[9px]', 'text-[10px]')}`}>Profile</span>
+              <span className="font-black uppercase tracking-[0.2em] text-[9px]">Profile</span>
             </button>
           </motion.div>
         )}
