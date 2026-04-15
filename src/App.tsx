@@ -9,6 +9,7 @@ import {
   LayoutGrid, List, Columns, Kanban, ImageIcon, Focus, Minimize2, Hexagon, ArrowLeftRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { migrateData, AppVersion, SCHEMAS } from './versioning';
 import { EUROPEAN_COINS, Coin } from './data/coins';
 import { GoogleGenAI, Type } from "@google/genai";
 
@@ -1087,6 +1088,7 @@ function CoinCollectorApp() {
   const [isSpinModalOpen, setIsSpinModalOpen] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [isIdentityCardOpen, setIsIdentityCardOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isStoryModeOpen, setIsStoryModeOpen] = useState(false);
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [isGameModesOpen, setIsGameModesOpen] = useState(false);
@@ -1353,7 +1355,7 @@ function CoinCollectorApp() {
     // v2 snake_case check
     if (data.collected_coins || data.custom_coins || data.requested_coins || data.user_profile || data.user_coin_images) return true;
     // v3 or other version check
-    if (data.version && data.version !== '2.0') return true;
+    if (data.version && data.version !== '3.0') return true;
     return false;
   };
 
@@ -1361,17 +1363,24 @@ function CoinCollectorApp() {
     try {
       if (!data || typeof data !== 'object') throw new Error("Invalid data format");
 
-      const sanitized: any = {
-        collectedIds: Array.isArray(data.collectedIds) ? data.collectedIds.filter((id: any) => typeof id === 'string') : [],
-        customCoins: Array.isArray(data.customCoins) ? data.customCoins.filter((c: any) => c && typeof c === 'object' && c.id) : [],
-        requestedCoins: Array.isArray(data.requestedCoins) ? data.requestedCoins.filter((r: any) => r && typeof r === 'object') : [],
-        userProfile: data.userProfile && typeof data.userProfile === 'object' ? { ...data.userProfile } : {},
-        userCoinImages: data.userCoinImages && typeof data.userCoinImages === 'object' ? { ...data.userCoinImages } : {},
-        purchasedCoins: Array.isArray(data.purchasedCoins) ? data.purchasedCoins.filter((p: any) => p && typeof p === 'object') : [],
-        version: '2.0'
-      };
+      const currentVersion = (data.version || '2.0') as AppVersion;
+      const allowedFields = SCHEMAS[currentVersion] || SCHEMAS['2.0'];
 
-      // Ensure userProfile has required structure to prevent crashes
+      const sanitized: any = {};
+      allowedFields.forEach(field => {
+        if (data[field] !== undefined) {
+          sanitized[field] = data[field];
+        }
+      });
+
+      // Ensure version is set
+      sanitized.version = currentVersion;
+
+      // Basic validation for critical fields
+      sanitized.collectedIds = Array.isArray(sanitized.collectedIds) ? sanitized.collectedIds : [];
+      sanitized.customCoins = Array.isArray(sanitized.customCoins) ? sanitized.customCoins : [];
+      sanitized.requestedCoins = Array.isArray(sanitized.requestedCoins) ? sanitized.requestedCoins : [];
+      
       if (sanitized.userProfile) {
         const p = sanitized.userProfile;
         p.badges = Array.isArray(p.badges) ? p.badges : [];
@@ -1389,67 +1398,27 @@ function CoinCollectorApp() {
 
   const convertOldData = (oldData: any) => {
     try {
-      const newData: any = {
-        collectedIds: [],
-        customCoins: [],
-        requestedCoins: [],
-        userProfile: {},
-        userCoinImages: {},
-        purchasedCoins: [],
-        version: '2.0'
-      };
-      
-      // Detect version
-      const isV3 = oldData.version === '3.0' || oldData.version === 3;
-      const isV2Snake = !!(oldData.collected_coins || oldData.custom_coins || oldData.requested_coins || oldData.user_profile || oldData.user_coin_images);
-      const isV1 = Array.isArray(oldData);
-
-      if (isV1) {
-        newData.collectedIds = oldData;
-      } else if (isV2Snake) {
-        // Map snake_case to camelCase
-        if (oldData.collected_coins) newData.collectedIds = oldData.collected_coins;
-        if (oldData.custom_coins) newData.customCoins = oldData.custom_coins;
-        if (oldData.requested_coins) newData.requestedCoins = oldData.requested_coins;
-        if (oldData.user_profile) newData.userProfile = oldData.user_profile;
-        if (oldData.user_coin_images) newData.userCoinImages = oldData.user_coin_images;
-        
-        if (newData.userProfile) {
-          const up = newData.userProfile;
-          if (up.total_spend !== undefined && up.totalSpend === undefined) up.totalSpend = up.total_spend;
-          if (up.join_date !== undefined && up.joinDate === undefined) up.joinDate = up.join_date;
-          if (up.last_login_date !== undefined && up.lastLoginDate === undefined) up.lastLoginDate = up.last_login_date;
-          if (up.collection_streak !== undefined && up.collectionStreak === undefined) up.collectionStreak = up.collection_streak;
-          if (up.last_collection_date !== undefined && up.lastCollectionDate === undefined) up.lastCollectionDate = up.last_collection_date;
-          
-          if (up.settings) {
-            const s = up.settings;
-            if (s.is_dark_mode !== undefined && s.isDarkMode === undefined) s.isDarkMode = s.is_dark_mode;
-            if (s.show_bottom_menu !== undefined && s.showBottomMenu === undefined) s.showBottomMenu = s.show_bottom_menu;
-            if (s.follow_system_theme !== undefined && s.followSystemTheme === undefined) s.followSystemTheme = s.follow_system_theme;
-            if (s.is_compact_ui !== undefined && s.isCompactUI === undefined) s.isCompactUI = s.is_compact_ui;
-          }
-        }
-      } else if (isV3) {
-        // Map v3 to v2 (taking only supported fields)
-        if (Array.isArray(oldData.collectedIds)) newData.collectedIds = oldData.collectedIds;
-        if (Array.isArray(oldData.customCoins)) newData.customCoins = oldData.customCoins;
-        if (Array.isArray(oldData.requestedCoins)) newData.requestedCoins = oldData.requestedCoins;
-        if (oldData.userProfile) newData.userProfile = oldData.userProfile;
-        if (oldData.userCoinImages) newData.userCoinImages = oldData.userCoinImages;
-        if (Array.isArray(oldData.purchasedCoins)) newData.purchasedCoins = oldData.purchasedCoins;
-      } else {
-        // Fallback for hybrid or unknown (try to map what matches)
-        if (oldData.collectedIds) newData.collectedIds = oldData.collectedIds;
-        if (oldData.customCoins) newData.customCoins = oldData.customCoins;
-        if (oldData.requestedCoins) newData.requestedCoins = oldData.requestedCoins;
-        if (oldData.userProfile) newData.userProfile = oldData.userProfile;
-        if (oldData.userCoinImages) newData.userCoinImages = oldData.userCoinImages;
-        if (oldData.purchasedCoins) newData.purchasedCoins = oldData.purchasedCoins;
+      // Step 1: Normalize to a known version if it's legacy
+      let normalized = { ...oldData };
+      if (Array.isArray(oldData)) {
+        normalized = { version: '2.0', collectedIds: oldData };
+      } else if (oldData.collected_coins || oldData.user_profile) {
+        // Legacy snake_case
+        normalized = {
+          version: '2.0',
+          collectedIds: oldData.collected_coins || [],
+          customCoins: oldData.custom_coins || [],
+          requestedCoins: oldData.requested_coins || [],
+          userProfile: oldData.user_profile || {},
+          userCoinImages: oldData.user_coin_images || {}
+        };
       }
 
-      // Final sanitization to ensure v2 compatibility and prevent crashes
-      return validateAndSanitizeData(newData) || newData;
+      // Step 2: Migrate to current app version (3.0)
+      const migrated = migrateData(normalized, '3.0');
+
+      // Step 3: Final sanitization
+      return validateAndSanitizeData(migrated) || migrated;
     } catch (err) {
       console.error("Conversion failed:", err);
       throw new Error("Data mapping failed. The file might be corrupted or incompatible.");
@@ -3053,8 +3022,8 @@ function CoinCollectorApp() {
     alert('Requests copied! You can now paste them in the chat.');
   };
 
-  const exportCollection = () => {
-    const data = {
+  const exportCollection = (targetVersion: AppVersion = '3.0') => {
+    const rawData = {
       collectedIds,
       customCoins,
       requestedCoins,
@@ -3062,18 +3031,25 @@ function CoinCollectorApp() {
       userCoinImages,
       purchasedCoins,
       lastOpenedIds,
-      version: '2.0'
+      collectionHistory,
+      userCoinDenominations,
+      userCoinValues,
+      version: '3.0' as AppVersion
     };
+
+    // Apply schema conversion before export
+    const data = migrateData(rawData, targetVersion);
+
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const now = new Date();
     const dateStr = now.toISOString().split('T')[0];
-    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-').slice(0, 5);
     a.href = url;
-    a.download = `coin-collector-backup-${dateStr}-${timeStr}.json`;
+    a.download = `coins_v${targetVersion}_${dateStr}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    setIsExportModalOpen(false);
   };
 
   const generateRecoveryCode = () => {
@@ -3171,6 +3147,18 @@ function CoinCollectorApp() {
                   points: Math.max(prev.points, data.userProfile.points || 0),
                   badges: Array.from(new Set([...prev.badges, ...(data.userProfile.badges || [])]))
                 }));
+              }
+
+              if (data.collectionHistory) {
+                setCollectionHistory(prev => ({ ...prev, ...data.collectionHistory }));
+              }
+
+              if (data.userCoinDenominations) {
+                setUserCoinDenominations(prev => ({ ...prev, ...data.userCoinDenominations }));
+              }
+
+              if (data.userCoinValues) {
+                setUserCoinValues(prev => ({ ...prev, ...data.userCoinValues }));
               }
 
               setImportProgress(null);
@@ -5197,7 +5185,7 @@ function CoinCollectorApp() {
                     <div className="grid grid-cols-1 gap-2">
                       <div className="grid grid-cols-2 gap-2">
                         <button 
-                          onClick={exportCollection}
+                          onClick={() => setIsExportModalOpen(true)}
                           className="flex items-center justify-center gap-2 p-3 bg-gray-900 text-white rounded-2xl hover:bg-black transition-colors"
                         >
                           <Share size={14} />
@@ -6646,6 +6634,66 @@ function CoinCollectorApp() {
               <p className="text-[10px] text-center text-gray-400 uppercase font-bold tracking-widest">
                 Safe & Offline Compatible
               </p>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Export Version Modal */}
+      <AnimatePresence>
+        {isExportModalOpen && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsExportModalOpen(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl p-8 space-y-6"
+            >
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-3xl flex items-center justify-center">
+                  <Share size={40} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Export Collection</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    Choose a version for your export. Downgrading will remove features not supported in older versions.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  { id: '3.0', label: 'Version 3.0 (Current)', desc: 'Full data including history and missions.' },
+                  { id: '2.5', label: 'Version 2.5', desc: 'Core data + purchased coins and denominations.' },
+                  { id: '2.0', label: 'Version 2.0 (Legacy)', desc: 'Basic collection data only.' }
+                ].map((v) => (
+                  <button
+                    key={v.id}
+                    onClick={() => exportCollection(v.id as AppVersion)}
+                    className="w-full p-4 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl text-left hover:border-blue-500 transition-all group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-gray-900 dark:text-white uppercase tracking-widest text-xs">{v.label}</span>
+                      <ArrowRight size={16} className="text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
+                    </div>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-bold">{v.desc}</p>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setIsExportModalOpen(false)}
+                className="w-full py-4 text-gray-400 font-black uppercase tracking-widest text-[10px] hover:text-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
             </motion.div>
           </div>
         )}
