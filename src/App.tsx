@@ -1347,58 +1347,117 @@ function CoinCollectorApp() {
   ];
   const [conversionError, setConversionError] = useState<string | null>(null);
 
+  const needsConversion = (data: any) => {
+    if (!data || typeof data !== 'object') return false;
+    if (Array.isArray(data)) return true; // v1
+    // v2 snake_case check
+    if (data.collected_coins || data.custom_coins || data.requested_coins || data.user_profile || data.user_coin_images) return true;
+    // v3 or other version check
+    if (data.version && data.version !== '2.0') return true;
+    return false;
+  };
+
+  const validateAndSanitizeData = (data: any) => {
+    try {
+      if (!data || typeof data !== 'object') throw new Error("Invalid data format");
+
+      const sanitized: any = {
+        collectedIds: Array.isArray(data.collectedIds) ? data.collectedIds.filter((id: any) => typeof id === 'string') : [],
+        customCoins: Array.isArray(data.customCoins) ? data.customCoins.filter((c: any) => c && typeof c === 'object' && c.id) : [],
+        requestedCoins: Array.isArray(data.requestedCoins) ? data.requestedCoins.filter((r: any) => r && typeof r === 'object') : [],
+        userProfile: data.userProfile && typeof data.userProfile === 'object' ? { ...data.userProfile } : {},
+        userCoinImages: data.userCoinImages && typeof data.userCoinImages === 'object' ? { ...data.userCoinImages } : {},
+        purchasedCoins: Array.isArray(data.purchasedCoins) ? data.purchasedCoins.filter((p: any) => p && typeof p === 'object') : [],
+        version: '2.0'
+      };
+
+      // Ensure userProfile has required structure to prevent crashes
+      if (sanitized.userProfile) {
+        const p = sanitized.userProfile;
+        p.badges = Array.isArray(p.badges) ? p.badges : [];
+        p.points = typeof p.points === 'number' ? p.points : 0;
+        p.level = typeof p.level === 'number' ? p.level : 1;
+        p.settings = p.settings && typeof p.settings === 'object' ? p.settings : {};
+      }
+
+      return sanitized;
+    } catch (err) {
+      console.error("Validation failed:", err);
+      return null;
+    }
+  };
+
   const convertOldData = (oldData: any) => {
     try {
-      const newData: any = {};
+      const newData: any = {
+        collectedIds: [],
+        customCoins: [],
+        requestedCoins: [],
+        userProfile: {},
+        userCoinImages: {},
+        purchasedCoins: [],
+        version: '2.0'
+      };
       
-      // Map snake_case to camelCase
-      if (oldData.collected_coins) newData.collectedIds = oldData.collected_coins;
-      if (oldData.custom_coins) newData.customCoins = oldData.custom_coins;
-      if (oldData.requested_coins) newData.requestedCoins = oldData.requested_coins;
-      if (oldData.user_profile) newData.userProfile = oldData.user_profile;
-      if (oldData.user_coin_images) newData.userCoinImages = oldData.user_coin_images;
-      
-      // Handle very old flat array format
-      if (Array.isArray(oldData)) {
+      // Detect version
+      const isV3 = oldData.version === '3.0' || oldData.version === 3;
+      const isV2Snake = !!(oldData.collected_coins || oldData.custom_coins || oldData.requested_coins || oldData.user_profile || oldData.user_coin_images);
+      const isV1 = Array.isArray(oldData);
+
+      if (isV1) {
         newData.collectedIds = oldData;
-      }
-
-      // Ensure all required fields exist and map nested snake_case
-      if (newData.userProfile) {
-        const up = newData.userProfile;
-        if (up.total_spend !== undefined && up.totalSpend === undefined) up.totalSpend = up.total_spend;
-        if (up.join_date !== undefined && up.joinDate === undefined) up.joinDate = up.join_date;
-        if (up.last_login_date !== undefined && up.lastLoginDate === undefined) up.lastLoginDate = up.last_login_date;
-        if (up.collection_streak !== undefined && up.collectionStreak === undefined) up.collectionStreak = up.collection_streak;
-        if (up.last_collection_date !== undefined && up.lastCollectionDate === undefined) up.lastCollectionDate = up.last_collection_date;
+      } else if (isV2Snake) {
+        // Map snake_case to camelCase
+        if (oldData.collected_coins) newData.collectedIds = oldData.collected_coins;
+        if (oldData.custom_coins) newData.customCoins = oldData.custom_coins;
+        if (oldData.requested_coins) newData.requestedCoins = oldData.requested_coins;
+        if (oldData.user_profile) newData.userProfile = oldData.user_profile;
+        if (oldData.user_coin_images) newData.userCoinImages = oldData.user_coin_images;
         
-        if (up.settings) {
-          const s = up.settings;
-          if (s.is_dark_mode !== undefined && s.isDarkMode === undefined) s.isDarkMode = s.is_dark_mode;
-          if (s.show_bottom_menu !== undefined && s.showBottomMenu === undefined) s.showBottomMenu = s.show_bottom_menu;
-          if (s.follow_system_theme !== undefined && s.followSystemTheme === undefined) s.followSystemTheme = s.follow_system_theme;
-          if (s.is_compact_ui !== undefined && s.isCompactUI === undefined) s.isCompactUI = s.is_compact_ui;
+        if (newData.userProfile) {
+          const up = newData.userProfile;
+          if (up.total_spend !== undefined && up.totalSpend === undefined) up.totalSpend = up.total_spend;
+          if (up.join_date !== undefined && up.joinDate === undefined) up.joinDate = up.join_date;
+          if (up.last_login_date !== undefined && up.lastLoginDate === undefined) up.lastLoginDate = up.last_login_date;
+          if (up.collection_streak !== undefined && up.collectionStreak === undefined) up.collectionStreak = up.collection_streak;
+          if (up.last_collection_date !== undefined && up.lastCollectionDate === undefined) up.lastCollectionDate = up.last_collection_date;
+          
+          if (up.settings) {
+            const s = up.settings;
+            if (s.is_dark_mode !== undefined && s.isDarkMode === undefined) s.isDarkMode = s.is_dark_mode;
+            if (s.show_bottom_menu !== undefined && s.showBottomMenu === undefined) s.showBottomMenu = s.show_bottom_menu;
+            if (s.follow_system_theme !== undefined && s.followSystemTheme === undefined) s.followSystemTheme = s.follow_system_theme;
+            if (s.is_compact_ui !== undefined && s.isCompactUI === undefined) s.isCompactUI = s.is_compact_ui;
+          }
         }
+      } else if (isV3) {
+        // Map v3 to v2 (taking only supported fields)
+        if (Array.isArray(oldData.collectedIds)) newData.collectedIds = oldData.collectedIds;
+        if (Array.isArray(oldData.customCoins)) newData.customCoins = oldData.customCoins;
+        if (Array.isArray(oldData.requestedCoins)) newData.requestedCoins = oldData.requestedCoins;
+        if (oldData.userProfile) newData.userProfile = oldData.userProfile;
+        if (oldData.userCoinImages) newData.userCoinImages = oldData.userCoinImages;
+        if (Array.isArray(oldData.purchasedCoins)) newData.purchasedCoins = oldData.purchasedCoins;
+      } else {
+        // Fallback for hybrid or unknown (try to map what matches)
+        if (oldData.collectedIds) newData.collectedIds = oldData.collectedIds;
+        if (oldData.customCoins) newData.customCoins = oldData.customCoins;
+        if (oldData.requestedCoins) newData.requestedCoins = oldData.requestedCoins;
+        if (oldData.userProfile) newData.userProfile = oldData.userProfile;
+        if (oldData.userCoinImages) newData.userCoinImages = oldData.userCoinImages;
+        if (oldData.purchasedCoins) newData.purchasedCoins = oldData.purchasedCoins;
       }
 
-      // Preserve existing new fields if they were already there (hybrid case)
-      if (oldData.collectedIds) newData.collectedIds = oldData.collectedIds;
-      if (oldData.customCoins) newData.customCoins = oldData.customCoins;
-      if (oldData.requestedCoins) newData.requestedCoins = oldData.requestedCoins;
-      if (oldData.userProfile) newData.userProfile = oldData.userProfile;
-      if (oldData.userCoinImages) newData.userCoinImages = oldData.userCoinImages;
-      if (oldData.purchasedCoins) newData.purchasedCoins = oldData.purchasedCoins;
-
-      return newData;
+      // Final sanitization to ensure v2 compatibility and prevent crashes
+      return validateAndSanitizeData(newData) || newData;
     } catch (err) {
       console.error("Conversion failed:", err);
-      throw new Error("Data mapping failed. The file might be corrupted.");
+      throw new Error("Data mapping failed. The file might be corrupted or incompatible.");
     }
   };
 
   const isOldDataFormat = (data: any) => {
-    if (Array.isArray(data)) return true;
-    return !!(data.collected_coins || data.custom_coins || data.requested_coins || data.user_profile || data.user_coin_images);
+    return needsConversion(data);
   };
 
   const handleApplyConversion = (data: any) => {
@@ -1420,13 +1479,23 @@ function CoinCollectorApp() {
       if (converted.collectedIds) setCollectedIds(converted.collectedIds);
       if (converted.customCoins) setCustomCoins(converted.customCoins);
       if (converted.requestedCoins) setRequestedCoins(converted.requestedCoins);
-      if (converted.userProfile) setUserProfile(converted.userProfile);
+      if (converted.userProfile) {
+        setUserProfile(prev => ({
+          ...prev,
+          ...converted.userProfile,
+          settings: {
+            ...prev.settings,
+            ...(converted.userProfile.settings || {})
+          }
+        }));
+      }
       if (converted.userCoinImages) setUserCoinImages(converted.userCoinImages);
       if (converted.purchasedCoins) setPurchasedCoins(converted.purchasedCoins);
 
       setIsConverting(false);
       setConversionData(null);
-      alert("Conversion successful! Your data has been updated to the new format.");
+      setConversionError(null);
+      alert("Import successful! Your data has been normalized and restored.");
     } catch (err) {
       setConversionError(err instanceof Error ? err.message : "Unknown error during conversion");
     }
@@ -3038,13 +3107,18 @@ function CoinCollectorApp() {
 
       reader.onload = (event) => {
         try {
-          const data = JSON.parse(event.target?.result as string);
+          const rawData = JSON.parse(event.target?.result as string);
           
-          if (isOldDataFormat(data)) {
-            setConversionData(data);
+          if (needsConversion(rawData)) {
+            setConversionData(rawData);
             setIsConverting(true);
             setImportProgress(null);
             return;
+          }
+
+          const data = validateAndSanitizeData(rawData);
+          if (!data) {
+            throw new Error("Invalid or corrupt data detected.");
           }
 
           // Simulate a bit of progress for UX if it's too fast
@@ -6526,9 +6600,9 @@ function CoinCollectorApp() {
                   <RefreshCw size={40} className="animate-spin-slow" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-black text-gray-900 dark:text-white">Old Data Detected</h3>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white">Version Mismatch</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                    We've detected data in an older format. Would you like to convert it to the new version?
+                    We've detected data from a different version. Would you like to normalize and import it? Unknown fields will be safely removed.
                   </p>
                 </div>
               </div>
@@ -6565,7 +6639,7 @@ function CoinCollectorApp() {
                   onClick={() => handleApplyConversion(conversionData)}
                   className="py-4 bg-amber-500 text-white font-bold rounded-2xl hover:bg-amber-600 transition-all shadow-lg shadow-amber-100 dark:shadow-none text-sm"
                 >
-                  Convert Now
+                  Normalize & Import
                 </button>
               </div>
               
