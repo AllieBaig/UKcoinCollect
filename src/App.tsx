@@ -101,6 +101,7 @@ interface UserProfile {
     eraFilter?: 'Modern' | 'Old' | 'Both';
     layout?: 'grid' | 'list' | 'carousel' | 'masonry' | 'board' | 'timeline' | 'gallery' | 'spotlight' | 'compact' | 'split' | 'hexagon' | 'table' | 'text-card' | 'text-list' | 'text-compact';
     showLayoutSwitcher?: boolean;
+    isMiniMode?: boolean;
     isAmbientMotionEnabled?: boolean;
     enabledLayouts?: Record<string, boolean>;
     visibleFields?: {
@@ -350,7 +351,8 @@ const GAME_MODES: GameMode[] = [
 ];
 
 const AmbientBackground = ({ isEnabled }: { isEnabled: boolean }) => {
-  if (!isEnabled) return null;
+  const isMiniMode = document.documentElement.classList.contains('mini-mode');
+  if (!isEnabled || isMiniMode) return null;
 
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden opacity-30 dark:opacity-10">
@@ -938,7 +940,8 @@ function CoinCollectorApp() {
           eraFilter: parsed.settings?.eraFilter || 'Both',
           layout: parsed.settings?.layout || 'grid',
           showLayoutSwitcher: parsed.settings?.showLayoutSwitcher ?? true,
-          isAmbientMotionEnabled: parsed.settings?.isAmbientMotionEnabled ?? true
+          isAmbientMotionEnabled: parsed.settings?.isAmbientMotionEnabled ?? true,
+          isMiniMode: parsed.settings?.isMiniMode ?? false
         },
         missions: parsed.missions || defaultProfile.missions,
         timelineStreak: parsed.timelineStreak || 0,
@@ -998,6 +1001,7 @@ function CoinCollectorApp() {
           isNightBonusActive: true,
           sortBy: 'recent-added',
           showOldEuropeanCoins: true,
+          isMiniMode: false,
           eraFilter: 'Both',
           layout: 'grid',
           showLayoutSwitcher: true
@@ -1300,6 +1304,38 @@ function CoinCollectorApp() {
     }
   }, [collectedIds]);
 
+  const isMiniMode = userProfile.settings?.isMiniMode;
+
+  useEffect(() => {
+    if (isMiniMode) {
+      document.documentElement.classList.add('mini-mode');
+    } else {
+      document.documentElement.classList.remove('mini-mode');
+    }
+  }, [isMiniMode]);
+
+  const uiConfig = useMemo(() => ({
+    animations: {
+      duration: isMiniMode ? 0.35 : 0.5,
+      layout: isMiniMode ? false : true,
+      hover: isMiniMode ? { scale: 1.02, y: -2 } : { scale: 1.05, y: -8 },
+      tap: isMiniMode ? { scale: 0.98 } : { scale: 0.95 },
+      transition: (isMiniMode ? { 
+        duration: 0.35, 
+        ease: "easeInOut" 
+      } : { 
+        type: "spring", 
+        stiffness: 300, 
+        damping: 30 
+      }) as any
+    },
+    styles: {
+      radius: isMiniMode ? 'rounded-xl' : 'rounded-3xl',
+      shadow: isMiniMode ? 'shadow-sm' : 'shadow-xl',
+      blur: isMiniMode ? 'backdrop-blur-none' : 'backdrop-blur-md'
+    }
+  }), [isMiniMode]);
+
   const [isCompareMode, setIsCompareMode] = useState(false);
   const [compareCoins, setCompareCoins] = useState<[Coin | null, Coin | null]>([null, null]);
   const [discoveryFact, setDiscoveryFact] = useState<string | null>(null);
@@ -1321,10 +1357,10 @@ function CoinCollectorApp() {
   }, []);
 
   const uiDensity = useMemo(() => {
-    if (windowWidth < 400) return 'compact';
+    if (isMiniMode || windowWidth < 400) return 'compact';
     if (windowWidth < 768) return 'normal';
     return 'spacious';
-  }, [windowWidth]);
+  }, [windowWidth, isMiniMode]);
 
   const getResponsiveClass = (base: string, compact: string, normal: string, spacious: string) => {
     if (uiDensity === 'compact') return `${base} ${compact}`;
@@ -1987,11 +2023,12 @@ function CoinCollectorApp() {
     return (
       <motion.div
         key={coin.id}
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: isMiniMode ? 5 : 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        whileHover={{ y: -4 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={uiConfig.animations.hover}
+        whileTap={uiConfig.animations.tap}
+        transition={uiConfig.animations.transition}
         onClick={() => handleCoinClick(coin)}
         onMouseDown={() => startLongPress(coin.id)}
         onMouseUp={endLongPress}
@@ -2016,6 +2053,7 @@ function CoinCollectorApp() {
                 src={coin.imageUrl} 
                 alt={coin.name}
                 loading="lazy"
+                decoding="async"
                 referrerPolicy="no-referrer"
                 onError={handleImageError}
                 className={`w-full h-full object-cover border-2 border-gray-100 dark:border-gray-800 shadow-sm transition-transform duration-500 group-hover:scale-110 ${
@@ -2047,6 +2085,7 @@ function CoinCollectorApp() {
                   src={coin.imageUrl} 
                   alt={coin.name}
                   loading="lazy"
+                  decoding="async"
                   referrerPolicy="no-referrer"
                   onError={handleImageError}
                   className={`w-full h-full object-cover ${!isCollected && 'grayscale opacity-50'}`}
@@ -2111,9 +2150,12 @@ function CoinCollectorApp() {
     return (
       <motion.div 
         key={coin.id}
-        layout
-        initial={{ opacity: 0, y: 10 }}
+        layout={!isMiniMode}
+        initial={{ opacity: 0, y: isMiniMode ? 5 : 10 }}
         animate={{ opacity: 1, y: 0 }}
+        whileHover={uiConfig.animations.hover}
+        whileTap={uiConfig.animations.tap}
+        transition={uiConfig.animations.transition}
         onClick={() => handleCoinClick(coin)}
         className="p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
       >
@@ -3699,16 +3741,16 @@ function CoinCollectorApp() {
   }
 
   const SegmentedControl = ({ options, value, onChange }: { options: string[], value: string, onChange: (val: any) => void }) => (
-    <div className="flex bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm p-1 rounded-xl w-full border border-gray-200/50 dark:border-gray-700/50">
+    <div className={`flex bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm p-1 rounded-xl w-full border border-gray-200/50 dark:border-gray-700/50 ${isMiniMode ? 'py-0.5' : ''}`}>
       {options.map(opt => (
         <button
           key={opt}
           onClick={() => onChange(opt)}
-          className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all duration-200 ${
+          className={`flex-1 py-1.5 sm:py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all duration-200 ${
             value === opt 
               ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/5' 
               : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-          }`}
+          } ${isMiniMode ? 'py-1' : ''}`}
         >
           {opt}
         </button>
@@ -3774,6 +3816,7 @@ function CoinCollectorApp() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
+            transition={uiConfig.animations.transition}
             className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 text-center py-2 px-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 z-[105] border-b border-amber-200/50 dark:border-amber-800/50"
           >
             <Sparkles size={12} className="animate-pulse" />
@@ -4390,11 +4433,12 @@ function CoinCollectorApp() {
       {/* Profile Modal */}
       <AnimatePresence>
         {isProfileOpen && (
-          <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+          <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 transition-all">
             <motion.div 
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
+              transition={uiConfig.animations.transition}
               className={`bg-gray-50 dark:bg-gray-950 w-full max-w-2xl rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] flex flex-col ${getResponsiveClass('m-0 sm:m-4', 'm-0', 'm-0 sm:m-4', 'm-0 sm:m-6')}`}
             >
               <div className={`bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between sticky top-0 z-10 ${getResponsiveClass('p-4 sm:p-6', 'p-3', 'p-4', 'p-8')}`}>

@@ -50,3 +50,32 @@
     clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   }
 }
+
+.mini-mode {
+  --radius-card: 1rem;
+  --radius-button: 0.5rem;
+}
+
+.mini-mode .premium-shadow {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
+}
+
+.mini-mode .glass-effect {
+  backdrop-filter: none !important;
+  background-color: white !important;
+}
+
+.dark .mini-mode .glass-effect {
+  background-color: rgb(17 24 39) !important;
+}
+
+.mini-mode * {
+  text-shadow: none !important;
+}
+
+.mini-mode .backdrop-blur-md,
+.mini-mode .backdrop-blur-sm,
+.mini-mode .backdrop-blur-xl,
+.mini-mode .backdrop-blur-2xl {
+  backdrop-filter: none !important;
+}
