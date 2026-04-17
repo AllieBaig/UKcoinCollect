@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
-  Trophy, Search, ChevronRight, CheckCircle2, Circle, 
+  Trophy, Search, ChevronRight, Check, CheckCircle2, Circle, 
   ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
   User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle, TrendingUp, Trash2, Shield, Copy, Edit,
   Monitor, Smartphone, Database, Settings2, ShieldAlert, FlaskConical,
@@ -1082,6 +1082,7 @@ function CoinCollectorApp() {
   const [isScanning, setIsScanning] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [settingsSubpage, setSettingsSubpage] = useState<string | null>(null);
   const [isWebSearchOpen, setIsWebSearchOpen] = useState(false);
   const [webSearchQuery, setWebSearchQuery] = useState('');
   const [webSearchResults, setWebSearchResults] = useState<string[]>([]);
@@ -1091,6 +1092,10 @@ function CoinCollectorApp() {
   const [isPhotoLibraryOpen, setIsPhotoLibraryOpen] = useState(false);
   const [isSpinModalOpen, setIsSpinModalOpen] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
+  useEffect(() => {
+    if (!isProfileOpen) setSettingsSubpage(null);
+  }, [isProfileOpen]);
+
   const [isIdentityCardOpen, setIsIdentityCardOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isStoryModeOpen, setIsStoryModeOpen] = useState(false);
@@ -1384,6 +1389,67 @@ function CoinCollectorApp() {
     "The 5p and 10p coins are legal tender for amounts up to £5."
   ];
   const [conversionError, setConversionError] = useState<string | null>(null);
+
+  const SettingsSection = ({ title, children }: { title: string, children: React.ReactNode }) => (
+    <div className="space-y-1.5 mb-8">
+      {title && <h3 className="px-4 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{title}</h3>}
+      <div className="bg-white dark:bg-gray-900 border-y border-gray-100 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
+        {children}
+      </div>
+    </div>
+  );
+
+  const SettingsRow = ({ 
+    icon: Icon, 
+    iconBg, 
+    title, 
+    subtitle, 
+    right, 
+    onClick,
+    isNavigation 
+  }: { 
+    icon?: any, 
+    iconBg?: string, 
+    title: string, 
+    subtitle?: string, 
+    right?: React.ReactNode, 
+    onClick?: () => void,
+    isNavigation?: boolean
+  }) => (
+    <div 
+      onClick={onClick}
+      className={`w-full min-h-[44px] sm:min-h-[56px] px-4 py-2 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all text-left group cursor-pointer active:bg-gray-100 dark:active:bg-gray-800`}
+    >
+      <div className="flex items-center gap-3">
+        {Icon && (
+          <div className={`w-7 h-7 sm:w-8 sm:h-8 ${iconBg} rounded-[0.55rem] flex items-center justify-center text-white shrink-0`}>
+            <Icon size={18} className="sm:w-5 sm:h-5" />
+          </div>
+        )}
+        <div className="flex flex-col min-w-0 pr-2">
+          <span className="text-[15px] sm:text-base font-medium text-gray-900 dark:text-white truncate">{title}</span>
+          {subtitle && <span className="text-[11px] sm:text-xs text-gray-400 truncate leading-tight mt-0.5">{subtitle}</span>}
+        </div>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        {right && <div className="text-[15px] text-gray-400 dark:text-gray-500 overflow-hidden text-ellipsis whitespace-nowrap max-w-[120px] text-right">{right}</div>}
+        {isNavigation && <ChevronRight size={18} className="text-gray-300 dark:text-gray-600 group-active:translate-x-1 transition-transform" />}
+      </div>
+    </div>
+  );
+
+  const SettingsToggle = ({ checked, onChange }: { checked: boolean, onChange: () => void }) => (
+    <div 
+      onClick={(e) => { e.stopPropagation(); onChange(); }}
+      className={`w-[51px] h-[31px] rounded-full transition-colors relative flex items-center px-[2px] cursor-pointer active:opacity-90 ${checked ? 'bg-[#34C759]' : 'bg-gray-200 dark:bg-gray-700'}`}
+    >
+      <motion.div 
+        animate={{ x: checked ? 20 : 0 }}
+        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        className="w-[27px] h-[27px] bg-white rounded-full shadow-sm"
+      />
+    </div>
+  );
 
   const needsConversion = (data: any) => {
     if (!data || typeof data !== 'object') return false;
@@ -4940,601 +5006,448 @@ function CoinCollectorApp() {
                   </button>
                 </div>
 
-                {/* Settings Section */}
-                <div className="space-y-8 mb-12">
-                  
-                  {/* Display Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 px-2">
-                      <Monitor size={16} className="text-blue-500" />
-                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Display</h4>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            {userProfile.settings?.isDarkMode ? <Moon size={16} /> : <Sparkles size={16} />}
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Dark Mode</p>
-                            <p className="text-[10px] text-gray-500">Enable night theme</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isDarkMode: !prev.settings.isDarkMode } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.isDarkMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isDarkMode ? 'right-0.5' : 'left-0.5'}`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <Settings size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Follow System Theme</p>
-                            <p className="text-[10px] text-gray-500">Sync with device settings</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, followSystemTheme: !prev.settings.followSystemTheme } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative active:scale-90 ${userProfile.settings?.followSystemTheme ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.followSystemTheme ? 'right-0.5' : 'left-0.5'}`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <BarChart3 size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Compact UI</p>
-                            <p className="text-[10px] text-gray-500">Reduce spacing and sizes</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isCompactUI: !prev.settings.isCompactUI } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative active:scale-90 ${userProfile.settings?.isCompactUI ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isCompactUI ? 'right-0.5' : 'left-0.5'}`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <LayoutGrid size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Layout Switcher</p>
-                            <p className="text-[10px] text-gray-500">Show switcher in header</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, showLayoutSwitcher: !prev.settings.showLayoutSwitcher } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative active:scale-90 ${userProfile.settings?.showLayoutSwitcher ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showLayoutSwitcher ? 'right-0.5' : 'left-0.5'}`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <Layout size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Text Mode UI</p>
-                            <p className="text-[10px] text-gray-500">Minimal text-only layout</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isTextMode: !prev.settings.isTextMode } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative active:scale-90 ${userProfile.settings?.isTextMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isTextMode ? 'right-0.5' : 'left-0.5'}`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <Wind size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Ambient Motion</p>
-                            <p className="text-[10px] text-gray-500">Subtle background movement</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isAmbientMotionEnabled: !prev.settings.isAmbientMotionEnabled } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative active:scale-90 ${userProfile.settings?.isAmbientMotionEnabled ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isAmbientMotionEnabled ? 'right-0.5' : 'left-0.5'}`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <Table size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Sort Collection By</p>
-                            <p className="text-[10px] text-gray-500">Change default sorting</p>
-                          </div>
-                        </div>
-                        <select
-                          value={userProfile.settings.sortBy || 'recent-added'}
-                          onChange={(e) => setUserProfile(prev => ({
-                            ...prev,
-                            settings: { ...prev.settings, sortBy: e.target.value as any }
-                          }))}
-                          className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-none outline-none active:scale-95 transition-transform"
-                        >
-                          <option value="name">Name</option>
-                          <option value="recent-added">Recent</option>
-                          <option value="recent-opened">Opened</option>
-                        </select>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-premium border border-gray-100 dark:border-gray-800 premium-shadow">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <Layout size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">App Theme</p>
-                            <p className="text-[10px] text-gray-500">Texture-based themes</p>
-                          </div>
-                        </div>
-                        <select
-                          value={userProfile.settings.theme || 'default'}
-                          onChange={(e) => setUserProfile(prev => ({
-                            ...prev,
-                            settings: { ...prev.settings, theme: e.target.value as any }
-                          }))}
-                          className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-none outline-none active:scale-95 transition-transform"
-                        >
-                          <option value="default">Default</option>
-                          <option value="paper">Paper</option>
-                          <option value="glass">Glass</option>
-                          <option value="wood">Wood</option>
-                          <option value="metal">Metal</option>
-                          <option value="fabric">Fabric</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* View Modes Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 px-2">
-                      <LayoutGrid size={16} className="text-amber-500" />
-                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">View Modes</h4>
-                    </div>
-                    <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-4 space-y-6">
-                      
-                      {/* Layout Visibility Toggles */}
-                      <div className="space-y-3">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Enabled Layouts</p>
-                        <div className="grid grid-cols-2 gap-2">
-                          {LAYOUT_OPTIONS.map(opt => (
-                            <button
-                              key={opt.id}
-                              onClick={() => {
-                                const current = userProfile.settings.enabledLayouts || {};
-                                setUserProfile(prev => ({
-                                  ...prev,
-                                  settings: {
-                                    ...prev.settings,
-                                    enabledLayouts: {
-                                      ...current,
-                                      [opt.id]: current[opt.id] === false ? true : false
-                                    }
-                                  }
-                                }));
-                              }}
-                              className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${
-                                userProfile.settings.enabledLayouts?.[opt.id] !== false
-                                  ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-900/30 text-amber-700 dark:text-amber-400'
-                                  : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-400'
-                              }`}
-                            >
-                              {opt.icon}
-                              <span className="text-[10px] font-bold uppercase tracking-widest">{opt.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Visible Fields Toggles */}
-                      <div className="space-y-3">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Text Field Visibility</p>
-                        <div className="flex flex-wrap gap-2">
-                          {['denomination', 'year', 'mint', 'condition'].map(field => (
-                            <button
-                              key={field}
-                              onClick={() => {
-                                const current = userProfile.settings.visibleFields || { denomination: true, year: true, mint: true, condition: true };
-                                setUserProfile(prev => ({
-                                  ...prev,
-                                  settings: {
-                                    ...prev.settings,
-                                    visibleFields: {
-                                      ...current,
-                                      [field]: !current[field as keyof typeof current]
-                                    }
-                                  }
-                                }));
-                              }}
-                              className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${
-                                (userProfile.settings.visibleFields?.[field as keyof typeof userProfile.settings.visibleFields] ?? true)
-                                  ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-900/30 text-blue-600 dark:text-blue-400'
-                                  : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-400'
-                              }`}
-                            >
-                              {field}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* App Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 px-2">
-                      <Smartphone size={16} className="text-amber-500" />
-                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">App</h4>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <Zap size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Focus Mode (Performance)</p>
-                            <p className="text-[10px] text-gray-500">Hide non-essential UI</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isFocusMode: !prev.settings.isFocusMode } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.isFocusMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isFocusMode ? 'right-0.5' : 'left-0.5'}`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <Layout size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Bottom Navigation</p>
-                            <p className="text-[10px] text-gray-500">Enable bottom menu bar</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, showBottomMenu: !prev.settings.showBottomMenu } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.showBottomMenu ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showBottomMenu ? 'right-0.5' : 'left-0.5'}`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <Globe size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Old European Coins</p>
-                            <p className="text-[10px] text-gray-500">Show pre-Euro currencies</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, showOldEuropeanCoins: !prev.settings.showOldEuropeanCoins } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.showOldEuropeanCoins ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showOldEuropeanCoins ? 'right-0.5' : 'left-0.5'}`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <ImageOff size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Background Removal</p>
-                            <p className="text-[10px] text-gray-500">Enable AI image processing</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isBackgroundRemovalEnabled: !prev.settings.isBackgroundRemovalEnabled } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.isBackgroundRemovalEnabled ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isBackgroundRemovalEnabled ? 'right-0.5' : 'left-0.5'}`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <RefreshCw size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Compare Mode</p>
-                            <p className="text-[10px] text-gray-500">Side-by-side view</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setIsCompareMode(true)}
-                          className="px-3 py-1.5 bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest"
-                        >
-                          Open
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <button 
-                          onClick={refreshApp}
-                          className="flex items-center justify-center gap-2 p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 transition-colors"
-                        >
-                          <RefreshCw size={14} className="text-blue-500" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest">Refresh App</span>
-                        </button>
-                        <button 
-                          onClick={clearCache}
-                          className="flex items-center justify-center gap-2 p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 transition-colors"
-                        >
-                          <Trash2 size={14} className="text-red-500" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest">Clear Cache</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Data Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 px-2">
-                      <Database size={16} className="text-green-500" />
-                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Data</h4>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      <div className="grid grid-cols-2 gap-2">
-                        <button 
-                          onClick={() => setIsExportModalOpen(true)}
-                          className="flex items-center justify-center gap-2 p-3 bg-gray-900 text-white rounded-2xl hover:bg-black transition-colors"
-                        >
-                          <Share size={14} />
-                          <span className="text-[10px] font-bold uppercase tracking-widest">Export Data</span>
-                        </button>
-                        <button 
-                          onClick={importCollection}
-                          className="flex items-center justify-center gap-2 p-3 bg-white text-gray-900 border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors"
-                        >
-                          <RefreshCw size={14} />
-                          <span className="text-[10px] font-bold uppercase tracking-widest">Import Data</span>
-                        </button>
-                      </div>
-
-                      <div className="p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-amber-50 dark:bg-amber-900/20 rounded-xl flex items-center justify-center text-amber-600">
-                              <Shield size={16} />
-                            </div>
-                            <div>
-                              <p className="font-bold text-xs text-gray-900 dark:text-white">Recovery Code (Backup)</p>
-                              <p className="text-[10px] text-gray-500">Secure your collection</p>
-                            </div>
-                          </div>
-                          <button 
-                            onClick={generateRecoveryCode}
-                            className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 rounded-xl text-[10px] font-bold"
-                          >
-                            {userProfile.recoveryCode ? 'Regen' : 'Gen'}
-                          </button>
-                        </div>
-                        {userProfile.recoveryCode && (
-                          <div className="bg-gray-50 dark:bg-gray-800 p-2.5 rounded-xl flex items-center justify-between border border-gray-100 dark:border-gray-700">
-                            <code className="text-[10px] font-mono font-bold text-gray-900 dark:text-white tracking-widest">
-                              {userProfile.recoveryCode}
-                            </code>
-                            <button 
-                              onClick={() => {
-                                navigator.clipboard.writeText(userProfile.recoveryCode!);
-                                alert("Recovery code copied!");
-                              }}
-                              className="text-amber-600"
-                            >
-                              <Copy size={14} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <RefreshCw size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Data Conversion</p>
-                            <p className="text-[10px] text-gray-500">Legacy format check</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => {
-                            const oldData = {
-                              collected_coins: JSON.parse(localStorage.getItem('collected_coins') || 'null'),
-                              custom_coins: JSON.parse(localStorage.getItem('custom_coins') || 'null'),
-                              requested_coins: JSON.parse(localStorage.getItem('requested_coins') || 'null'),
-                              user_profile: JSON.parse(localStorage.getItem('user_profile') || 'null'),
-                              user_coin_images: JSON.parse(localStorage.getItem('user_coin_images') || 'null'),
-                            };
-                            if (oldData.collected_coins || oldData.custom_coins || oldData.requested_coins || oldData.user_profile) {
-                              setConversionData(oldData);
-                              setIsConverting(true);
-                            } else {
-                              alert("No old data detected.");
-                            }
-                          }}
-                          className="px-3 py-1.5 bg-amber-100 text-amber-600 font-bold rounded-xl text-[10px]"
-                        >
-                          Check
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Advanced Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 px-2">
-                      <Settings2 size={16} className="text-purple-500" />
-                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Advanced</h4>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <Table size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Purchase Mode</p>
-                            <p className="text-[10px] text-gray-500">Senior-friendly table view</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isPurchaseMode: !prev.settings.isPurchaseMode } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.isPurchaseMode ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.isPurchaseMode ? 'right-0.5' : 'left-0.5'}`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <Tag size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Show Coin Price</p>
-                            <p className="text-[10px] text-gray-500">Display price in normal mode</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, showCoinPrice: !prev.settings.showCoinPrice } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.showCoinPrice ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showCoinPrice ? 'right-0.5' : 'left-0.5'}`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <Globe size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Show Old European Coins</p>
-                            <p className="text-[10px] text-gray-500">Enable pre-euro currencies</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, showOldEuropeanCoins: !prev.settings.showOldEuropeanCoins } }))}
-                          className={`w-10 h-5 rounded-full transition-all relative ${userProfile.settings?.showOldEuropeanCoins ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${userProfile.settings?.showOldEuropeanCoins ? 'right-0.5' : 'left-0.5'}`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-                            <ShieldAlert size={16} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs text-gray-900 dark:text-white">Safe Mode</p>
-                            <p className="text-[10px] text-gray-500">Minimal recovery state</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => alert("Safe Mode is automatically managed by the system. If the app crashes, it will prompt for recovery.")}
-                          className="px-3 py-1.5 bg-gray-100 text-gray-500 font-bold rounded-xl text-[10px] uppercase tracking-widest"
-                        >
-                          Info
-                        </button>
-                      </div>
-
-                      {collectedIds.length >= 20 && (
-                        <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800/50 rounded-2xl flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-purple-100 dark:bg-purple-800/40 rounded-xl flex items-center justify-center text-purple-600">
-                              <FlaskConical size={16} />
-                            </div>
-                            <div>
-                              <p className="font-bold text-xs text-gray-900 dark:text-white">Experimental Sorting</p>
-                              <p className="text-[10px] text-purple-600/60">Unlocked feature</p>
-                            </div>
-                          </div>
-                          <button className="px-3 py-1.5 bg-purple-600 text-white font-bold rounded-xl text-[10px] uppercase tracking-widest">Enable</button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Fixed Prices Section */}
-                  <div className="space-y-4 mt-8">
-                    <div className="flex items-center gap-2 px-2">
-                      <Tag size={16} className="text-amber-500" />
-                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Fixed Prices</h4>
-                    </div>
-                    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-4">
-                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Set default prices for denominations</p>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                        {DENOMINATIONS.map(denom => (
-                          <div key={denom} className="space-y-1">
-                            <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{denom}</label>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">£</span>
-                              <input 
-                                type="number"
-                                step="0.01"
-                                value={userProfile.settings.fixedPrices?.[denom] || ''}
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  setUserProfile(prev => ({
-                                    ...prev,
-                                    settings: {
-                                      ...prev.settings,
-                                      fixedPrices: {
-                                        ...(prev.settings.fixedPrices || {}),
-                                        [denom]: isNaN(val) ? 0 : val
-                                      }
-                                    }
-                                  }));
-                                }}
-                                className="w-full pl-6 pr-3 py-2 bg-gray-50 dark:bg-gray-800 border border-transparent focus:border-amber-500 rounded-xl text-[10px] font-bold transition-all"
-                                placeholder="0.00"
+                {/* iOS Settings Style Content */}
+                <div className="relative min-h-[400px]">
+                  <AnimatePresence mode="wait">
+                    {!settingsSubpage ? (
+                      <motion.div 
+                        key="main-settings"
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: -20, opacity: 0 }}
+                        transition={{ type: "tween", duration: 0.2 }}
+                      >
+                        <SettingsSection title="Display">
+                          <SettingsRow 
+                            icon={Moon} 
+                            iconBg="bg-indigo-500" 
+                            title="Dark Mode" 
+                            subtitle="Enable night theme" 
+                            right={
+                              <SettingsToggle 
+                                checked={userProfile.settings?.isDarkMode ?? false} 
+                                onChange={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isDarkMode: !prev.settings.isDarkMode } }))} 
                               />
+                            } 
+                          />
+                          <SettingsRow 
+                            icon={Settings} 
+                            iconBg="bg-gray-500" 
+                            title="Follow System Theme" 
+                            subtitle="Sync with device settings" 
+                            right={
+                              <SettingsToggle 
+                                checked={userProfile.settings?.followSystemTheme ?? false} 
+                                onChange={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, followSystemTheme: !prev.settings.followSystemTheme } }))} 
+                              />
+                            } 
+                          />
+                          <SettingsRow 
+                            icon={BarChart3} 
+                            iconBg="bg-blue-400" 
+                            title="Compact UI" 
+                            subtitle="Reduce spacing and sizes" 
+                            right={
+                              <SettingsToggle 
+                                checked={userProfile.settings?.isCompactUI ?? false} 
+                                onChange={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isCompactUI: !prev.settings.isCompactUI } }))} 
+                              />
+                            } 
+                          />
+                          <SettingsRow 
+                            icon={Layout} 
+                            iconBg="bg-pink-500" 
+                            title="App Theme" 
+                            subtitle="Texture-based patterns" 
+                            right={userProfile.settings.theme || 'Default'} 
+                            isNavigation 
+                            onClick={() => setSettingsSubpage('theme')}
+                          />
+                        </SettingsSection>
+
+                        <SettingsSection title="Layout & View">
+                          <SettingsRow 
+                            icon={LayoutGrid} 
+                            iconBg="bg-amber-500" 
+                            title="Layout Switcher" 
+                            subtitle="Show switcher in header" 
+                            right={
+                              <SettingsToggle 
+                                checked={userProfile.settings?.showLayoutSwitcher ?? false} 
+                                onChange={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, showLayoutSwitcher: !prev.settings.showLayoutSwitcher } }))} 
+                              />
+                            } 
+                          />
+                          <SettingsRow 
+                            icon={List} 
+                            iconBg="bg-emerald-500" 
+                            title="Text Mode UI" 
+                            subtitle="Minimal text-only layout" 
+                            right={
+                              <SettingsToggle 
+                                checked={userProfile.settings?.isTextMode ?? false} 
+                                onChange={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isTextMode: !prev.settings.isTextMode } }))} 
+                              />
+                            } 
+                          />
+                          <SettingsRow 
+                            icon={Columns} 
+                            iconBg="bg-rose-500" 
+                            title="Visible Fields" 
+                            subtitle="Customize info displayed" 
+                            isNavigation 
+                            onClick={() => setSettingsSubpage('fields')}
+                          />
+                          <SettingsRow 
+                            icon={Layout} 
+                            iconBg="bg-blue-600" 
+                            title="Enabled Layouts" 
+                            subtitle="Filter switcher options" 
+                            isNavigation 
+                            onClick={() => setSettingsSubpage('layouts')}
+                          />
+                        </SettingsSection>
+
+                        <SettingsSection title="Motion">
+                          <SettingsRow 
+                            icon={Wind} 
+                            iconBg="bg-cyan-500" 
+                            title="Ambient Motion" 
+                            subtitle="Subtle background movement" 
+                            right={
+                              <SettingsToggle 
+                                checked={userProfile.settings?.isAmbientMotionEnabled ?? false} 
+                                onChange={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isAmbientMotionEnabled: !prev.settings.isAmbientMotionEnabled } }))} 
+                              />
+                            } 
+                          />
+                          <SettingsRow 
+                            icon={Zap} 
+                            iconBg="bg-orange-500" 
+                            title="Performance Mode" 
+                            subtitle="Optimize for speed" 
+                            right={
+                              <SettingsToggle 
+                                checked={userProfile.settings?.isMiniMode ?? false} 
+                                onChange={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isMiniMode: !prev.settings.isMiniMode } }))} 
+                              />
+                            } 
+                          />
+                        </SettingsSection>
+
+                        <SettingsSection title="Sorting">
+                          <SettingsRow 
+                            icon={Table} 
+                            iconBg="bg-violet-500" 
+                            title="Sort Collection By" 
+                            subtitle="Default sorting method" 
+                            right={userProfile.settings.sortBy || 'Recent'} 
+                            isNavigation 
+                            onClick={() => setSettingsSubpage('sort')}
+                          />
+                        </SettingsSection>
+
+                        <SettingsSection title="Advanced">
+                          <SettingsRow 
+                            icon={ShoppingCart} 
+                            iconBg="bg-blue-500" 
+                            title="Purchase Mode" 
+                            subtitle="Senior-friendly table view" 
+                            right={
+                              <SettingsToggle 
+                                checked={userProfile.settings?.isPurchaseMode ?? false} 
+                                onChange={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, isPurchaseMode: !prev.settings.isPurchaseMode } }))} 
+                              />
+                            } 
+                          />
+                          <SettingsRow 
+                            icon={Tag} 
+                            iconBg="bg-amber-400" 
+                            title="Show Coin Price" 
+                            subtitle="Prices in visual modes" 
+                            right={
+                              <SettingsToggle 
+                                checked={userProfile.settings?.showCoinPrice ?? false} 
+                                onChange={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, showCoinPrice: !prev.settings.showCoinPrice } }))} 
+                              />
+                            } 
+                          />
+                          <SettingsRow 
+                            icon={Globe} 
+                            iconBg="bg-emerald-600" 
+                            title="Old European Coins" 
+                            subtitle="Enable pre-euro currencies" 
+                            right={
+                              <SettingsToggle 
+                                checked={userProfile.settings?.showOldEuropeanCoins ?? false} 
+                                onChange={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, showOldEuropeanCoins: !prev.settings.showOldEuropeanCoins } }))} 
+                              />
+                            } 
+                          />
+                          <SettingsRow 
+                            icon={Database} 
+                            iconBg="bg-gray-800" 
+                            title="Fixed Prices" 
+                            subtitle="Manage default values" 
+                            isNavigation 
+                            onClick={() => setSettingsSubpage('prices')}
+                          />
+                        </SettingsSection>
+
+                        <SettingsSection title="Data Management">
+                          <SettingsRow 
+                            icon={Shield} 
+                            iconBg="bg-gray-600" 
+                            title="Recovery Code" 
+                            subtitle="Backup security" 
+                            isNavigation 
+                            onClick={() => setSettingsSubpage('data')}
+                          />
+                          <SettingsRow 
+                            icon={Share} 
+                            iconBg="bg-blue-600" 
+                            title="Export Data" 
+                            onClick={() => setIsExportModalOpen(true)}
+                            isNavigation
+                          />
+                          <SettingsRow 
+                            icon={RefreshCw} 
+                            iconBg="bg-emerald-600" 
+                            title="Import Data" 
+                            onClick={importCollection}
+                            isNavigation
+                          />
+                          <SettingsRow 
+                            icon={Trash2} 
+                            iconBg="bg-red-500" 
+                            title="Clear Cache" 
+                            onClick={clearCache}
+                          />
+                        </SettingsSection>
+                      </motion.div>
+                    ) : (
+                      <motion.div 
+                        key="subpage"
+                        initial={{ x: 300, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: 300, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 40 }}
+                        className="bg-gray-50 dark:bg-black/20 min-h-full"
+                      >
+                        <div className="sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 flex items-center p-3 gap-2">
+                          <button 
+                            onClick={() => setSettingsSubpage(null)}
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors flex items-center gap-1 text-blue-500"
+                          >
+                            <ArrowLeft size={20} />
+                            <span className="text-[15px] font-medium">Settings</span>
+                          </button>
+                          <h4 className="flex-1 text-center font-bold text-gray-900 dark:text-white capitalize pr-10">
+                            {settingsSubpage.replace('-', ' ')}
+                          </h4>
+                        </div>
+                        
+                        <div className="p-0">
+                          {settingsSubpage === 'theme' && (
+                            <SettingsSection title="">
+                              {['default', 'paper', 'glass', 'wood', 'metal', 'fabric'].map(t => (
+                                <SettingsRow 
+                                  key={t}
+                                  title={t.charAt(0).toUpperCase() + t.slice(1)}
+                                  right={userProfile.settings.theme === t ? <Check size={18} className="text-blue-500" /> : null}
+                                  onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, theme: t as any } }))}
+                                />
+                              ))}
+                            </SettingsSection>
+                          )}
+
+                          {settingsSubpage === 'sort' && (
+                            <SettingsSection title="">
+                              {[
+                                { id: 'recent-added', label: 'Recently Added' },
+                                { id: 'recent-opened', label: 'Recently Opened' },
+                                { id: 'name', label: 'Alphabetical (Name)' },
+                                { id: 'year', label: 'Production Year' },
+                                { id: 'denomination', label: 'Denomination' },
+                                { id: 'country', label: 'Country' }
+                              ].map(opt => (
+                                <SettingsRow 
+                                  key={opt.id}
+                                  title={opt.label}
+                                  right={userProfile.settings.sortBy === opt.id ? <Check size={18} className="text-blue-500" /> : null}
+                                  onClick={() => setUserProfile(prev => ({ ...prev, settings: { ...prev.settings, sortBy: opt.id as any } }))}
+                                />
+                              ))}
+                            </SettingsSection>
+                          )}
+
+                          {settingsSubpage === 'fields' && (
+                            <SettingsSection title="Text Field Visibility">
+                              {['denomination', 'year', 'mint', 'condition'].map(field => {
+                                const isVisible = userProfile.settings.visibleFields?.[field as keyof typeof userProfile.settings.visibleFields] ?? true;
+                                return (
+                                  <SettingsRow 
+                                    key={field}
+                                    title={field.charAt(0).toUpperCase() + field.slice(1)}
+                                    right={
+                                      <SettingsToggle 
+                                        checked={isVisible} 
+                                        onChange={() => {
+                                          const current = userProfile.settings.visibleFields || { denomination: true, year: true, mint: true, condition: true };
+                                          setUserProfile(prev => ({
+                                            ...prev,
+                                            settings: {
+                                              ...prev.settings,
+                                              visibleFields: {
+                                                ...current,
+                                                [field]: !current[field as keyof typeof current]
+                                              }
+                                            }
+                                          }));
+                                        }} 
+                                      />
+                                    }
+                                  />
+                                );
+                              })}
+                            </SettingsSection>
+                          )}
+
+                          {settingsSubpage === 'layouts' && (
+                            <SettingsSection title="Available Layouts">
+                              {LAYOUT_OPTIONS.map(opt => {
+                                const isEnabled = userProfile.settings.enabledLayouts?.[opt.id] !== false;
+                                return (
+                                  <SettingsRow 
+                                    key={opt.id}
+                                    title={opt.label}
+                                    icon={opt.icon ? () => opt.icon : undefined}
+                                    iconBg="bg-gray-100 dark:bg-gray-800 !text-gray-500"
+                                    right={
+                                      <SettingsToggle 
+                                        checked={isEnabled} 
+                                        onChange={() => {
+                                          const current = userProfile.settings.enabledLayouts || {};
+                                          setUserProfile(prev => ({
+                                            ...prev,
+                                            settings: {
+                                              ...prev.settings,
+                                              enabledLayouts: {
+                                                ...current,
+                                                [opt.id]: current[opt.id] === false ? true : false
+                                              }
+                                            }
+                                          }));
+                                        }} 
+                                      />
+                                    }
+                                  />
+                                );
+                              })}
+                            </SettingsSection>
+                          )}
+
+                          {settingsSubpage === 'prices' && (
+                            <div className="space-y-4 p-4">
+                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Set default prices by denomination</p>
+                              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
+                                {DENOMINATIONS.map(denom => (
+                                  <div key={denom} className="flex items-center justify-between px-4 py-3">
+                                    <span className="text-[15px] font-medium text-gray-700 dark:text-gray-200">{denom}</span>
+                                    <div className="relative w-24">
+                                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">£</span>
+                                      <input 
+                                        type="number"
+                                        step="0.01"
+                                        value={userProfile.settings.fixedPrices?.[denom] || ''}
+                                        onChange={(e) => {
+                                          const val = parseFloat(e.target.value);
+                                          setUserProfile(prev => ({
+                                            ...prev,
+                                            settings: {
+                                              ...prev.settings,
+                                              fixedPrices: {
+                                                ...(prev.settings.fixedPrices || {}),
+                                                [denom]: isNaN(val) ? 0 : val
+                                              }
+                                            }
+                                          }));
+                                        }}
+                                        className="w-full pl-5 pr-2 py-1.5 bg-gray-50 dark:bg-gray-800 border-none rounded-lg text-xs font-bold text-right"
+                                        placeholder="0.00"
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                          )}
+
+                          {settingsSubpage === 'data' && (
+                            <div className="space-y-6">
+                              <SettingsSection title="Security">
+                                <SettingsRow 
+                                  title="Recovery Code" 
+                                  right={userProfile.recoveryCode ? 'Verified' : 'Generate'} 
+                                  onClick={generateRecoveryCode}
+                                />
+                                {userProfile.recoveryCode && (
+                                  <div className="px-4 py-4 bg-gray-50 dark:bg-black/20">
+                                    <div className="bg-white dark:bg-gray-900 p-3 rounded-xl flex items-center justify-between border border-gray-100 dark:border-gray-800 shadow-sm">
+                                      <code className="text-[13px] font-mono font-bold text-gray-900 dark:text-white tracking-widest uppercase">
+                                        {userProfile.recoveryCode}
+                                      </code>
+                                      <button 
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(userProfile.recoveryCode!);
+                                          alert("Recovery code copied!");
+                                        }}
+                                        className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-lg transition-colors"
+                                      >
+                                        <Copy size={16} />
+                                      </button>
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mt-2 px-1 text-center italic">
+                                      Store this code safely. It's needed for major schema migrations.
+                                    </p>
+                                  </div>
+                                )}
+                              </SettingsSection>
+
+                              <SettingsSection title="Tools">
+                                <SettingsRow 
+                                  title="Check Legacy Conversion" 
+                                  right="Run Scan" 
+                                  onClick={() => {
+                                    const oldData = {
+                                      collected_coins: JSON.parse(localStorage.getItem('collected_coins') || 'null'),
+                                      custom_coins: JSON.parse(localStorage.getItem('custom_coins') || 'null'),
+                                      requested_coins: JSON.parse(localStorage.getItem('requested_coins') || 'null'),
+                                      user_profile: JSON.parse(localStorage.getItem('user_profile') || 'null'),
+                                    };
+                                    if (oldData.collected_coins || oldData.custom_coins || oldData.requested_coins || oldData.user_profile) {
+                                      setConversionData(oldData);
+                                      setIsConverting(true);
+                                    } else {
+                                      alert("No legacy data found.");
+                                    }
+                                  }}
+                                />
+                                <SettingsRow 
+                                  title="Bulk Price Update" 
+                                  right="Open Modal" 
+                                  onClick={() => setIsBulkPriceModalOpen(true)}
+                                />
+                              </SettingsSection>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
-                <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-800 text-center">
+                <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-800 text-center pb-8">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em]">Coin Collector v2.0</p>
                 </div>
               </div>
