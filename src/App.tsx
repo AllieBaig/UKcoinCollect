@@ -235,11 +235,11 @@ const LAYOUT_OPTIONS = [
 
 const LAYOUT_GROUPS = [
   {
-    name: 'Visual Modes',
-    options: ['grid', 'carousel', 'masonry', 'board', 'timeline', 'gallery', 'spotlight', 'split', 'hexagon', 'list', 'compact']
+    name: 'Visual Layouts',
+    options: ['grid', 'carousel', 'masonry', 'gallery', 'timeline', 'board']
   },
   {
-    name: 'Text Modes',
+    name: 'Text Layouts',
     options: ['text-card', 'table', 'text-list', 'text-compact']
   }
 ];
@@ -3932,6 +3932,88 @@ function CoinCollectorApp() {
           </div>
         </div>
       </header>
+      
+      {/* Layout Selection Dropdown */}
+      <AnimatePresence>
+        {isLayoutMenuOpen && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsLayoutMenuOpen(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              transition={uiConfig.animations.transition}
+              className="relative w-full max-w-sm bg-white dark:bg-gray-950 rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden"
+            >
+              <div className="p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl">
+                      <LayoutGrid size={18} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-tight text-gray-900 dark:text-white">Switch View</h3>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Select your layout</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setIsLayoutMenuOpen(false)}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-400 transition-colors"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="space-y-6 max-h-[60vh] overflow-y-auto no-scrollbar pr-1">
+                  {LAYOUT_GROUPS.map((group) => (
+                    <div key={group.name} className="space-y-3">
+                      <h4 className="px-2 text-[10px] font-black text-amber-500 uppercase tracking-[0.2em]">
+                        {group.name}
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {group.options.map(id => {
+                          const opt = LAYOUT_OPTIONS.find(o => o.id === id);
+                          if (!opt) return null;
+                          const isActive = (userProfile.settings.layout || 'grid') === id;
+                          
+                          return (
+                            <button
+                              key={id}
+                              onClick={() => {
+                                setUserProfile(prev => ({
+                                  ...prev,
+                                  settings: { ...prev.settings, layout: id as any }
+                                }));
+                                setIsLayoutMenuOpen(false);
+                              }}
+                              className={`flex items-center gap-3 p-3 rounded-2xl border transition-all active:scale-95 ${
+                                isActive 
+                                  ? 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 ring-2 ring-amber-500/20' 
+                                  : 'bg-gray-50 dark:bg-gray-900 border-transparent text-gray-500 hover:border-gray-200 dark:hover:border-gray-800'
+                              }`}
+                            >
+                              <div className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-amber-500 text-white' : 'bg-white dark:bg-gray-800'}`}>
+                                {opt.icon}
+                              </div>
+                              <span className="text-[10px] font-black uppercase tracking-widest">{opt.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto no-scrollbar pt-[env(safe-area-inset-top)]">
