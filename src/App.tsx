@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Trophy, Search, ChevronRight, Check, CheckCircle2, Circle, 
-  ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles,
+  ArrowLeft, Info, X, Plus, Send, Clipboard, Camera, Loader2, Sparkles, Cpu, HardDrive, RotateCcw, Power,
   User, Settings, Award, Calendar, BarChart3, Share, WifiOff, RefreshCw, AlertTriangle, Globe, AlertCircle, TrendingUp, Trash2, Shield, Copy, Edit,
   Monitor, Smartphone, Database, Settings2, ShieldAlert, FlaskConical,
   Zap, Target, Dices, Layout, ImageOff, Clock, CheckCircle, ShoppingCart, Tag, Table, History, Moon, HelpCircle, ArrowRight, Star, ChevronDown,
@@ -1068,6 +1068,35 @@ function CoinCollectorApp() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'collected' | 'missing'>('all');
+  const [swStatus, setSwStatus] = useState<'Active' | 'Waiting' | 'Installing' | 'None'>('None');
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      const checkStatus = () => {
+        navigator.serviceWorker.getRegistration().then(reg => {
+          if (!reg) {
+            setSwStatus('None');
+            return;
+          }
+          if (reg.installing) setSwStatus('Installing');
+          else if (reg.waiting) setSwStatus('Waiting');
+          else if (reg.active) setSwStatus('Active');
+        });
+      };
+      
+      checkStatus();
+      
+      // Check periodically as well
+      const interval = setInterval(checkStatus, 3000);
+      
+      navigator.serviceWorker.addEventListener('controllerchange', checkStatus);
+      return () => {
+        navigator.serviceWorker.removeEventListener('controllerchange', checkStatus);
+        clearInterval(interval);
+      };
+    }
+  }, []);
+
   const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   
@@ -3710,13 +3739,66 @@ function CoinCollectorApp() {
     a.click();
   };
 
-  const clearCache = () => {
+  const clearCache = async () => {
+    if (!window.confirm("Clear all Cache Storage? This will force assets to re-download on next load.")) return;
     if ('caches' in window) {
-      caches.keys().then(names => {
-        for (let name of names) caches.delete(name);
-      });
+      const keys = await caches.keys();
+      await Promise.all(keys.map(key => caches.delete(key)));
     }
     alert("Cache cleared successfully!");
+  };
+
+  const unregisterSW = async () => {
+    if (!window.confirm("Unregister all Service Workers? This can fix stuck updates or white screen issues.")) return;
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (let registration of registrations) {
+        await registration.unregister();
+      }
+      alert("Service Workers unregistered. The app will now reload.");
+      window.location.reload();
+    } else {
+      alert("Service Workers not supported in this browser.");
+    }
+  };
+
+  const clearIndexedDB = async () => {
+    if (!window.confirm("Clear IndexedDB? This removes stored databases. Your main collection is safe in LocalStorage.")) return;
+    if ('indexedDB' in window && (window.indexedDB as any).databases) {
+      const dbs = await (window.indexedDB as any).databases();
+      for (const dbInfo of dbs) {
+        if (dbInfo.name) window.indexedDB.deleteDatabase(dbInfo.name);
+      }
+      alert("IndexedDB databases cleared.");
+    } else {
+      // Fallback if databases() is not supported (e.g. Firefox)
+      alert("Detailed database clearing not supported in this browser, but cache/SW can still be reset.");
+    }
+  };
+
+  const fullAppReset = async () => {
+    if (!window.confirm("PERFORM FULL SYSTEM RESET? This unregisters SW, clears all caches, and reloads. Your collection data is safe.")) return;
+    
+    // 1. SW
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (let registration of registrations) await registration.unregister();
+    }
+    
+    // 2. Cache
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(key => caches.delete(key)));
+    }
+
+    // 3. Optional IDB
+    if ('indexedDB' in window && (window.indexedDB as any).databases) {
+      const dbs = await (window.indexedDB as any).databases();
+      for (const dbInfo of dbs) if (dbInfo.name) window.indexedDB.deleteDatabase(dbInfo.name);
+    }
+
+    alert("Full reset complete. Reloading...");
+    window.location.reload();
   };
 
   const { level: currentLevel, name: levelName, nextLevelPoints, progress: levelProgress } = getLevelInfo(userProfile.points);
@@ -5192,6 +5274,14 @@ function CoinCollectorApp() {
                             isNavigation 
                             onClick={() => setSettingsSubpage('prices')}
                           />
+                          <SettingsRow 
+                            icon={Cpu} 
+                            iconBg="bg-purple-600" 
+                            title="Service Worker Tools" 
+                            subtitle="Fix PWA & Cache issues" 
+                            isNavigation 
+                            onClick={() => setSettingsSubpage('sw-tools')}
+                          />
                         </SettingsSection>
 
                         <SettingsSection title="Data Management">
@@ -5439,6 +5529,72 @@ function CoinCollectorApp() {
                                   onClick={() => setIsBulkPriceModalOpen(true)}
                                 />
                               </SettingsSection>
+                            </div>
+                          )}
+
+                          {settingsSubpage === 'sw-tools' && (
+                            <div className="space-y-6">
+                              <SettingsSection title="Status">
+                                <SettingsRow 
+                                  title="Status" 
+                                  right={
+                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                                      swStatus === 'Active' ? 'bg-green-100 text-green-600 font-bold' :
+                                      swStatus === 'None' ? 'bg-gray-100 text-gray-400 font-bold' :
+                                      'bg-amber-100 text-amber-600 font-bold'
+                                    }`}>
+                                      {swStatus}
+                                    </span>
+                                  }
+                                />
+                              </SettingsSection>
+
+                              <SettingsSection title="Repair Tools">
+                                <SettingsRow 
+                                  icon={RotateCcw}
+                                  iconBg="bg-blue-500"
+                                  title="Unregister SW" 
+                                  subtitle="Fix stuck updates" 
+                                  onClick={unregisterSW}
+                                />
+                                <SettingsRow 
+                                  icon={Trash2}
+                                  iconBg="bg-amber-500"
+                                  title="Clear Cache" 
+                                  subtitle="Force fresh assets" 
+                                  onClick={clearCache}
+                                />
+                                <SettingsRow 
+                                  icon={Database}
+                                  iconBg="bg-gray-600"
+                                  title="Clear IndexedDB" 
+                                  subtitle="Reset local DBs" 
+                                  onClick={clearIndexedDB}
+                                />
+                                <SettingsRow 
+                                  icon={RefreshCw}
+                                  iconBg="bg-emerald-600"
+                                  title="Hard Reload" 
+                                  subtitle="Refresh app safely" 
+                                  onClick={() => window.location.reload()}
+                                />
+                              </SettingsSection>
+
+                              <SettingsSection title="System">
+                                <SettingsRow 
+                                  icon={Power}
+                                  iconBg="bg-red-500"
+                                  title="Full System Reset" 
+                                  subtitle="Clean environment" 
+                                  onClick={fullAppReset}
+                                />
+                              </SettingsSection>
+
+                              <div className="px-6 text-center pb-8">
+                                <p className="text-[10px] text-gray-400 font-medium leading-relaxed italic">
+                                  These tools help resolve "White Screen" or update issues. Your collection data is safe.
+                                </p>
+                              </div>
                             </div>
                           )}
                         </div>
